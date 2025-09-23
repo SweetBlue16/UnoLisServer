@@ -1,0 +1,40 @@
+## Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+*.log
+
+## Visual Studio cache
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Test results
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+## Local config
+*.local.json
+appsettings.Development.json
+
+## Rider / VSCode / JetBrains
+.vscode/
+.idea/
+*.code-workspace
+
+## System files
+[Tt]humbs.db
+[Dd]esktop.ini
+*.DS_Store
