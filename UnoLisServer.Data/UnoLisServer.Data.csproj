@@ -56,13 +56,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="AppDbContext.cs" />
+    <Compile Include="Entities\Account.cs" />
+    <Compile Include="Entities\Achievement.cs" />
+    <Compile Include="Entities\Avatar.cs" />
+    <Compile Include="Entities\AvatarsUnlocked.cs" />
+    <Compile Include="Entities\FriendList.cs" />
+    <Compile Include="Entities\Player.cs" />
+    <Compile Include="Entities\PlayerStatistics.cs" />
+    <Compile Include="Entities\Report.cs" />
+    <Compile Include="Entities\Sanction.cs" />
+    <Compile Include="Entities\SocialNetwork.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
