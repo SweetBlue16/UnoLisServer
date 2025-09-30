@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -10,7 +12,9 @@ namespace UnoLisServer.Data.Entities
 {
     public class Player
     {
-        public int IdPlayer { get; set; }
+        [Key]
+        [Column("idPlayer")]
+        public int PlayerId { get; set; }
         public string Nickname { get; set; }
         public string FullName { get; set; }
 

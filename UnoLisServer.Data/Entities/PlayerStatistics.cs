@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +10,9 @@ namespace UnoLisServer.Data.Entities
 {
     public class PlayerStatistics
     {
-        public int IdPlayerStatistics { get; set; }
+        [Key]
+        [Column("idPlayerStatistics")]
+        public int PlayerStatisticsId { get; set; }
         public int MatchesPlayed { get; set; }
         public int Wins { get; set; }
         public int Loses { get; set; }

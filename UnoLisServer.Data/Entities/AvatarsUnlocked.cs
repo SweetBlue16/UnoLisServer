@@ -8,6 +8,7 @@ namespace UnoLisServer.Data.Entities
 {
     public class AvatarsUnlocked
     {
+
         public int PlayerId { get; set; }
         public int AvatarId { get; set; }
         public DateTime UnlockedDate { get; set; }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +10,9 @@ namespace UnoLisServer.Data.Entities
 {
     public class Achievement
     {
-        public int IdAchievements { get; set; }
+        [Key]
+        [Column("idAchievement")]
+        public int AchievementId { get; set; }
         public string AchievementTitle { get; set; }
         public string AchievementsDescription { get; set; }
         public string AchievementRarity { get; set; }

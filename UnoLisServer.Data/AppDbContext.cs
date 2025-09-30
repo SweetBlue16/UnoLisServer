@@ -27,10 +27,15 @@ namespace UnoLisServer.Data
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            modelBuilder.Conventions.Remove<System.Data.Entity.ModelConfiguration.Conventions.PluralizingTableNameConvention>();
+
             // Player ↔ Account (1:1)
             modelBuilder.Entity<Player>()
                 .HasOptional(p => p.Account)
                 .WithRequired(a => a.Player);
+
+            modelBuilder.Entity<AvatarsUnlocked>()
+                .HasKey(au => new { au.PlayerId, au.AvatarId });
 
             // Player ↔ PlayerStatistics (1:1)
             modelBuilder.Entity<Player>()
