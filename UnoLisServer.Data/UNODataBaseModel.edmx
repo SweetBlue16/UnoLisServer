@@ -1,0 +1,776 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="UNODataBaseModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Account">
+          <Key>
+            <PropertyRef Name="idAccount" />
+          </Key>
+          <Property Name="idAccount" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="email" Type="varchar" MaxLength="100" Nullable="false" />
+          <Property Name="password" Type="varchar" MaxLength="255" Nullable="false" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Achievements">
+          <Key>
+            <PropertyRef Name="idAchievements" />
+          </Key>
+          <Property Name="idAchievements" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="achievementTitle" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="achievementsDescription" Type="varchar" MaxLength="255" />
+          <Property Name="achievementRarity" Type="varchar" MaxLength="20" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="achievementDate" Type="date" />
+        </EntityType>
+        <EntityType Name="Avatar">
+          <Key>
+            <PropertyRef Name="idAvatar" />
+          </Key>
+          <Property Name="idAvatar" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="avatarName" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="avatarDescription" Type="varchar" MaxLength="255" />
+          <Property Name="avatarRarity" Type="varchar" MaxLength="20" />
+          <Property Name="LootBoxType_idLootBoxType" Type="int" />
+        </EntityType>
+        <EntityType Name="AvatarsUnlocked">
+          <Key>
+            <PropertyRef Name="Player_idPlayer" />
+            <PropertyRef Name="Avatar_idAvatar" />
+          </Key>
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="Avatar_idAvatar" Type="int" Nullable="false" />
+          <Property Name="unlockedDate" Type="date" />
+        </EntityType>
+        <EntityType Name="FriendList">
+          <Key>
+            <PropertyRef Name="idFriendList" />
+          </Key>
+          <Property Name="idFriendList" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="Player_idPlayer1" Type="int" Nullable="false" />
+          <Property Name="friendRequest" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="LootBoxType">
+          <Key>
+            <PropertyRef Name="idLootBoxType" />
+          </Key>
+          <Property Name="idLootBoxType" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="boxName" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="boxRarity" Type="varchar" MaxLength="20" Nullable="false" />
+          <Property Name="price" Type="int" Nullable="false" />
+          <Property Name="description" Type="varchar" MaxLength="255" />
+        </EntityType>
+        <EntityType Name="Player">
+          <Key>
+            <PropertyRef Name="idPlayer" />
+          </Key>
+          <Property Name="idPlayer" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="nickname" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="fullName" Type="varchar" MaxLength="45" />
+        </EntityType>
+        <EntityType Name="PlayerStatistics">
+          <Key>
+            <PropertyRef Name="idPlayerStatistics" />
+          </Key>
+          <Property Name="idPlayerStatistics" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="matchesPlayed" Type="int" />
+          <Property Name="wins" Type="int" />
+          <Property Name="loses" Type="int" />
+          <Property Name="globalPoints" Type="int" />
+          <Property Name="streak" Type="int" />
+          <Property Name="maxStreak" Type="int" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="MatchGame_idMatchGame" Type="int" />
+        </EntityType>
+        <EntityType Name="Report">
+          <Key>
+            <PropertyRef Name="idReport" />
+          </Key>
+          <Property Name="idReport" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="reportDescription" Type="varchar" MaxLength="255" />
+          <Property Name="reportDate" Type="date" />
+        </EntityType>
+        <EntityType Name="Sanction">
+          <Key>
+            <PropertyRef Name="idSanction" />
+          </Key>
+          <Property Name="idSanction" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="sanctionType" Type="varchar" MaxLength="45" />
+          <Property Name="sanctionDescription" Type="varchar" MaxLength="255" />
+          <Property Name="sanctionDate" Type="date" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SocialNetwork">
+          <Key>
+            <PropertyRef Name="idRedSocial" />
+          </Key>
+          <Property Name="idRedSocial" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="tipoRedSocial" Type="varchar" MaxLength="45" />
+          <Property Name="linkRedSocial" Type="varchar" MaxLength="255" />
+          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+        </EntityType>
+        <Association Name="FK__Account__Player___4E88ABD4">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Account" Type="Self.Account" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Account">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Achieveme__Playe__5441852A">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Achievements" Type="Self.Achievements" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Achievements">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__AvatarsUn__Avata__44FF419A">
+          <End Role="Avatar" Type="Self.Avatar" Multiplicity="1" />
+          <End Role="AvatarsUnlocked" Type="Self.AvatarsUnlocked" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Avatar">
+              <PropertyRef Name="idAvatar" />
+            </Principal>
+            <Dependent Role="AvatarsUnlocked">
+              <PropertyRef Name="Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__AvatarsUn__Playe__440B1D61">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="AvatarsUnlocked" Type="Self.AvatarsUnlocked" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="AvatarsUnlocked">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__FriendLis__Playe__5812160E">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="FriendList" Type="Self.FriendList" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="FriendList">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__FriendLis__Playe__59063A47">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="FriendList" Type="Self.FriendList" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="FriendList">
+              <PropertyRef Name="Player_idPlayer1" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__PlayerSta__Playe__412EB0B6">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="PlayerStatistics" Type="Self.PlayerStatistics" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="PlayerStatistics">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RedSocial__Playe__4AB81AF0">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="SocialNetwork" Type="Self.SocialNetwork" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="SocialNetwork">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Report__Player_i__5165187F">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Report" Type="Self.Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Sanction__Player__47DBAE45">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Sanction" Type="Self.Sanction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Sanction">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Avatar_LootBoxType">
+          <End Role="LootBoxType" Type="Self.LootBoxType" Multiplicity="0..1" />
+          <End Role="Avatar" Type="Self.Avatar" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="LootBoxType">
+              <PropertyRef Name="idLootBoxType" />
+            </Principal>
+            <Dependent Role="Avatar">
+              <PropertyRef Name="LootBoxType_idLootBoxType" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="UNODataBaseModelStoreContainer">
+          <EntitySet Name="Account" EntityType="Self.Account" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Achievements" EntityType="Self.Achievements" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Avatar" EntityType="Self.Avatar" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="AvatarsUnlocked" EntityType="Self.AvatarsUnlocked" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="FriendList" EntityType="Self.FriendList" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="LootBoxType" EntityType="Self.LootBoxType" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Player" EntityType="Self.Player" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PlayerStatistics" EntityType="Self.PlayerStatistics" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Report" EntityType="Self.Report" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Sanction" EntityType="Self.Sanction" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SocialNetwork" EntityType="Self.SocialNetwork" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK__Account__Player___4E88ABD4" Association="Self.FK__Account__Player___4E88ABD4">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Account" EntitySet="Account" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Achieveme__Playe__5441852A" Association="Self.FK__Achieveme__Playe__5441852A">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Achievements" EntitySet="Achievements" />
+          </AssociationSet>
+          <AssociationSet Name="FK__AvatarsUn__Avata__44FF419A" Association="Self.FK__AvatarsUn__Avata__44FF419A">
+            <End Role="Avatar" EntitySet="Avatar" />
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+          </AssociationSet>
+          <AssociationSet Name="FK__AvatarsUn__Playe__440B1D61" Association="Self.FK__AvatarsUn__Playe__440B1D61">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+          </AssociationSet>
+          <AssociationSet Name="FK__FriendLis__Playe__5812160E" Association="Self.FK__FriendLis__Playe__5812160E">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="FriendList" EntitySet="FriendList" />
+          </AssociationSet>
+          <AssociationSet Name="FK__FriendLis__Playe__59063A47" Association="Self.FK__FriendLis__Playe__59063A47">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="FriendList" EntitySet="FriendList" />
+          </AssociationSet>
+          <AssociationSet Name="FK__PlayerSta__Playe__412EB0B6" Association="Self.FK__PlayerSta__Playe__412EB0B6">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="PlayerStatistics" EntitySet="PlayerStatistics" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RedSocial__Playe__4AB81AF0" Association="Self.FK__RedSocial__Playe__4AB81AF0">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="SocialNetwork" EntitySet="SocialNetwork" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Report__Player_i__5165187F" Association="Self.FK__Report__Player_i__5165187F">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Sanction__Player__47DBAE45" Association="Self.FK__Sanction__Player__47DBAE45">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Sanction" EntitySet="Sanction" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Avatar_LootBoxType" Association="Self.FK_Avatar_LootBoxType">
+            <End Role="LootBoxType" EntitySet="LootBoxType" />
+            <End Role="Avatar" EntitySet="Avatar" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="UNODataBaseModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Account">
+          <Key>
+            <PropertyRef Name="idAccount" />
+          </Key>
+          <Property Name="idAccount" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="email" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="password" Type="String" MaxLength="255" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__Account__Player___4E88ABD4" FromRole="Account" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="Achievements">
+          <Key>
+            <PropertyRef Name="idAchievements" />
+          </Key>
+          <Property Name="idAchievements" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="achievementTitle" Type="String" MaxLength="45" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="achievementsDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <Property Name="achievementRarity" Type="String" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <Property Name="achievementDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__Achieveme__Playe__5441852A" FromRole="Achievements" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="Avatar">
+          <Key>
+            <PropertyRef Name="idAvatar" />
+          </Key>
+          <Property Name="idAvatar" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="avatarName" Type="String" MaxLength="45" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="avatarDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <Property Name="avatarRarity" Type="String" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="LootBoxType_idLootBoxType" Type="Int32" />
+          <NavigationProperty Name="AvatarsUnlocked" Relationship="Self.FK__AvatarsUn__Avata__44FF419A" FromRole="Avatar" ToRole="AvatarsUnlocked" />
+          <NavigationProperty Name="LootBoxType" Relationship="Self.FK_Avatar_LootBoxType" FromRole="Avatar" ToRole="LootBoxType" />
+        </EntityType>
+        <EntityType Name="AvatarsUnlocked">
+          <Key>
+            <PropertyRef Name="Player_idPlayer" />
+            <PropertyRef Name="Avatar_idAvatar" />
+          </Key>
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <Property Name="Avatar_idAvatar" Type="Int32" Nullable="false" />
+          <Property Name="unlockedDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="Avatar" Relationship="Self.FK__AvatarsUn__Avata__44FF419A" FromRole="AvatarsUnlocked" ToRole="Avatar" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__AvatarsUn__Playe__440B1D61" FromRole="AvatarsUnlocked" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="FriendList">
+          <Key>
+            <PropertyRef Name="idFriendList" />
+          </Key>
+          <Property Name="idFriendList" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <Property Name="Player_idPlayer1" Type="Int32" Nullable="false" />
+          <Property Name="friendRequest" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__FriendLis__Playe__5812160E" FromRole="FriendList" ToRole="Player" />
+          <NavigationProperty Name="Player1" Relationship="Self.FK__FriendLis__Playe__59063A47" FromRole="FriendList" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="LootBoxType">
+          <Key>
+            <PropertyRef Name="idLootBoxType" />
+          </Key>
+          <Property Name="idLootBoxType" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="boxName" Type="String" MaxLength="45" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="boxRarity" Type="String" MaxLength="20" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="price" Type="Int32" Nullable="false" />
+          <Property Name="description" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <NavigationProperty Name="Avatar" Relationship="Self.FK_Avatar_LootBoxType" FromRole="LootBoxType" ToRole="Avatar" />
+        </EntityType>
+        <EntityType Name="Player">
+          <Key>
+            <PropertyRef Name="idPlayer" />
+          </Key>
+          <Property Name="idPlayer" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="nickname" Type="String" MaxLength="45" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="fullName" Type="String" MaxLength="45" FixedLength="false" Unicode="false" />
+          <NavigationProperty Name="Account" Relationship="Self.FK__Account__Player___4E88ABD4" FromRole="Player" ToRole="Account" />
+          <NavigationProperty Name="Achievements" Relationship="Self.FK__Achieveme__Playe__5441852A" FromRole="Player" ToRole="Achievements" />
+          <NavigationProperty Name="AvatarsUnlocked" Relationship="Self.FK__AvatarsUn__Playe__440B1D61" FromRole="Player" ToRole="AvatarsUnlocked" />
+          <NavigationProperty Name="FriendList" Relationship="Self.FK__FriendLis__Playe__5812160E" FromRole="Player" ToRole="FriendList" />
+          <NavigationProperty Name="FriendList1" Relationship="Self.FK__FriendLis__Playe__59063A47" FromRole="Player" ToRole="FriendList" />
+          <NavigationProperty Name="PlayerStatistics" Relationship="Self.FK__PlayerSta__Playe__412EB0B6" FromRole="Player" ToRole="PlayerStatistics" />
+          <NavigationProperty Name="SocialNetwork" Relationship="Self.FK__RedSocial__Playe__4AB81AF0" FromRole="Player" ToRole="SocialNetwork" />
+          <NavigationProperty Name="Report" Relationship="Self.FK__Report__Player_i__5165187F" FromRole="Player" ToRole="Report" />
+          <NavigationProperty Name="Sanction" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Player" ToRole="Sanction" />
+        </EntityType>
+        <EntityType Name="PlayerStatistics">
+          <Key>
+            <PropertyRef Name="idPlayerStatistics" />
+          </Key>
+          <Property Name="idPlayerStatistics" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="matchesPlayed" Type="Int32" />
+          <Property Name="wins" Type="Int32" />
+          <Property Name="loses" Type="Int32" />
+          <Property Name="globalPoints" Type="Int32" />
+          <Property Name="streak" Type="Int32" />
+          <Property Name="maxStreak" Type="Int32" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <Property Name="MatchGame_idMatchGame" Type="Int32" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__PlayerSta__Playe__412EB0B6" FromRole="PlayerStatistics" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="Report">
+          <Key>
+            <PropertyRef Name="idReport" />
+          </Key>
+          <Property Name="idReport" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <Property Name="reportDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <Property Name="reportDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__Report__Player_i__5165187F" FromRole="Report" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="Sanction">
+          <Key>
+            <PropertyRef Name="idSanction" />
+          </Key>
+          <Property Name="idSanction" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="sanctionType" Type="String" MaxLength="45" FixedLength="false" Unicode="false" />
+          <Property Name="sanctionDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <Property Name="sanctionDate" Type="DateTime" Precision="0" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Sanction" ToRole="Player" />
+        </EntityType>
+        <EntityType Name="SocialNetwork">
+          <Key>
+            <PropertyRef Name="idRedSocial" />
+          </Key>
+          <Property Name="idRedSocial" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="tipoRedSocial" Type="String" MaxLength="45" FixedLength="false" Unicode="false" />
+          <Property Name="linkRedSocial" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Player" Relationship="Self.FK__RedSocial__Playe__4AB81AF0" FromRole="SocialNetwork" ToRole="Player" />
+        </EntityType>
+        <Association Name="FK__Account__Player___4E88ABD4">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Account" Type="Self.Account" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Account">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Achieveme__Playe__5441852A">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Achievements" Type="Self.Achievements" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Achievements">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__AvatarsUn__Avata__44FF419A">
+          <End Role="Avatar" Type="Self.Avatar" Multiplicity="1" />
+          <End Role="AvatarsUnlocked" Type="Self.AvatarsUnlocked" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Avatar">
+              <PropertyRef Name="idAvatar" />
+            </Principal>
+            <Dependent Role="AvatarsUnlocked">
+              <PropertyRef Name="Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Avatar_LootBoxType">
+          <End Role="LootBoxType" Type="Self.LootBoxType" Multiplicity="0..1" />
+          <End Role="Avatar" Type="Self.Avatar" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="LootBoxType">
+              <PropertyRef Name="idLootBoxType" />
+            </Principal>
+            <Dependent Role="Avatar">
+              <PropertyRef Name="LootBoxType_idLootBoxType" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__AvatarsUn__Playe__440B1D61">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="AvatarsUnlocked" Type="Self.AvatarsUnlocked" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="AvatarsUnlocked">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__FriendLis__Playe__5812160E">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="FriendList" Type="Self.FriendList" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="FriendList">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__FriendLis__Playe__59063A47">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="FriendList" Type="Self.FriendList" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="FriendList">
+              <PropertyRef Name="Player_idPlayer1" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__PlayerSta__Playe__412EB0B6">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="PlayerStatistics" Type="Self.PlayerStatistics" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="PlayerStatistics">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RedSocial__Playe__4AB81AF0">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="SocialNetwork" Type="Self.SocialNetwork" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="SocialNetwork">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Report__Player_i__5165187F">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Report" Type="Self.Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Sanction__Player__47DBAE45">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Sanction" Type="Self.Sanction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Sanction">
+              <PropertyRef Name="Player_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="UNOContext" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Account" EntityType="Self.Account" />
+          <EntitySet Name="Achievements" EntityType="Self.Achievements" />
+          <EntitySet Name="Avatar" EntityType="Self.Avatar" />
+          <EntitySet Name="AvatarsUnlocked" EntityType="Self.AvatarsUnlocked" />
+          <EntitySet Name="FriendList" EntityType="Self.FriendList" />
+          <EntitySet Name="LootBoxType" EntityType="Self.LootBoxType" />
+          <EntitySet Name="Player" EntityType="Self.Player" />
+          <EntitySet Name="PlayerStatistics" EntityType="Self.PlayerStatistics" />
+          <EntitySet Name="Report" EntityType="Self.Report" />
+          <EntitySet Name="Sanction" EntityType="Self.Sanction" />
+          <EntitySet Name="SocialNetwork" EntityType="Self.SocialNetwork" />
+          <AssociationSet Name="FK__Account__Player___4E88ABD4" Association="Self.FK__Account__Player___4E88ABD4">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Account" EntitySet="Account" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Achieveme__Playe__5441852A" Association="Self.FK__Achieveme__Playe__5441852A">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Achievements" EntitySet="Achievements" />
+          </AssociationSet>
+          <AssociationSet Name="FK__AvatarsUn__Avata__44FF419A" Association="Self.FK__AvatarsUn__Avata__44FF419A">
+            <End Role="Avatar" EntitySet="Avatar" />
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Avatar_LootBoxType" Association="Self.FK_Avatar_LootBoxType">
+            <End Role="LootBoxType" EntitySet="LootBoxType" />
+            <End Role="Avatar" EntitySet="Avatar" />
+          </AssociationSet>
+          <AssociationSet Name="FK__AvatarsUn__Playe__440B1D61" Association="Self.FK__AvatarsUn__Playe__440B1D61">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+          </AssociationSet>
+          <AssociationSet Name="FK__FriendLis__Playe__5812160E" Association="Self.FK__FriendLis__Playe__5812160E">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="FriendList" EntitySet="FriendList" />
+          </AssociationSet>
+          <AssociationSet Name="FK__FriendLis__Playe__59063A47" Association="Self.FK__FriendLis__Playe__59063A47">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="FriendList" EntitySet="FriendList" />
+          </AssociationSet>
+          <AssociationSet Name="FK__PlayerSta__Playe__412EB0B6" Association="Self.FK__PlayerSta__Playe__412EB0B6">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="PlayerStatistics" EntitySet="PlayerStatistics" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RedSocial__Playe__4AB81AF0" Association="Self.FK__RedSocial__Playe__4AB81AF0">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="SocialNetwork" EntitySet="SocialNetwork" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Report__Player_i__5165187F" Association="Self.FK__Report__Player_i__5165187F">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Sanction__Player__47DBAE45" Association="Self.FK__Sanction__Player__47DBAE45">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Sanction" EntitySet="Sanction" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="UNODataBaseModelStoreContainer" CdmEntityContainer="UNOContext">
+          <EntitySetMapping Name="Account">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Account">
+              <MappingFragment StoreEntitySet="Account">
+                <ScalarProperty Name="idAccount" ColumnName="idAccount" />
+                <ScalarProperty Name="email" ColumnName="email" />
+                <ScalarProperty Name="password" ColumnName="password" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Achievements">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Achievements">
+              <MappingFragment StoreEntitySet="Achievements">
+                <ScalarProperty Name="idAchievements" ColumnName="idAchievements" />
+                <ScalarProperty Name="achievementTitle" ColumnName="achievementTitle" />
+                <ScalarProperty Name="achievementsDescription" ColumnName="achievementsDescription" />
+                <ScalarProperty Name="achievementRarity" ColumnName="achievementRarity" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+                <ScalarProperty Name="achievementDate" ColumnName="achievementDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Avatar">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Avatar">
+              <MappingFragment StoreEntitySet="Avatar">
+                <ScalarProperty Name="idAvatar" ColumnName="idAvatar" />
+                <ScalarProperty Name="avatarName" ColumnName="avatarName" />
+                <ScalarProperty Name="avatarDescription" ColumnName="avatarDescription" />
+                <ScalarProperty Name="avatarRarity" ColumnName="avatarRarity" />
+                <ScalarProperty Name="LootBoxType_idLootBoxType" ColumnName="LootBoxType_idLootBoxType" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="AvatarsUnlocked">
+            <EntityTypeMapping TypeName="UNODataBaseModel.AvatarsUnlocked">
+              <MappingFragment StoreEntitySet="AvatarsUnlocked">
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+                <ScalarProperty Name="Avatar_idAvatar" ColumnName="Avatar_idAvatar" />
+                <ScalarProperty Name="unlockedDate" ColumnName="unlockedDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="FriendList">
+            <EntityTypeMapping TypeName="UNODataBaseModel.FriendList">
+              <MappingFragment StoreEntitySet="FriendList">
+                <ScalarProperty Name="idFriendList" ColumnName="idFriendList" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+                <ScalarProperty Name="Player_idPlayer1" ColumnName="Player_idPlayer1" />
+                <ScalarProperty Name="friendRequest" ColumnName="friendRequest" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="LootBoxType">
+            <EntityTypeMapping TypeName="UNODataBaseModel.LootBoxType">
+              <MappingFragment StoreEntitySet="LootBoxType">
+                <ScalarProperty Name="idLootBoxType" ColumnName="idLootBoxType" />
+                <ScalarProperty Name="boxName" ColumnName="boxName" />
+                <ScalarProperty Name="boxRarity" ColumnName="boxRarity" />
+                <ScalarProperty Name="price" ColumnName="price" />
+                <ScalarProperty Name="description" ColumnName="description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Player">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Player">
+              <MappingFragment StoreEntitySet="Player">
+                <ScalarProperty Name="idPlayer" ColumnName="idPlayer" />
+                <ScalarProperty Name="nickname" ColumnName="nickname" />
+                <ScalarProperty Name="fullName" ColumnName="fullName" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PlayerStatistics">
+            <EntityTypeMapping TypeName="UNODataBaseModel.PlayerStatistics">
+              <MappingFragment StoreEntitySet="PlayerStatistics">
+                <ScalarProperty Name="idPlayerStatistics" ColumnName="idPlayerStatistics" />
+                <ScalarProperty Name="matchesPlayed" ColumnName="matchesPlayed" />
+                <ScalarProperty Name="wins" ColumnName="wins" />
+                <ScalarProperty Name="loses" ColumnName="loses" />
+                <ScalarProperty Name="globalPoints" ColumnName="globalPoints" />
+                <ScalarProperty Name="streak" ColumnName="streak" />
+                <ScalarProperty Name="maxStreak" ColumnName="maxStreak" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+                <ScalarProperty Name="MatchGame_idMatchGame" ColumnName="MatchGame_idMatchGame" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Report">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Report">
+              <MappingFragment StoreEntitySet="Report">
+                <ScalarProperty Name="idReport" ColumnName="idReport" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+                <ScalarProperty Name="reportDescription" ColumnName="reportDescription" />
+                <ScalarProperty Name="reportDate" ColumnName="reportDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Sanction">
+            <EntityTypeMapping TypeName="UNODataBaseModel.Sanction">
+              <MappingFragment StoreEntitySet="Sanction">
+                <ScalarProperty Name="idSanction" ColumnName="idSanction" />
+                <ScalarProperty Name="sanctionType" ColumnName="sanctionType" />
+                <ScalarProperty Name="sanctionDescription" ColumnName="sanctionDescription" />
+                <ScalarProperty Name="sanctionDate" ColumnName="sanctionDate" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SocialNetwork">
+            <EntityTypeMapping TypeName="UNODataBaseModel.SocialNetwork">
+              <MappingFragment StoreEntitySet="SocialNetwork">
+                <ScalarProperty Name="idRedSocial" ColumnName="idRedSocial" />
+                <ScalarProperty Name="tipoRedSocial" ColumnName="tipoRedSocial" />
+                <ScalarProperty Name="linkRedSocial" ColumnName="linkRedSocial" />
+                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

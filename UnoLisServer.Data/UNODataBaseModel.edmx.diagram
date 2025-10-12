@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="b46234d931c04016bad1fd03c4d80444" Name="Diagram1">
+        <EntityTypeShape EntityType="UNODataBaseModel.Account" Width="1.5" PointX="3" PointY="3.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.Achievements" Width="1.5" PointX="3" PointY="6.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.Avatar" Width="1.5" PointX="3.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.AvatarsUnlocked" Width="1.5" PointX="6" PointY="13" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.FriendList" Width="1.5" PointX="3" PointY="12.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.LootBoxType" Width="1.5" PointX="1.5" PointY="0.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.Player" Width="1.5" PointX="0.75" PointY="12.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.PlayerStatistics" Width="1.5" PointX="3" PointY="15.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.Report" Width="1.5" PointX="3" PointY="19.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.Sanction" Width="1.5" PointX="3" PointY="21.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="UNODataBaseModel.SocialNetwork" Width="1.5" PointX="3" PointY="24.75" IsExpanded="true" />
+        <AssociationConnector Association="UNODataBaseModel.FK__Account__Player___4E88ABD4" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__Achieveme__Playe__5441852A" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__AvatarsUn__Avata__44FF419A" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK_Avatar_LootBoxType" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__AvatarsUn__Playe__440B1D61" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__FriendLis__Playe__5812160E" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__FriendLis__Playe__59063A47" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__PlayerSta__Playe__412EB0B6" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__RedSocial__Playe__4AB81AF0" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__Report__Player_i__5165187F" ManuallyRouted="false" />
+        <AssociationConnector Association="UNODataBaseModel.FK__Sanction__Player__47DBAE45" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

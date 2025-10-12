@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UnoLisServer.Data
+namespace Host
 {
-    public class Program
+    internal class Program
     {
         static void Main(string[] args)
         {
-            
         }
     }
 }
