@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class PlayCardData
+    public class PlayCardData
     {
+        public string Nickname { get; set; }
+        public Card PlayedCard { get; set; }
     }
 }

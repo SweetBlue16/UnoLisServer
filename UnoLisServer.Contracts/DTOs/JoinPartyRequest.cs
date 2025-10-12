@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class JoinPartyRequest
+    public class JoinPartyRequest
     {
+        public string Nickname { get; set; }
+        public string JoinCode { get; set; }
     }
 }

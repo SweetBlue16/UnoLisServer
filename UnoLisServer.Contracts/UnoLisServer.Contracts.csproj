@@ -31,11 +31,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=3.2.0.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.3.2.0\lib\net462\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,7 +50,42 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="DTOs\AuthCredentials.cs" />
+    <Compile Include="DTOs\Card.cs" />
+    <Compile Include="DTOs\ChatMessageData.cs" />
+    <Compile Include="DTOs\FriendData.cs" />
+    <Compile Include="DTOs\FriendRequestData.cs" />
+    <Compile Include="DTOs\JoinPartyRequest.cs" />
+    <Compile Include="DTOs\LeaderboardEntry.cs" />
+    <Compile Include="DTOs\NotificationData.cs" />
+    <Compile Include="DTOs\NotificationType.cs" />
+    <Compile Include="DTOs\PartyActionData.cs" />
+    <Compile Include="DTOs\PlayCardData.cs" />
+    <Compile Include="DTOs\ProfileData.cs" />
+    <Compile Include="DTOs\PurchaseRequest.cs" />
+    <Compile Include="DTOs\RegistrationData.cs" />
+    <Compile Include="DTOs\ResultData.cs" />
+    <Compile Include="DTOs\ShopItem.cs" />
+    <Compile Include="Enums\CardColor.cs" />
+    <Compile Include="Enums\CardValue.cs" />
+    <Compile Include="Enums\NotificationType.cs" />
+    <Compile Include="Enums\PlayerStatus.cs" />
+    <Compile Include="Enums\RarityType.cs" />
+    <Compile Include="Interfaces\IAuthManager.cs" />
+    <Compile Include="Interfaces\IChatManager.cs" />
+    <Compile Include="Interfaces\IFriendsManager.cs" />
+    <Compile Include="Interfaces\IGameplayManager.cs" />
+    <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
+    <Compile Include="Interfaces\INotificationsManager.cs" />
+    <Compile Include="Interfaces\IPartyClientManager.cs" />
+    <Compile Include="Interfaces\IPartyHostManager.cs" />
+    <Compile Include="Interfaces\IProfileManager.cs" />
+    <Compile Include="Interfaces\ISessionCallback.cs" />
+    <Compile Include="Interfaces\IShopManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

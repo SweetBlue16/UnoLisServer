@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.Enums
 {
-    internal class RarityType
+    public enum RarityType
     {
+        Common,
+        Special,
+        Epic,
+        Legendary
     }
 }

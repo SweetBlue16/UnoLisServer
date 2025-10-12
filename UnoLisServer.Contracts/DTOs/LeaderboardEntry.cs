@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class LeaderboardEntry
+    public class LeaderboardEntry
     {
+        public int Rank { get; set; }
+        public string Nickname { get; set; }
+        public int Wins { get; set; }
+        public int MatchesPlayed { get; set; }
+        public int GlobalPoints { get; set; }
+        public string FullName { get; set; }
     }
 }

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class PurchaseRequest
+    public class PurchaseRequest
     {
+        public string Nickname { get; set; }
+        public int ItemId { get; set; }
     }
 }

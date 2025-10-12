@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class RegistrationData
+    public class RegistrationData
     {
+        public string Email { get; set; }
+        public string Password { get; set; }
     }
 }
+

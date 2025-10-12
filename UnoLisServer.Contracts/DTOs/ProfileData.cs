@@ -6,7 +6,19 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class ProfileData
+    public class ProfileData
     {
+        public string Nickname { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public int Level { get; set; }
+        public int ExperiencePoints { get; set; }
+        public int MatchesPlayed { get; set; }
+        public int Wins { get; set; }
+        public int Losses { get; set; }
+        public int Streak { get; set; }
+        public int MaxStreak { get; set; }
+        public string CurrentAvatar { get; set; }
     }
 }
+

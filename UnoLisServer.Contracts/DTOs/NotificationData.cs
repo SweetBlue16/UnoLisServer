@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class NotificationData
+    public class NotificationData
     {
+        public string Nickname { get; set; }
+        public string Message { get; set; }
+        public NotificationType Type { get; set; }
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
     }
 }

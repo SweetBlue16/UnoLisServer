@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.Enums
 {
-    internal class CardColor
+    public enum CardColor
     {
+        Red,
+        Yellow,
+        Green,
+        Blue,
+        Wild // Para las cartas especiales sin color asignado
     }
 }

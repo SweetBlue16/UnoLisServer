@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.Enums
 {
-    internal class PlayerStatus
+    public enum PlayerStatus
     {
+        Offline,
+        Online,
+        InLobby,
+        InMatch,
+        Spectating
     }
 }
+

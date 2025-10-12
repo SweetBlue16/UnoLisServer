@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class NotificationType
+    public enum NotificationType
     {
+        FriendRequest,
+        MatchInvite,
+        SystemMessage
     }
 }

@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class PartyActionData
+    public class PartyActionData
     {
+        public int PartyId { get; set; }
+        public string Nickname { get; set; }
+        public bool? IsReady { get; set; }
     }
 }
+

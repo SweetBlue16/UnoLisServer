@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Contracts.DTOs
 {
-    internal class FriendRequestData
+    public class FriendRequestData
     {
+        public string RequesterNickname { get; set; }
+        public string TargetNickname { get; set; }
     }
 }

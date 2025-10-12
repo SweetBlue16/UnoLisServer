@@ -3,10 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ServiceModel;
+using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
-    internal interface IShopManager
+    [ServiceContract(CallbackContract = typeof(IShopCallback), SessionMode = SessionMode.Required)]
+    public interface IShopManager
     {
+        [OperationContract(IsOneWay = true)]
+        void GetShopItems();
+
+        [OperationContract(IsOneWay = true)]
+        void PurchaseItem(PurchaseRequest request);
+    }
+
+    [ServiceContract]
+    public interface IShopCallback : ISessionCallback
+    {
+        [OperationContract]
+        void ShopItemsReceived(List<ShopItem> items);
+
+        [OperationContract]
+        void PurchaseResponse(bool success, string itemName);
     }
 }
