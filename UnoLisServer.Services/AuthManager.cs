@@ -47,7 +47,7 @@ namespace UnoLisServer.Services
 
                 // Registrar sesión
                 var session = OperationContext.Current.GetCallbackChannel<IAuthCallback>();
-                SessionTracker.AddSession(credentials.Nickname, session);
+                SessionManager.AddSession(credentials.Nickname, session);
 
                 _callback.LoginResponse(true, "Inicio de sesión exitoso.");
                 Logger.Log($"Usuario {credentials.Nickname} inició sesión correctamente.");

@@ -7,7 +7,7 @@ using System.ServiceModel;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 
-namespace UnoLisServer.Services.Chat
+namespace UnoLisServer.Services
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ChatManager : IChatManager

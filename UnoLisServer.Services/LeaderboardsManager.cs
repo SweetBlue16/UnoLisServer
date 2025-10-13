@@ -9,7 +9,7 @@ using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
 
-namespace UnoLisServer.Services.Leaderboards
+namespace UnoLisServer.Services
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class LeaderboardsManager : ILeaderboardsManager

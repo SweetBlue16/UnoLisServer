@@ -21,7 +21,10 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(PartyHostManager)),
                 new ServiceHost(typeof(PartyClientManager)),
                 new ServiceHost(typeof(GameplayManager)),
-                new ServiceHost(typeof(NotificationsManager)) // 👈 agregado
+                new ServiceHost(typeof(NotificationsManager)), 
+                new ServiceHost(typeof(ChatManager)),
+                new ServiceHost(typeof(LeaderboardsManager)),
+                new ServiceHost(typeof(ShopManager))
             };
 
             try

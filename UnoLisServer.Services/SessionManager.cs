@@ -4,7 +4,7 @@ using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services
 {
-    public static class SessionTracker
+    public static class SessionManager
     {
         private static readonly ConcurrentDictionary<string, ISessionCallback> ActiveSessions =
         new ConcurrentDictionary<string, ISessionCallback>();
