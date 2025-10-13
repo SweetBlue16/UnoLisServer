@@ -11,7 +11,7 @@ using UnoLisServer.Data;
 using UnoLisServer.Services;
 
 
-namespace UnoLisServer.Services.Friends
+namespace UnoLisServer.Services
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class FriendsManager : IFriendsManager

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Services", "Un
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Common", "UnoLisServer.Common\UnoLisServer.Common.csproj", "{5A8FA681-D17F-4968-BC72-3A0DCA91B546}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Host", "UnoLisServer.Host\UnoLisServer.Host.csproj", "{3D528C72-8D7B-4A2E-9039-BE90B75E2950}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{5A8FA681-D17F-4968-BC72-3A0DCA91B546}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A8FA681-D17F-4968-BC72-3A0DCA91B546}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A8FA681-D17F-4968-BC72-3A0DCA91B546}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D528C72-8D7B-4A2E-9039-BE90B75E2950}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D528C72-8D7B-4A2E-9039-BE90B75E2950}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D528C72-8D7B-4A2E-9039-BE90B75E2950}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D528C72-8D7B-4A2E-9039-BE90B75E2950}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

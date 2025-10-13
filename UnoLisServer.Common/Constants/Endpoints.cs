@@ -8,12 +8,26 @@ namespace UnoLisServer.Common.Constants
 {
     public static class Endpoints
     {
-        public const string AuthEndpoint = "net.tcp://localhost:8000/AuthService";
-        public const string ProfileEndpoint = "net.tcp://localhost:8001/ProfileService";
-        public const string FriendsEndpoint = "net.tcp://localhost:8002/FriendsService";
-        public const string ShopEndpoint = "net.tcp://localhost:8003/ShopService";
-        public const string MatchmakingEndpoint = "net.tcp://localhost:8004/MatchmakingService";
-        public const string GameplayEndpoint = "net.tcp://localhost:8005/GameplayService";
-        public const string NotificationsEndpoint = "net.tcp://localhost:8006/NotificationsService";
+        // AUTENTICACIÓN
+        public const string AuthEndpoint = "net.tcp://localhost:8101/Auth";
+
+        // PERFIL
+        public const string ProfileEndpoint = "net.tcp://localhost:8103/Profile";
+
+        // AMIGOS
+        public const string FriendsEndpoint = "net.tcp://localhost:8105/Friends";
+
+        // TIENDA
+        public const string ShopEndpoint = "net.tcp://localhost:8107/Shop";
+
+        // LOBBY / PARTIDAS
+        public const string PartyHostEndpoint = "net.tcp://localhost:8107/PartyHost";
+        public const string PartyClientEndpoint = "net.tcp://localhost:8109/PartyClient";
+
+        // GAMEPLAY
+        public const string GameplayEndpoint = "net.tcp://localhost:8111/Gameplay";
+
+        // NOTIFICACIONES
+        public const string NotificationsEndpoint = "net.tcp://localhost:8113/Notifications";
     }
 }
