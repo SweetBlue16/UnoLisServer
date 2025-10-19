@@ -10,6 +10,7 @@ namespace UnoLisServer.Contracts.DTOs
     {
         public string Nickname { get; set; }
         public string FullName { get; set; }
+        public string Password { get; set; }
         public string Email { get; set; }
         public int Level { get; set; }
         public int ExperiencePoints { get; set; }
@@ -19,6 +20,9 @@ namespace UnoLisServer.Contracts.DTOs
         public int Streak { get; set; }
         public int MaxStreak { get; set; }
         public string CurrentAvatar { get; set; }
+        public string FacebookUrl { get; set; }
+        public string InstagramUrl { get; set; }
+        public string TikTokUrl { get; set; }
     }
 }
 

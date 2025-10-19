@@ -6,17 +6,17 @@ namespace UnoLisServer.Host
 {
     internal class Program
     {
- 
-
         static void Main(string[] args)
         {
             Console.Title = "UNO LIS - WCF Server";
 
-            // 🔹 Definir los hosts a levantar
             ServiceHost[] hosts = new ServiceHost[]
             {
-                new ServiceHost(typeof(AuthManager)),
-                new ServiceHost(typeof(ProfileManager)),
+                new ServiceHost(typeof(LoginManager)),
+                new ServiceHost(typeof(RegisterManager)),
+                new ServiceHost(typeof(ConfirmationManager)),
+                new ServiceHost(typeof(ProfileEditManager)),
+                new ServiceHost(typeof(ProfileViewManager)),
                 new ServiceHost(typeof(FriendsManager)),
                 new ServiceHost(typeof(PartyHostManager)),
                 new ServiceHost(typeof(PartyClientManager)),

@@ -49,7 +49,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
     <Compile Include="DTOs\AuthCredentials.cs" />
     <Compile Include="DTOs\Card.cs" />
     <Compile Include="DTOs\ChatMessageData.cs" />
@@ -71,15 +70,18 @@
     <Compile Include="Enums\NotificationType.cs" />
     <Compile Include="Enums\PlayerStatus.cs" />
     <Compile Include="Enums\RarityType.cs" />
-    <Compile Include="Interfaces\IAuthManager.cs" />
     <Compile Include="Interfaces\IChatManager.cs" />
+    <Compile Include="Interfaces\IConfirmationManager.cs" />
     <Compile Include="Interfaces\IFriendsManager.cs" />
     <Compile Include="Interfaces\IGameplayManager.cs" />
     <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
+    <Compile Include="Interfaces\ILoginManager.cs" />
     <Compile Include="Interfaces\INotificationsManager.cs" />
     <Compile Include="Interfaces\IPartyClientManager.cs" />
     <Compile Include="Interfaces\IPartyHostManager.cs" />
-    <Compile Include="Interfaces\IProfileManager.cs" />
+    <Compile Include="Interfaces\IProfileEditManager.cs" />
+    <Compile Include="Interfaces\IProfileViewManager.cs" />
+    <Compile Include="Interfaces\IRegisterManager.cs" />
     <Compile Include="Interfaces\ISessionCallback.cs" />
     <Compile Include="Interfaces\IShopManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
