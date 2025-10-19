@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UnoLisServer.Data; // Asegúrate de usar el namespace correcto de tu modelo
+using UnoLisServer.Data;
 
 class Program
 {
@@ -11,23 +11,28 @@ class Program
     {
         using (var context = new UNOContext())
         {
-            // 🔹 Contar los jugadores
             var count = context.Player.Count();
             Console.WriteLine($"Hay {count} jugadores en la base.");
 
-            // 🔹 Insertar un nuevo jugador de prueba
             var newPlayer = new Player
             {
-                nickname = "TestModelPlayer",
-                fullName = "Jugador creado desde el modelo"
+                nickname = "SweetBlue16",
+                fullName = "Mauricio Noriega"
+            };
+
+            var newAccount = new Account
+            {
+                email = "p.sweetblue16@gmail.com",
+                password = "Contraseña segura",
+                Player = newPlayer
             };
 
             context.Player.Add(newPlayer);
+            context.Account.Add(newAccount);
             context.SaveChanges();
 
             Console.WriteLine("Jugador agregado correctamente!");
         }
-
         Console.ReadKey();
     }
 }
