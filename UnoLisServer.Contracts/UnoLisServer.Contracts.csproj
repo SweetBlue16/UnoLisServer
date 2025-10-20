@@ -56,6 +56,7 @@
     <Compile Include="DTOs\FriendRequestData.cs" />
     <Compile Include="DTOs\JoinPartyRequest.cs" />
     <Compile Include="DTOs\LeaderboardEntry.cs" />
+    <Compile Include="DTOs\NetworkUpdateData.cs" />
     <Compile Include="DTOs\NotificationData.cs" />
     <Compile Include="DTOs\NotificationType.cs" />
     <Compile Include="DTOs\PartyActionData.cs" />
