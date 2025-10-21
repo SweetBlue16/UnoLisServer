@@ -77,6 +77,7 @@
     <Compile Include="Interfaces\IGameplayManager.cs" />
     <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
     <Compile Include="Interfaces\ILoginManager.cs" />
+    <Compile Include="Interfaces\ILogoutManager.cs" />
     <Compile Include="Interfaces\INotificationsManager.cs" />
     <Compile Include="Interfaces\IPartyClientManager.cs" />
     <Compile Include="Interfaces\IPartyHostManager.cs" />

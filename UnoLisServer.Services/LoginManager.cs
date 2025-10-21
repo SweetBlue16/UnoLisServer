@@ -16,6 +16,7 @@ namespace UnoLisServer.Services
     {
         private readonly UNOContext _context;
         private readonly ILoginCallback _callback;
+
         public LoginManager()
         {
             _context = new UNOContext();

@@ -24,7 +24,8 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(NotificationsManager)), 
                 new ServiceHost(typeof(ChatManager)),
                 new ServiceHost(typeof(LeaderboardsManager)),
-                new ServiceHost(typeof(ShopManager))
+                new ServiceHost(typeof(ShopManager)),
+                new ServiceHost(typeof(LogoutManager))
             };
 
             try
@@ -35,9 +36,9 @@ namespace UnoLisServer.Host
                     Console.WriteLine($"✔️ Servicio {host.Description.ServiceType.Name} activo.");
                 }
 
-                Console.WriteLine("\n==============================");
+                Console.WriteLine("\n=================================");
                 Console.WriteLine("   UNO LIS SERVER EN EJECUCIÓN");
-                Console.WriteLine("==============================\n");
+                Console.WriteLine("=================================\n");
                 Console.WriteLine("Presiona [ENTER] para detener...");
 
                 Console.ReadLine();

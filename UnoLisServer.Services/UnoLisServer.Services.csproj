@@ -64,6 +64,7 @@
     <Compile Include="GameplayManager.cs" />
     <Compile Include="LeaderboardsManager.cs" />
     <Compile Include="LoginManager.cs" />
+    <Compile Include="LogoutManager.cs" />
     <Compile Include="NotificationsManager.cs" />
     <Compile Include="PartyClientManager.cs" />
     <Compile Include="PartyHostManager.cs" />
