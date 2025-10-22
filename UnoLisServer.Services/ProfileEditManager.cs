@@ -37,16 +37,26 @@ namespace UnoLisServer.Services
                     _callback.ProfileUpdateResponse(false, "Jugador no encontrado.");
                     return;
                 }
-                player.fullName = data.FullName;
 
                 var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
-                if (account != null)
+                if (account == null)
                 {
-                    account.email = data.Email;
-                    if (!string.IsNullOrWhiteSpace(data.Password))
+                    _callback.ProfileUpdateResponse(false, "Cuenta no encontrada.");
+                    return;
+                }
+
+                player.fullName = data.FullName;
+                account.email = data.Email;
+
+                if (!string.IsNullOrWhiteSpace(data.Password))
+                {
+                    bool samePassword = PasswordHelper.VerifyPassword(data.Password, account.password);
+                    if (samePassword)
                     {
-                        account.password = PasswordHelper.HashPassword(data.Password);
+                        _callback.ProfileUpdateResponse(false, "La nueva contraseña no puede ser igual a la anterior.");
+                        return;
                     }
+                    account.password = PasswordHelper.HashPassword(data.Password);
                 }
 
                 var socialNetworks = _context.SocialNetwork
