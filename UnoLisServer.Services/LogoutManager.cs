@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Common.Helpers;
+using UnoLisServer.Common.Models;
+using UnoLisServer.Common.Enums;
 
 namespace UnoLisServer.Services
 {
@@ -13,6 +15,7 @@ namespace UnoLisServer.Services
     public class LogoutManager : ILogoutManager
     {
         private readonly ILogoutCallback _callback;
+        private ServiceResponse<object> _response;
 
         public LogoutManager()
         {
@@ -25,25 +28,37 @@ namespace UnoLisServer.Services
             {
                 if (string.IsNullOrWhiteSpace(nickname))
                 {
-                    _callback.LogoutResponse(false, "Nickname inválido.");
+                    _response = new ServiceResponse<object>(false, MessageCode.InvalidData);
+                    _callback.LogoutResponse(_response);
                     return;
                 }
 
                 if (!SessionManager.IsOnline(nickname))
                 {
-                    _callback.LogoutResponse(false, $"El usuario '{nickname}' no está conectado.");
+                    _response = new ServiceResponse<object>(false, MessageCode.UserNotConnected);
+                    _callback.LogoutResponse(_response);
                     Logger.Log($"Intento de logout inválido para '{nickname}'.");
                     return;
                 }
 
                 SessionManager.RemoveSession(nickname);
-                _callback.LogoutResponse(true, $"El usuario '{nickname}' cerró sesión correctamente.");
+                _response = new ServiceResponse<object>(true, MessageCode.LogoutSuccessful);
+                _callback.LogoutResponse(_response);
                 Logger.Log($"Usuario '{nickname}' cerró sesión correctamente.");
+            }
+            catch (CommunicationException communicationEx)
+            {
+                Logger.Log($"Error de comunicación durante logout para '{nickname}'. Error: {communicationEx.Message}");
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Log($"Tiempo de espera agotado durante el logout para '{nickname}'. Error: {timeoutEx.Message}");
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error durante el logout para '{nickname}': {ex.Message}");
-                _callback.LogoutResponse(false, "Error interno del servidor durante el logout.");
+                _response = new ServiceResponse<object>(false, MessageCode.LogoutInternalError);
+                _callback.LogoutResponse(_response);
             }
         }
     }

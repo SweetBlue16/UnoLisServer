@@ -91,5 +91,11 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\UnoLisServer.Common\UnoLisServer.Common.csproj">
+      <Project>{5A8FA681-D17F-4968-BC72-3A0DCA91B546}</Project>
+      <Name>UnoLisServer.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

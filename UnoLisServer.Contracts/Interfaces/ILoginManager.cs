@@ -5,6 +5,7 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Contracts.DTOs;
+using UnoLisServer.Common.Models;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
@@ -19,6 +20,6 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface ILoginCallback : ISessionCallback
     {
         [OperationContract]
-        void LoginResponse(bool success, string message);
+        void LoginResponse(ServiceResponse<object> response);
     }
 }

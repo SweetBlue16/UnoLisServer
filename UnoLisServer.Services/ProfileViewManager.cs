@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums;
+using UnoLisServer.Common.Helpers;
+using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
@@ -15,6 +19,7 @@ namespace UnoLisServer.Services
     {
         private readonly UNOContext _context;
         private readonly IProfileViewCallback _callback;
+        private ServiceResponse<object> _response;
 
         public ProfileViewManager()
         {
@@ -29,7 +34,9 @@ namespace UnoLisServer.Services
                 var player = _context.Player.FirstOrDefault(p => p.nickname == nickname);
                 if (player == null)
                 {
-                    _callback.ProfileDataReceived(false, null);
+                    _response = new ServiceResponse<object>(false, MessageCode.PlayerNotFound);
+                    _callback.ProfileDataReceived(_response);
+                    Logger.Log($"No se encontró el perfil para '{nickname}'.");
                     return;
                 }
 
@@ -49,7 +56,7 @@ namespace UnoLisServer.Services
                     FullName = player.fullName,
 
                     Email = account?.email,
-                    Password = account?.password,
+                    Password = PasswordHelper.HashPassword(account?.password),
 
                     ExperiencePoints = statistics?.globalPoints ?? 0,
                     MatchesPlayed = statistics?.matchesPlayed ?? 0,
@@ -62,11 +69,32 @@ namespace UnoLisServer.Services
                     InstagramUrl = instagramUrl,
                     TikTokUrl = tikTokUrl
                 };
-                _callback.ProfileDataReceived(true, profileData);
+                _response = new ServiceResponse<object>(true, MessageCode.ProfileDataRetrieved, profileData);
+                _callback.ProfileDataReceived(_response);
             }
-            catch (Exception)
+            catch (CommunicationException communicationEx)
             {
-                _callback.ProfileDataReceived(false, null);
+                Logger.Log($"Error de comunicación al obtener el perfil para '{nickname}': {communicationEx.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.ProfileFetchFailed);
+                _callback.ProfileDataReceived(_response);
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Log($"Tiempo de espera agotado al obtener el perfil para '{nickname}': {timeoutEx.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.Timeout);
+                _callback.ProfileDataReceived(_response);
+            }
+            catch (SqlException dbEx)
+            {
+                Logger.Log($"Error de base de datos al obtener el perfil para '{nickname}': {dbEx.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.DatabaseError);
+                _callback.ProfileDataReceived(_response);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error inesperado al obtener el perfil para '{nickname}': {ex.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.GeneralServerError);
+                _callback.ProfileDataReceived(_response);
             }
         }
     }

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
+using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
@@ -20,6 +24,7 @@ namespace UnoLisServer.Services
 
         private readonly UNOContext _context;
         private readonly IProfileEditCallback _callback;
+        private ServiceResponse<object> _response;
 
         public ProfileEditManager()
         {
@@ -29,64 +34,107 @@ namespace UnoLisServer.Services
 
         public void UpdateProfileData(ProfileData data)
         {
-            try
+            if (data == null)
             {
-                var player = _context.Player.FirstOrDefault(p => p.nickname == data.Nickname);
-                if (player == null)
-                {
-                    _callback.ProfileUpdateResponse(false, "Jugador no encontrado.");
-                    return;
-                }
+                _response = new ServiceResponse<object>(false, MessageCode.InvalidData);
+                _callback.ProfileUpdateResponse(_response);
+                return;
+            }
 
-                var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
-                if (account == null)
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
                 {
-                    _callback.ProfileUpdateResponse(false, "Cuenta no encontrada.");
-                    return;
-                }
-
-                player.fullName = data.FullName;
-                account.email = data.Email;
-
-                if (!string.IsNullOrWhiteSpace(data.Password))
-                {
-                    bool samePassword = PasswordHelper.VerifyPassword(data.Password, account.password);
-                    if (samePassword)
+                    var player = _context.Player.FirstOrDefault(p => p.nickname == data.Nickname);
+                    if (player == null)
                     {
-                        _callback.ProfileUpdateResponse(false, "La nueva contraseña no puede ser igual a la anterior.");
+                        _response = new ServiceResponse<object>(false, MessageCode.PlayerNotFound);
+                        _callback.ProfileUpdateResponse(_response);
                         return;
                     }
-                    account.password = PasswordHelper.HashPassword(data.Password);
+
+                    var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
+                    if (account == null)
+                    {
+                        _response = new ServiceResponse<object>(false, MessageCode.PlayerNotFound);
+                        _callback.ProfileUpdateResponse(_response);
+                        return;
+                    }
+
+                    player.fullName = data.FullName;
+                    account.email = data.Email;
+
+                    if (!string.IsNullOrWhiteSpace(data.Password))
+                    {
+                        bool samePassword = PasswordHelper.VerifyPassword(data.Password, account.password);
+                        if (samePassword)
+                        {
+                            _response = new ServiceResponse<object>(false, MessageCode.SamePassword);
+                            _callback.ProfileUpdateResponse(_response);
+                            return;
+                        }
+                        account.password = PasswordHelper.HashPassword(data.Password);
+                    }
+
+                    var socialNetworks = _context.SocialNetwork
+                        .Where(sn => sn.Player_idPlayer == player.idPlayer)
+                        .ToList();
+
+                    UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                    {
+                        Type = FacebookSocialNetworkType,
+                        Url = data.FacebookUrl
+                    });
+
+                    UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                    {
+                        Type = InstagramSocialNetworkType,
+                        Url = data.InstagramUrl
+                    });
+
+                    UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                    {
+                        Type = TikTokSocialNetworkType,
+                        Url = data.TikTokUrl
+                    });
+
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    _response = new ServiceResponse<object>(true, MessageCode.ProfileUpdated);
+                    _callback.ProfileUpdateResponse(_response);
                 }
-
-                var socialNetworks = _context.SocialNetwork
-                    .Where(sn => sn.Player_idPlayer == player.idPlayer)
-                    .ToList();
-
-                UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                catch (CommunicationException communicationEx)
                 {
-                    Type = FacebookSocialNetworkType,
-                    Url = data.FacebookUrl
-                });
-
-                UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                    Logger.Log($"Error de comunicación durante la actualización de perfil para '{data.Nickname}'. Error: {communicationEx.Message}");
+                    transaction.Rollback();
+                }
+                catch (TimeoutException timeoutEx)
                 {
-                    Type = InstagramSocialNetworkType,
-                    Url = data.InstagramUrl
-                });
-
-                UpdateOrAddNetwork(player.idPlayer, socialNetworks, new NetworkUpdateData
+                    Logger.Log($"Timeout durante la actualización de perfil para '{data.Nickname}'. Error: {timeoutEx.Message}");
+                    transaction.Rollback();
+                }
+                catch (DbUpdateException dbUpdateEx)
                 {
-                    Type = TikTokSocialNetworkType,
-                    Url = data.TikTokUrl
-                });
-
-                _context.SaveChanges();
-                _callback.ProfileUpdateResponse(true, "Perfil actualizado correctamente.");
-            }
-            catch (Exception ex)
-            {
-                _callback.ProfileUpdateResponse(false, $"Error al actualizar: {ex.Message}");
+                    _response = new ServiceResponse<object>(false, MessageCode.DatabaseError);
+                    Logger.Log($"Error de base de datos durante la actualización de perfil para '{data.Nickname}'. Error: {dbUpdateEx.Message}");
+                    transaction.Rollback();
+                    _callback.ProfileUpdateResponse(_response);
+                }
+                catch (SqlException sqlEx)
+                {
+                    _response = new ServiceResponse<object>(false, MessageCode.SqlError);
+                    Logger.Log($"Error SQL durante la actualización de perfil para '{data.Nickname}'. Error: {sqlEx.Message}");
+                    transaction.Rollback();
+                    _callback.ProfileUpdateResponse(_response);
+                }
+                catch (Exception ex)
+                {
+                    _response = new ServiceResponse<object>(false, MessageCode.ProfileUpdateFailed);
+                    Logger.Log($"Error inesperado durante la actualización de perfil para '{data.Nickname}'. Error: {ex.Message}");
+                    transaction.Rollback();
+                    _callback.ProfileUpdateResponse(_response);
+                }
             }
         }
 

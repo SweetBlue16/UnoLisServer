@@ -4,6 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Models;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
@@ -18,6 +19,6 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface ILogoutCallback
     {
         [OperationContract(IsOneWay = true)]
-        void LogoutResponse(bool success, string message);
+        void LogoutResponse(ServiceResponse<object> response);
     }
 }

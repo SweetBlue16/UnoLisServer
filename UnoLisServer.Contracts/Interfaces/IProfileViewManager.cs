@@ -4,6 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
@@ -19,6 +20,6 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface IProfileViewCallback : ISessionCallback
     {
         [OperationContract]
-        void ProfileDataReceived(bool success, ProfileData data);
+        void ProfileDataReceived(ServiceResponse<object> response);
     }
 }
