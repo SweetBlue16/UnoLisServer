@@ -24,7 +24,7 @@ namespace UnoLisServer.Services
 
         private readonly UNOContext _context;
         private readonly IProfileEditCallback _callback;
-        private ServiceResponse<object> _response;
+        private ServiceResponse<ProfileData> _response;
 
         public ProfileEditManager()
         {
@@ -36,7 +36,7 @@ namespace UnoLisServer.Services
         {
             if (data == null)
             {
-                _response = new ServiceResponse<object>(false, MessageCode.InvalidData);
+                _response = new ServiceResponse<ProfileData>(false, MessageCode.InvalidData);
                 _callback.ProfileUpdateResponse(_response);
                 return;
             }
@@ -48,7 +48,7 @@ namespace UnoLisServer.Services
                     var player = _context.Player.FirstOrDefault(p => p.nickname == data.Nickname);
                     if (player == null)
                     {
-                        _response = new ServiceResponse<object>(false, MessageCode.PlayerNotFound);
+                        _response = new ServiceResponse<ProfileData>(false, MessageCode.PlayerNotFound);
                         _callback.ProfileUpdateResponse(_response);
                         return;
                     }
@@ -56,7 +56,7 @@ namespace UnoLisServer.Services
                     var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
                     if (account == null)
                     {
-                        _response = new ServiceResponse<object>(false, MessageCode.PlayerNotFound);
+                        _response = new ServiceResponse<ProfileData>(false, MessageCode.PlayerNotFound);
                         _callback.ProfileUpdateResponse(_response);
                         return;
                     }
@@ -69,7 +69,7 @@ namespace UnoLisServer.Services
                         bool samePassword = PasswordHelper.VerifyPassword(data.Password, account.password);
                         if (samePassword)
                         {
-                            _response = new ServiceResponse<object>(false, MessageCode.SamePassword);
+                            _response = new ServiceResponse<ProfileData>(false, MessageCode.SamePassword);
                             _callback.ProfileUpdateResponse(_response);
                             return;
                         }
@@ -101,7 +101,7 @@ namespace UnoLisServer.Services
                     _context.SaveChanges();
                     transaction.Commit();
 
-                    _response = new ServiceResponse<object>(true, MessageCode.ProfileUpdated);
+                    _response = new ServiceResponse<ProfileData>(true, MessageCode.ProfileUpdated);
                     _callback.ProfileUpdateResponse(_response);
                 }
                 catch (CommunicationException communicationEx)
@@ -116,21 +116,21 @@ namespace UnoLisServer.Services
                 }
                 catch (DbUpdateException dbUpdateEx)
                 {
-                    _response = new ServiceResponse<object>(false, MessageCode.DatabaseError);
+                    _response = new ServiceResponse<ProfileData>(false, MessageCode.DatabaseError);
                     Logger.Log($"Error de base de datos durante la actualización de perfil para '{data.Nickname}'. Error: {dbUpdateEx.Message}");
                     transaction.Rollback();
                     _callback.ProfileUpdateResponse(_response);
                 }
                 catch (SqlException sqlEx)
                 {
-                    _response = new ServiceResponse<object>(false, MessageCode.SqlError);
+                    _response = new ServiceResponse<ProfileData>(false, MessageCode.SqlError);
                     Logger.Log($"Error SQL durante la actualización de perfil para '{data.Nickname}'. Error: {sqlEx.Message}");
                     transaction.Rollback();
                     _callback.ProfileUpdateResponse(_response);
                 }
                 catch (Exception ex)
                 {
-                    _response = new ServiceResponse<object>(false, MessageCode.ProfileUpdateFailed);
+                    _response = new ServiceResponse<ProfileData>(false, MessageCode.ProfileUpdateFailed);
                     Logger.Log($"Error inesperado durante la actualización de perfil para '{data.Nickname}'. Error: {ex.Message}");
                     transaction.Rollback();
                     _callback.ProfileUpdateResponse(_response);

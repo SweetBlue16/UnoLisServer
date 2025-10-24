@@ -20,6 +20,6 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface IProfileViewCallback : ISessionCallback
     {
         [OperationContract]
-        void ProfileDataReceived(ServiceResponse<object> response);
+        void ProfileDataReceived(ServiceResponse<ProfileData> response);
     }
 }
