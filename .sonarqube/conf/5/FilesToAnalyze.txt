@@ -1,0 +1,4 @@
+﻿C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\Program.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\Properties\AssemblyInfo.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\App.config
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\packages.config

@@ -1,0 +1,1 @@
+aRSC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\UnoLisServer.Host.csprojò	CSharp7_3

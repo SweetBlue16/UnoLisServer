@@ -14,15 +14,12 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract(CallbackContract = typeof(IPartyClientCallback), SessionMode = SessionMode.Required)]
     public interface IPartyClientManager
     {
-        // 🔹 Unirse a una partida existente mediante código
         [OperationContract(IsOneWay = true)]
-        void JoinParty(JoinPartyRequest request);
+        void JoinParty(JoinPartyRequest request); //NOTA Modificar los métodos de forma en que se les pase un DTO y evitar tantos callbacks
 
-        // 🔹 Salir del lobby antes de que inicie la partida
         [OperationContract(IsOneWay = true)]
         void LeaveParty(PartyActionData data);
 
-        // 🔹 Marcar o desmarcar el estado de "listo"
         [OperationContract(IsOneWay = true)]
         void SetReadyStatus(PartyActionData data);
     }
@@ -49,12 +46,12 @@ namespace UnoLisServer.Contracts.Interfaces
         void PlayerReadyStatusChanged(string nickname, bool isReady);
 
         [OperationContract]
-        void MatchStarting(); // 🔹 Cuando el host inicia la partida
+        void MatchStarting(); 
 
         [OperationContract]
-        void PartyCancelled(); // 🔹 Cuando el host cancela el lobby
+        void PartyCancelled(); 
 
         [OperationContract]
-        void PartyDisbanded(); // 🔹 Cuando se pierde conexión o se disuelve por error
+        void PartyDisbanded();
     }
 }

@@ -1,0 +1,10 @@
+﻿C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Config\EnviromentConfig.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Constants\Constants.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Constants\Endpoints.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Enums\ConnectionState.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Enums\MessageCode.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Helpers\Logger.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Helpers\PasswordHelpers.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Models\OperationResult.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Models\ServiceResponse.cs
+C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Properties\AssemblyInfo.cs

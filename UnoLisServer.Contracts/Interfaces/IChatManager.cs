@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ServiceModel;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
-    [ServiceContract(CallbackContract = typeof(IChatCallback), SessionMode = SessionMode.Required)]
+    [ServiceContract(
+        CallbackContract = typeof(IChatCallback),
+        SessionMode = SessionMode.Required)]
     public interface IChatManager
     {
         [OperationContract(IsOneWay = true)]
@@ -16,15 +14,18 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void GetChatHistory(string channelId);
+
+        [OperationContract(IsOneWay = true)]
+        void RegisterPlayer(string nickname);
     }
 
     [ServiceContract]
     public interface IChatCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void MessageReceived(ChatMessageData message);
 
-        [OperationContract]
-        void ChatHistoryReceived(List<ChatMessageData> messages);
+        [OperationContract(IsOneWay = true)]
+        void ChatHistoryReceived(ChatMessageData[] messages);
     }
 }

@@ -1,0 +1,12 @@
+„
+yC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\obj\Debug\.NETFramework,Version=v4.7.2.AssemblyAttributes.csutf-8`
+WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Properties\AssemblyInfo.csutf-8_
+VC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Models\ServiceResponse.csutf-8_
+VC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Models\OperationResult.csutf-8`
+WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Helpers\PasswordHelpers.csutf-8W
+NC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Helpers\Logger.csutf-8Z
+QC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Enums\MessageCode.csutf-8\
+SC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Constants\Endpoints.csutf-8\
+SC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Constants\Constants.csutf-8^
+UC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Enums\ConnectionState.csutf-8`
+WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\Config\EnviromentConfig.csutf-8

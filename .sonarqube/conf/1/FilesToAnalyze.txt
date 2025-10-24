@@ -1,0 +1,4 @@
+﻿C:\Users\meler\Source\Repos\UnoLisServer\TestConsole\Program.cs
+C:\Users\meler\Source\Repos\UnoLisServer\TestConsole\Properties\AssemblyInfo.cs
+C:\Users\meler\Source\Repos\UnoLisServer\TestConsole\App.config
+C:\Users\meler\Source\Repos\UnoLisServer\TestConsole\packages.config

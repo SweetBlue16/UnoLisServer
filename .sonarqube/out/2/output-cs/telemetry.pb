@@ -1,0 +1,1 @@
+eRWC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\UnoLisServer.Common.csprojò	CSharp7_3

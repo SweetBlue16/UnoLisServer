@@ -1,0 +1,1 @@
+URGC:\Users\meler\Source\Repos\UnoLisServer\TestConsole\TestConsole.csprojò	CSharp7_3

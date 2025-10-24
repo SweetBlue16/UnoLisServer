@@ -1,0 +1,1 @@
+kR]C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\UnoLisServer.Contracts.csprojò	CSharp7_3

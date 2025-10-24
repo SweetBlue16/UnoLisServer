@@ -14,15 +14,12 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract(CallbackContract = typeof(IPartyHostCallback), SessionMode = SessionMode.Required)]
     public interface IPartyHostManager
     {
-        // 🔹 Crear una partida nueva
         [OperationContract(IsOneWay = true)]
         void CreateParty(string hostNickname);
 
-        // 🔹 Iniciar la partida cuando todos están listos
         [OperationContract(IsOneWay = true)]
         void StartMatch(int partyId, string hostNickname);
 
-        // 🔹 Cancelar la partida antes de comenzar
         [OperationContract(IsOneWay = true)]
         void CancelParty(int partyId);
     }
@@ -46,12 +43,12 @@ namespace UnoLisServer.Contracts.Interfaces
         void PlayerReadyStatusChanged(string nickname, bool isReady);
 
         [OperationContract]
-        void AllPlayersReady(); // 🔹 Opción para que el host reciba aviso automático
+        void AllPlayersReady(); 
 
         [OperationContract]
-        void PartyCancelled(); // 🔹 Confirmación de cancelación
+        void PartyCancelled(); 
 
         [OperationContract]
-        void MatchStarted(); // 🔹 Notifica que la partida comenzó exitosamente
+        void MatchStarted();
     }
 }
