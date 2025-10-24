@@ -25,6 +25,10 @@ namespace UnoLisServer.Common.Enums
         LobbyLeft = 1013,
         MatchStarted = 1014,
         MatchEnded = 1015,
+        PlayerReady = 1016,
+        PlayerNotReady = 1017,
+        RewardGranted = 1018,
+        PurchaseCompleted = 1019,
 
         // 2000-2999: Client Error Codes
         BadRequest = 2000,
@@ -89,7 +93,7 @@ namespace UnoLisServer.Common.Enums
         PlayerHasActiveLobby = 6003,
         PlayerNotInLobby = 6004,
         PlayerAlreadyReady = 6005,
-        PlayerNotReady = 6006,
+        PlayerWereNotReady = 6006,
         MatchAlreadyStarted = 6007,
         MatchCancelled = 6008,
         MatchNotFound = 6009,
