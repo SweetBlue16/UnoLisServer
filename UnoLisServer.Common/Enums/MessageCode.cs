@@ -29,6 +29,8 @@ namespace UnoLisServer.Common.Enums
         PlayerNotReady = 1017,
         RewardGranted = 1018,
         PurchaseCompleted = 1019,
+        VerificationCodeSent = 1020,
+        VerificationCodeResent = 1021,
 
         // 2000-2999: Client Error Codes
         BadRequest = 2000,
@@ -52,6 +54,9 @@ namespace UnoLisServer.Common.Enums
         OperationNotSupported = 2018,
         ValidationFailed = 2019,
         EmptyFields = 2020,
+        RateLimitExceeded = 2021,
+        RegistrationDataLost = 2022,
+        VerificationCodeInvalid = 2023,
 
         // 3000-3999: Session/Auth Error Codes
         SessionExpired = 3000,

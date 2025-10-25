@@ -23,10 +23,18 @@ namespace UnoLisServer.Services
         private readonly IRegisterCallback _callback;
         private ServiceResponse<object> _response;
 
+        private readonly INotificationSender _notificationSender;
+        private readonly IVerificationCodeHelper _verificationCodeHelper;
+        private readonly IPendingRegistrationHelper _pendingRegistrationHelper;
+
         public RegisterManager()
         {
             _context = new UNOContext();
             _callback = OperationContext.Current.GetCallbackChannel<IRegisterCallback>();
+
+            _notificationSender = NotificationSender.Instance;
+            _verificationCodeHelper = VerificationCodeHelper.Instance;
+            _pendingRegistrationHelper = PendingRegistrationHelper.Instance;
         }
 
         public void Register(RegistrationData data)
@@ -38,83 +46,60 @@ namespace UnoLisServer.Services
                 return;
             }
 
-            using (var transaction = _context.Database.BeginTransaction())
+            try
             {
-                try
+                Logger.Log($"Intentando registrar el usuario '{data.Nickname}'...");
+
+                bool existsPlayer = _context.Player.Any(p => p.nickname == data.Nickname);
+                if (existsPlayer)
                 {
-                    Logger.Log($"Intentando registrar el usuario '{data.Nickname}'...");
-
-                    bool existsPlayer = _context.Player.Any(p => p.nickname == data.Nickname);
-                    if (existsPlayer)
-                    {
-                        _response = new ServiceResponse<object>(false, MessageCode.NicknameAlreadyTaken);
-                        _callback.RegisterResponse(_response);
-                        Logger.Log($"El nickname '{data.Nickname}' ya está registrado.");
-                        return;
-                    }
-
-                    bool existsAccount = _context.Account.Any(a => a.email == data.Email);
-                    if (existsAccount)
-                    {
-                        _response = new ServiceResponse<object>(false, MessageCode.EmailAlreadyRegistered);
-                        _callback.RegisterResponse(_response);
-                        Logger.Log($"El email '{data.Email}' ya está registrado.");
-                        return;
-                    }
-
-                    var newPlayer = new Player
-                    {
-                        nickname = data.Nickname,
-                        fullName = data.FullName
-                    };
-                    _context.Player.Add(newPlayer);
-
-                    var newAccount = new Account
-                    {
-                        email = data.Email,
-                        password = PasswordHelper.HashPassword(data.Password),
-                        Player = newPlayer
-                    };
-                    _context.Account.Add(newAccount);
-
-                    _context.SaveChanges();
-                    transaction.Commit();
-
-                    _response = new ServiceResponse<object>(true, MessageCode.RegistrationSuccessful);
+                    _response = new ServiceResponse<object>(false, MessageCode.NicknameAlreadyTaken);
                     _callback.RegisterResponse(_response);
-                    Logger.Log($"Registro exitoso para {data.Nickname}.");
+                    Logger.Log($"El nickname '{data.Nickname}' ya está registrado.");
+                    return;
                 }
-                catch (CommunicationException communicationEx)
+
+                bool existsAccount = _context.Account.Any(a => a.email == data.Email);
+                if (existsAccount)
                 {
-                    transaction.Rollback();
-                    Logger.Log($"Error de comunicación en Register({data.Email}): {communicationEx.Message}");
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    transaction.Rollback();
-                    Logger.Log($"Timeout en Register({data.Email}): {timeoutEx.Message}");
-                }
-                catch (DbUpdateException dbUpdateEx)
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.DatabaseError);
-                    transaction.Rollback();
-                    Logger.Log($"Error de base de datos en Register({data.Email}): {dbUpdateEx.Message}");
+                    _response = new ServiceResponse<object>(false, MessageCode.EmailAlreadyRegistered);
                     _callback.RegisterResponse(_response);
+                    Logger.Log($"El email '{data.Email}' ya está registrado.");
+                    return;
                 }
-                catch (SqlException dbEx)
+
+                var pendingData = new PendingRegistration
                 {
-                    transaction.Rollback();
-                    _response = new ServiceResponse<object>(false, MessageCode.SqlError);
-                    Logger.Log($"Error SQL en Register({data.Email}): {dbEx.Message}");
-                    _callback.RegisterResponse(_response);
-                }
-                catch (Exception ex)
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.GeneralServerError);
-                    transaction.Rollback();
-                    Logger.Log($"Error en Register({data.Email}): {ex.Message}");
-                    _callback.RegisterResponse(_response);
-                }
+                    Nickname = data.Nickname,
+                    FullName = data.FullName,
+                    HashedPassword = PasswordHelper.HashPassword(data.Password)
+                };
+
+                _pendingRegistrationHelper.StorePendingRegistration(data.Email, pendingData);
+                var code = _verificationCodeHelper.GenerateAndStoreCode(data.Email, CodeType.EmailVerification);
+                _notificationSender.SendAccountVerificationEmailAsync(data.Email, code);
+
+                _response = new ServiceResponse<object>(true, MessageCode.VerificationCodeSent);
+                _callback.RegisterResponse(_response);
+                Logger.Log($"Código enviado a {data.Email}. Esperando confirmación...");
+            }
+            catch (CommunicationException communicationEx)
+            {
+                Logger.Log($"Error de comunicación en Register({data.Email}): {communicationEx.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.ConnectionFailed);
+                _callback.RegisterResponse(_response);
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Log($"Timeout en Register({data.Email}): {timeoutEx.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.Timeout);
+                _callback.RegisterResponse(_response);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error en Register({data.Email}): {ex.Message}");
+                _response = new ServiceResponse<object>(false, MessageCode.GeneralServerError);
+                _callback.RegisterResponse(_response);
             }
         }
     }

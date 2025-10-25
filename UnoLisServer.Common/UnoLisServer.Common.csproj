@@ -49,11 +49,18 @@
     <Compile Include="Enums\CodeType.cs" />
     <Compile Include="Enums\ConnectionState.cs" />
     <Compile Include="Enums\MessageCode.cs" />
+    <Compile Include="Exceptions\ValidationException.cs" />
     <Compile Include="Helpers\EmailSender.cs" />
     <Compile Include="Helpers\Logger.cs" />
+    <Compile Include="Helpers\NotificationSender.cs" />
     <Compile Include="Helpers\PasswordHelpers.cs" />
+    <Compile Include="Helpers\PendingRegistrationHelper.cs" />
+    <Compile Include="Helpers\ResponseHelper.cs" />
+    <Compile Include="Helpers\VerificationCodeHelper.cs" />
+    <Compile Include="Models\CodeValidationRequest.cs" />
     <Compile Include="Models\OperationResult.cs" />
     <Compile Include="Models\PendingRegistration.cs" />
+    <Compile Include="Models\ResponseInfo.cs" />
     <Compile Include="Models\ServiceResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
