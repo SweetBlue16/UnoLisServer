@@ -5,8 +5,6 @@ VisualStudioVersion = 17.14.36511.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Data", "UnoLisServer.Data\UnoLisServer.Data.csproj", "{B64E169C-5D12-4404-9E93-EFB0CB8667F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{7D32625B-A443-4B2D-8358-D63142C1A2CA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Contracts", "UnoLisServer.Contracts\UnoLisServer.Contracts.csproj", "{0E0CE13F-2D93-4BC2-BEA1-3332D88EE082}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnoLisServer.Services", "UnoLisServer.Services\UnoLisServer.Services.csproj", "{445CA5D1-34BF-47C2-9274-E965630A7362}"
@@ -25,10 +23,6 @@ Global
 		{B64E169C-5D12-4404-9E93-EFB0CB8667F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B64E169C-5D12-4404-9E93-EFB0CB8667F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B64E169C-5D12-4404-9E93-EFB0CB8667F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7D32625B-A443-4B2D-8358-D63142C1A2CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7D32625B-A443-4B2D-8358-D63142C1A2CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7D32625B-A443-4B2D-8358-D63142C1A2CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7D32625B-A443-4B2D-8358-D63142C1A2CA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0E0CE13F-2D93-4BC2-BEA1-3332D88EE082}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0E0CE13F-2D93-4BC2-BEA1-3332D88EE082}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E0CE13F-2D93-4BC2-BEA1-3332D88EE082}.Release|Any CPU.ActiveCfg = Release|Any CPU
