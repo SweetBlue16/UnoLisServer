@@ -11,6 +11,8 @@ using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Services.Validators;
+using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
@@ -19,7 +21,7 @@ namespace UnoLisServer.Services
     {
         private readonly UNOContext _context;
         private readonly IProfileViewCallback _callback;
-        private ServiceResponse<ProfileData> _response;
+        private ResponseInfo<ProfileData> _responseInfo;
 
         public ProfileViewManager()
         {
@@ -29,73 +31,94 @@ namespace UnoLisServer.Services
 
         public void GetProfileData(string nickname)
         {
+            string userNickname = nickname ?? "Unknown";
             try
             {
-                var player = _context.Player.FirstOrDefault(p => p.nickname == nickname);
-                if (player == null)
-                {
-                    _response = new ServiceResponse<ProfileData>(false, MessageCode.PlayerNotFound);
-                    _callback.ProfileDataReceived(_response);
-                    Logger.Log($"No se encontró el perfil para '{nickname}'.");
-                    return;
-                }
+                Logger.Log($"[INFO] Iniciando obtención de perfil para '{userNickname}'.");
 
-                var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
-                var statistics = _context.PlayerStatistics.FirstOrDefault(s => s.Player_idPlayer == player.idPlayer);
-                var socialNetworks = _context.SocialNetwork
-                    .Where(sn => sn.Player_idPlayer == player.idPlayer)
-                    .ToList();
+                var player = ProfileViewValidator.ValidateProfileData(userNickname);
+                var profileData = GetProfileData(player);
 
-                string facebookUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Facebook")?.linkRedSocial;
-                string instagramUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Instagram")?.linkRedSocial;
-                string tikTokUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "TikTok")?.linkRedSocial;
-
-                var profileData = new ProfileData
-                {
-                    Nickname = player.nickname,
-                    FullName = player.fullName,
-
-                    Email = account?.email,
-                    Password = PasswordHelper.HashPassword(account?.password),
-
-                    ExperiencePoints = statistics?.globalPoints ?? 0,
-                    MatchesPlayed = statistics?.matchesPlayed ?? 0,
-                    Wins = statistics?.wins ?? 0,
-                    Losses = statistics?.loses ?? 0,
-                    Streak = statistics?.streak ?? 0,
-                    MaxStreak = statistics?.maxStreak ?? 0,
-
-                    FacebookUrl = facebookUrl,
-                    InstagramUrl = instagramUrl,
-                    TikTokUrl = tikTokUrl
-                };
-                _response = new ServiceResponse<ProfileData>(true, MessageCode.ProfileDataRetrieved, profileData);
-                _callback.ProfileDataReceived(_response);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileDataRetrieved,
+                    true,
+                    $"[INFO] Perfil obtenido exitosamente para '{userNickname}'.",
+                    profileData
+                );
+            }
+            catch (ValidationException validationEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    validationEx.ErrorCode,
+                    false,
+                    $"[WARNING] Validación fallida al obtener perfil para '{userNickname}'. Error: {validationEx.Message}"
+                );
             }
             catch (CommunicationException communicationEx)
             {
-                Logger.Log($"Error de comunicación al obtener el perfil para '{nickname}': {communicationEx.Message}");
-                _response = new ServiceResponse<ProfileData>(false, MessageCode.ProfileFetchFailed);
-                _callback.ProfileDataReceived(_response);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ConnectionFailed,
+                    false,
+                    $"[ERROR] Comunicación al obtener perfil para '{userNickname}'. Error: {communicationEx.Message}"
+                );
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Log($"Tiempo de espera agotado al obtener el perfil para '{nickname}': {timeoutEx.Message}");
-                _response = new ServiceResponse<ProfileData>(false, MessageCode.Timeout);
-                _callback.ProfileDataReceived(_response);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.Timeout,
+                    false,
+                    $"[ERROR] Tiempo de espera agotado al obtener perfil para '{userNickname}'. Error: {timeoutEx.Message}"
+                );
             }
             catch (SqlException dbEx)
             {
-                Logger.Log($"Error de base de datos al obtener el perfil para '{nickname}': {dbEx.Message}");
-                _response = new ServiceResponse<ProfileData>(false, MessageCode.DatabaseError);
-                _callback.ProfileDataReceived(_response);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.DatabaseError,
+                    false,
+                    $"[FATAL] Error de base de datos al obtener perfil para '{userNickname}'. Error: {dbEx.Message}"
+                );
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error inesperado al obtener el perfil para '{nickname}': {ex.Message}");
-                _response = new ServiceResponse<ProfileData>(false, MessageCode.GeneralServerError);
-                _callback.ProfileDataReceived(_response);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileFetchFailed,
+                    false,
+                    $"[FATAL] Error inesperado al obtener perfil para '{userNickname}'. Error: {ex.Message}"
+                );
             }
+            ResponseHelper.SendResponse(_callback.ProfileDataReceived, _responseInfo);
+        }
+
+        private ProfileData GetProfileData(Player player)
+        {
+            var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
+            var statistics = _context.PlayerStatistics.FirstOrDefault(s => s.Player_idPlayer == player.idPlayer);
+            var socialNetworks = _context.SocialNetwork
+                .Where(sn => sn.Player_idPlayer == player.idPlayer)
+                .ToList();
+
+            string facebookUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Facebook")?.linkRedSocial;
+            string instagramUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Instagram")?.linkRedSocial;
+            string tikTokUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "TikTok")?.linkRedSocial;
+
+            var profileData = new ProfileData
+            {
+                Nickname = player.nickname,
+                FullName = player.fullName,
+                Email = account?.email,
+
+                ExperiencePoints = statistics?.globalPoints ?? 0,
+                MatchesPlayed = statistics?.matchesPlayed ?? 0,
+                Wins = statistics?.wins ?? 0,
+                Losses = statistics?.loses ?? 0,
+                Streak = statistics?.streak ?? 0,
+                MaxStreak = statistics?.maxStreak ?? 0,
+
+                FacebookUrl = facebookUrl,
+                InstagramUrl = instagramUrl,
+                TikTokUrl = tikTokUrl
+            };
+            return profileData;
         }
     }
 }

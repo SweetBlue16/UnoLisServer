@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UnoLisServer.Common.Enums
 {
     public enum MessageCode
     {
-        // 1000-1999: Success Codes
         Success = 1000,
         RegistrationSuccessful = 1001,
         LoginSuccessful = 1002,
@@ -32,7 +27,6 @@ namespace UnoLisServer.Common.Enums
         VerificationCodeSent = 1020,
         VerificationCodeResent = 1021,
 
-        // 2000-2999: Client Error Codes
         BadRequest = 2000,
         InvalidData = 2001,
         InvalidCredentials = 2002,
@@ -57,8 +51,8 @@ namespace UnoLisServer.Common.Enums
         RateLimitExceeded = 2021,
         RegistrationDataLost = 2022,
         VerificationCodeInvalid = 2023,
+        InvalidUrlFormat = 2024,
 
-        // 3000-3999: Session/Auth Error Codes
         SessionExpired = 3000,
         UnauthorizedAccess = 3001,
         InvalidToken = 3002,
@@ -68,7 +62,6 @@ namespace UnoLisServer.Common.Enums
         LoginInternalError = 3006,
         LogoutInternalError = 3007,
 
-        // 4000-4999: Internal Server Error Codes
         DatabaseError = 4000,
         TransactionFailed = 4001,
         SqlError = 4002,
@@ -82,8 +75,9 @@ namespace UnoLisServer.Common.Enums
         FriendsInternalError = 4010,
         LobbyInternalError = 4011,
         GeneralServerError = 4012,
+        RegistrationInternalError = 4013,
+        ConfirmationInternalError = 4014,
 
-        // 5000-5999: Network/Communication Error Codes
         ConnectionLost = 5000,
         Timeout = 5001,
         ConnectionFailed = 5002,
@@ -91,7 +85,6 @@ namespace UnoLisServer.Common.Enums
         UnstableConnection = 5004,
         ClientDisconnected = 5005,
 
-        // 6000-6999: Game Logic Error Codes
         FriendActionCompleted = 6000,
         PlayerBlocked = 6001,
         PlayerUnblocked = 6002,
