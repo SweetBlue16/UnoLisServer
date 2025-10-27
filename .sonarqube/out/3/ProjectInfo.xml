@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ProjectInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
-  <ProjectName>UnoLisServer.Contracts</ProjectName>
+  <ProjectName>UnoLisServer.Services</ProjectName>
   <ProjectLanguage>C#</ProjectLanguage>
   <ProjectType>Product</ProjectType>
-  <ProjectGuid>0e0ce13f-2d93-4bc2-bea1-3332d88ee082</ProjectGuid>
-  <FullPath>C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\UnoLisServer.Contracts.csproj</FullPath>
+  <ProjectGuid>445ca5d1-34bf-47c2-9274-e965630a7362</ProjectGuid>
+  <FullPath>C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\UnoLisServer.Services.csproj</FullPath>
   <IsExcluded>false</IsExcluded>
   <AnalysisResultFiles>
     <AnalysisResultFile Id="FilesToAnalyze" Location="C:\Users\meler\Source\Repos\UnoLisServer\.sonarqube\conf\3\FilesToAnalyze.txt" />

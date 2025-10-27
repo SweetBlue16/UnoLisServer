@@ -1,1 +1,1 @@
-URGC:\Users\meler\Source\Repos\UnoLisServer\TestConsole\TestConsole.csprojò	CSharp7_3
+eRWC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\UnoLisServer.Common.csprojò	CSharp7_3

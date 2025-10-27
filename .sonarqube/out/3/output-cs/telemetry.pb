@@ -1,1 +1,1 @@
-kR]C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\UnoLisServer.Contracts.csprojò	CSharp7_3
+iR[C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\UnoLisServer.Services.csprojò	CSharp7_3

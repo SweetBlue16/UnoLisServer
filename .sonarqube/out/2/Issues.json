@@ -11,44 +11,7 @@
         "language": "es-MX"
       },
       "results": [
-        {
-          "ruleId": "CS0105",
-          "level": "warning",
-          "message": "La directiva using para 'System' aparece previamente en este espacio de nombres",
-          "locations": [
-            {
-              "resultFile": {
-                "uri": "file:///C:/Users/meler/Source/Repos/UnoLisServer/UnoLisServer.Common/Helpers/Logger.cs",
-                "region": {
-                  "startLine": 7,
-                  "startColumn": 7,
-                  "endLine": 7,
-                  "endColumn": 13
-                }
-              }
-            }
-          ],
-          "properties": {
-            "warningLevel": 3
-          }
-        }
-      ],
-      "rules": {
-        "CS0105": {
-          "id": "CS0105",
-          "shortDescription": "La directiva using apareció anteriormente en este espacio de nombre",
-          "defaultLevel": "warning",
-          "helpUri": "https://msdn.microsoft.com/query/roslyn.query?appId=roslyn&k=k(CS0105)",
-          "properties": {
-            "category": "Compiler",
-            "isEnabledByDefault": true,
-            "tags": [
-              "Compiler",
-              "Telemetry"
-            ]
-          }
-        }
-      }
+      ]
     }
   ]
 }

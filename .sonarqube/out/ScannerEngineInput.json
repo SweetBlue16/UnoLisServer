@@ -10,11 +10,11 @@
     },
     {
       "key": "sonar.scanner.bootstrapStartTime",
-      "value": "1761232912000"
+      "value": "1761435271000"
     },
     {
       "key": "sonar.projectKey",
-      "value": "UnoLisServer"
+      "value": "UnoLisServer2"
     },
     {
       "key": "sonar.working.directory",
@@ -30,7 +30,7 @@
     },
     {
       "key": "sonar.sources",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\VSWorkspaceState.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Host\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Services\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\UnoLisServer\\v17\\DocumentLayout.backup.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\UnoLisServer\\v17\\DocumentLayout.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Host\\bin\\Debug\\Host.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\init.ps1,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\install.ps1,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\net6.0\\any\\ef6.runtimeconfig.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\bin\\Debug\\UnoLisServer.TestConsole.exe.config"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\VSWorkspaceState.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Host\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Services\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\UnoLisServer\\v17\\DocumentLayout.backup.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.vs\\UnoLisServer\\v17\\DocumentLayout.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\Host\\bin\\Debug\\Host.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\init.ps1,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\install.ps1,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\packages\\EntityFramework.6.5.1\\tools\\net6.0\\any\\ef6.runtimeconfig.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\bin\\Debug\\TestConsole.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.TestConsole\\bin\\Debug\\UnoLisServer.TestConsole.exe.config"
     },
     {
       "key": "sonar.tests",
@@ -38,11 +38,11 @@
     },
     {
       "key": "sonar.modules",
-      "value": "B64E169C-5D12-4404-9E93-EFB0CB8667F8,7D32625B-A443-4B2D-8358-D63142C1A2CA,5A8FA681-D17F-4968-BC72-3A0DCA91B546,0E0CE13F-2D93-4BC2-BEA1-3332D88EE082,445CA5D1-34BF-47C2-9274-E965630A7362,3D528C72-8D7B-4A2E-9039-BE90B75E2950"
+      "value": "B64E169C-5D12-4404-9E93-EFB0CB8667F8,5A8FA681-D17F-4968-BC72-3A0DCA91B546,0E0CE13F-2D93-4BC2-BEA1-3332D88EE082,445CA5D1-34BF-47C2-9274-E965630A7362,3D528C72-8D7B-4A2E-9039-BE90B75E2950"
     },
     {
       "key": "B64E169C-5D12-4404-9E93-EFB0CB8667F8.sonar.projectKey",
-      "value": "UnoLisServer:B64E169C-5D12-4404-9E93-EFB0CB8667F8"
+      "value": "UnoLisServer2:B64E169C-5D12-4404-9E93-EFB0CB8667F8"
     },
     {
       "key": "B64E169C-5D12-4404-9E93-EFB0CB8667F8.sonar.projectName",
@@ -81,48 +81,8 @@
       "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\0\\Telemetry.json"
     },
     {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.projectKey",
-      "value": "UnoLisServer:7D32625B-A443-4B2D-8358-D63142C1A2CA"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.projectName",
-      "value": "TestConsole"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.projectBaseDir",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.working.directory",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod1"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.sourceEncoding",
-      "value": "utf-8"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.tests",
-      "value": ""
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.sources",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\bin\\Debug\\TestConsole.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\Program.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\TestConsole\\Properties\\AssemblyInfo.cs"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.cs.analyzer.projectOutPaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.cs.roslyn.reportFilePaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1\\Issues.json"
-    },
-    {
-      "key": "7D32625B-A443-4B2D-8358-D63142C1A2CA.sonar.cs.scanner.telemetry",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1\\Telemetry.json"
-    },
-    {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.projectKey",
-      "value": "UnoLisServer:5A8FA681-D17F-4968-BC72-3A0DCA91B546"
+      "value": "UnoLisServer2:5A8FA681-D17F-4968-BC72-3A0DCA91B546"
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.projectName",
@@ -134,7 +94,7 @@
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.working.directory",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod2"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod1"
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.sourceEncoding",
@@ -146,23 +106,23 @@
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.sources",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\.vs\\UnoLisServer.Common.csproj.dtbcache.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Config\\EnviromentConfig.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Constants\\Constants.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Constants\\Endpoints.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Enums\\ConnectionState.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Enums\\MessageCode.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\Logger.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\PasswordHelpers.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\OperationResult.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\ServiceResponse.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Properties\\AssemblyInfo.cs"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\.vs\\UnoLisServer.Common.csproj.dtbcache.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Config\\EnviromentConfig.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Constants\\Constants.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Constants\\Endpoints.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Enums\\CodeType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Enums\\ConnectionState.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Enums\\MessageCode.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Exceptions\\ValidationException.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\EmailSender.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\Logger.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\NotificationSender.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\PasswordHelpers.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\PendingRegistrationHelper.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\ResponseHelper.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Helpers\\VerificationCodeHelper.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\CodeValidationRequest.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\OperationResult.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\PendingRegistration.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\ResponseInfo.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Models\\ServiceResponse.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Common\\Properties\\AssemblyInfo.cs"
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.cs.analyzer.projectOutPaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1"
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.cs.roslyn.reportFilePaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2\\Issues.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1\\Issues.json"
     },
     {
       "key": "5A8FA681-D17F-4968-BC72-3A0DCA91B546.sonar.cs.scanner.telemetry",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2\\Telemetry.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\1\\Telemetry.json"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.projectKey",
-      "value": "UnoLisServer:0E0CE13F-2D93-4BC2-BEA1-3332D88EE082"
+      "value": "UnoLisServer2:0E0CE13F-2D93-4BC2-BEA1-3332D88EE082"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.projectName",
@@ -174,7 +134,7 @@
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.working.directory",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod3"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod2"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.sourceEncoding",
@@ -186,23 +146,23 @@
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.sources",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\AuthCredentials.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\Card.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ChatMessageData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\FriendData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\FriendRequestData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\JoinPartyRequest.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\LeaderboardEntry.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NetworkUpdateData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NotificationData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NotificationType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PartyActionData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PlayCardData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ProfileData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PurchaseRequest.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\RegistrationData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ResultData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ShopItem.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\CardColor.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\CardValue.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\NotificationType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\PlayerStatus.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\RarityType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IChatManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IConfirmationManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IFriendsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IGameplayManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILeaderBoardsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILoginManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILogoutManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\INotificationsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IPartyClientManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IPartyHostManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IProfileEditManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IProfileViewManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IRegisterManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ISessionCallback.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IShopManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Properties\\AssemblyInfo.cs"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\.vs\\UnoLisServer.Contracts.csproj.dtbcache.json,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\AuthCredentials.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\Card.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ChatMessageData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\FriendData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\FriendRequestData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\JoinPartyRequest.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\LeaderboardEntry.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NetworkUpdateData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NotificationData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\NotificationType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PartyActionData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PlayCardData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ProfileData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\PurchaseRequest.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\RegistrationData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ResultData.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\DTOs\\ShopItem.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\CardColor.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\CardValue.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\NotificationType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\PlayerStatus.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Enums\\RarityType.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IChatManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IConfirmationManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IFriendsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IGameplayManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILeaderBoardsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILoginManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ILogoutManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\INotificationsManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IPartyClientManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IPartyHostManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IProfileEditManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IProfileViewManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IRegisterManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\ISessionCallback.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Interfaces\\IShopManager.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Contracts\\Properties\\AssemblyInfo.cs"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.cs.analyzer.projectOutPaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.cs.roslyn.reportFilePaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3\\Issues.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2\\Issues.json"
     },
     {
       "key": "0E0CE13F-2D93-4BC2-BEA1-3332D88EE082.sonar.cs.scanner.telemetry",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3\\Telemetry.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\2\\Telemetry.json"
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.projectKey",
-      "value": "UnoLisServer:445CA5D1-34BF-47C2-9274-E965630A7362"
+      "value": "UnoLisServer2:445CA5D1-34BF-47C2-9274-E965630A7362"
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.projectName",
@@ -214,7 +174,7 @@
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.working.directory",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod4"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod3"
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.sourceEncoding",
@@ -230,19 +190,19 @@
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.cs.analyzer.projectOutPaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3"
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.cs.roslyn.reportFilePaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4\\Issues.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3\\Issues.json"
     },
     {
       "key": "445CA5D1-34BF-47C2-9274-E965630A7362.sonar.cs.scanner.telemetry",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4\\Telemetry.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\3\\Telemetry.json"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.projectKey",
-      "value": "UnoLisServer:3D528C72-8D7B-4A2E-9039-BE90B75E2950"
+      "value": "UnoLisServer2:3D528C72-8D7B-4A2E-9039-BE90B75E2950"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.projectName",
@@ -254,7 +214,7 @@
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.working.directory",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod5"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\.sonar\\mod4"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.sourceEncoding",
@@ -266,19 +226,19 @@
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.sources",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Host.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Services.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\Program.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\Properties\\AssemblyInfo.cs"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\App.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\packages.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Data.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Host.exe.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\bin\\Debug\\UnoLisServer.Services.dll.config,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\ConfigInitializer.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\Program.cs,C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\UnoLisServer.Host\\Properties\\AssemblyInfo.cs"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.cs.analyzer.projectOutPaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\5"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.cs.roslyn.reportFilePaths",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\5\\Issues.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4\\Issues.json"
     },
     {
       "key": "3D528C72-8D7B-4A2E-9039-BE90B75E2950.sonar.cs.scanner.telemetry",
-      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\5\\Telemetry.json"
+      "value": "C:\\Users\\meler\\Source\\Repos\\UnoLisServer\\.sonarqube\\out\\4\\Telemetry.json"
     },
     {
       "key": "sonar.token",

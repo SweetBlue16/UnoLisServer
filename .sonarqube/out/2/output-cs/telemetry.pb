@@ -1,1 +1,1 @@
-eRWC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Common\UnoLisServer.Common.csprojò	CSharp7_3
+kR]C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\UnoLisServer.Contracts.csprojò	CSharp7_3

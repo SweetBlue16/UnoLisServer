@@ -1,1 +1,1 @@
-iR[C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\UnoLisServer.Services.csprojò	CSharp7_3
+aRSC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Host\UnoLisServer.Host.csprojò	CSharp7_3

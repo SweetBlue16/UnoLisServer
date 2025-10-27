@@ -1,79 +1,34 @@
-z
-ZC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IShopManager.csr	
-{
-ZC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Properties\AssemblyInfo.csjr	
- !{
-^C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\ISessionCallback.csj
-r	Ç
-^C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IGameplayManager.csr	
-!"$%}
-bC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IConfirmationManager.csr	
-{
-^C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IRegisterManager.csr
-~
-aC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IProfileViewManager.csr
-ô
-_C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IPartyHostManager.csj 147r&	
-!"#$%'(*+-.01346789~
-aC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IProfileEditManager.csr
-ù
-aC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IPartyClientManager.csj 47:r(	
-!"#$%'(*+-.0134679:;<
-cC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\INotificationsManager.csr	
-x
-\C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\ILogoutManager.csr	
-f
-SC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Enums\RarityType.csr	
-x
-[C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\ILoginManager.csr
-Ö
-]C:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IFriendsManager.csr"	
-!"$%'()*Ç
-bC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\ILeaderBoardsManager.csr	
-k
-RC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\ResultData.cs 8r	
-w
-SC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\ProfileData.cs 8r	
-o
-XC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\JoinPartyRequest.cs 8r	
-j
-XC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\NotificationType.csr	
-j
-RC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\FriendData.cs 8r	
-z
-ZC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Interfaces\IChatManager.csr	
-p
-YC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\FriendRequestData.cs 8r	
-i
-UC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Enums\PlayerStatus.csr	
-k
-YC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Enums\NotificationType.csr	
-p
-RC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Enums\CardValue.csr	
-i
-RC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\Enums\CardColor.csjr	
-j
-PC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\ShopItem.cs 
-8
-r	
-u
-XC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\NotificationData.cs 8r	
-Çq
-XC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\RegistrationData.cs 8r	
-n
-WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\PurchaseRequest.cs 8r	
-k
-TC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\PlayCardData.cs 8r	
-o
-WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\PartyActionData.cs 8r	
-p
-YC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\NetworkUpdateData.cs 8r	
-s
-WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\ChatMessageData.cs 8r	
-Çs
-XC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\LeaderboardEntry.cs 8r	
-Ü
-LC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\Card.cs 8jr"	
- !"$%&'()Ç !&n
-WC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Contracts\DTOs\AuthCredentials.cs 8r	
-
+Ä
+VC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\NotificationsManager.cs 8r	ÇÂ
+NC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\LoginManager.cs* 8r]	
+ !"#$%&'(*+,-./013456789:<=>?@ABDEGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdex	Ç)"$%&(*+-./0346789<>?@ADEGHIMNOSTUYZ[_`aé
+MC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\ShopManager.cs 8r(	
+ !"#%&()*+,-Ç
+ !"%*È
+QC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\RegisterManager.cs' 8r_	
+ !#$%&()*+,-./12356789:;<>?@ABCDEGHIJKLNOPRSTUVWXYZ[\]^_`abcdefghijxÇ( !#$%*,-.35689:;>?ABCDIJKNOPRSTXYZ^_`def°
+TC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\PartyClientManager.cs 8jr-
+ !"#$%&()*+,./01234xÇ $*+01Ë
+TC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\ProfileViewManager.cs 8r\	
+ !"#$%&'()+,-./1235678:;=>?@ABDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdexÇ'"#%&'(+,-.12378:;=>?@ABHIMNOSTUYZ[_`aÄ
+PC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\SessionManager.cs 8r	
+ !"Çz
+YC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\Properties\AssemblyInfo.csjr	
+ !Î
+TC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\ProfileEditManager.cs: 8
+rπ	
+ !#$%&'()*,-./012345689:;<=>@ACDEFGHIJKLMOPQSTUVWYZ[\]_`abcefhijklmnopqrstuvwxyz{|}~ÄÅÇÉÑÖÜáàâäãçéèêëíîïñóòôöõúùûü†°¢£§•xÇL %'(),0134589;<=@ACEFHIJLOPSVY\_befhimnrswxyz~ÄÅÖÜáàèëîïóùû°Ω
+RC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\PartyHostManager.cs 8j@rF	
+ !"$&'(*+,-./01345789:;<=>ABCDEFHJKLMOPQRSTUVxÇ$&',./0349;<QRØ
+OC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\LogoutManager.cs 8r<	
+ !"$%&'()*,-./0123456789:;<=>?@AxÇ !$&'(),-./37;<=ì
+PC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\FriendsManager.cs 8jr,	
+ !#$&'()+,-.012345Ç#(-2∂
+UC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\LeaderboardsManager.cs 8r@	
+ !"#$&'()*+,./012345679:;<=?@ABCDEFGxÇ!"&*2356;<?CÄ
+QC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\GameplayManager.cs 8r	!"Çå
+UC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\ConfirmationManager.cs0 8rw	
+!"#$&'()*+,-./012456789:<=>?@ABCEFGHIJKLNOPQRSTVWYZ[\]^_`abcdfghijklmnopqstvwxyz{|}~ÄÅÇxÇ/!"#(/246789<=?@ABEIJLQTVWYZ[`abhkmnopstvwx|}~Õ
+MC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Services\ChatManager.cs 8j
+rR	 !"#$%&'()*+,-/13456789:;<=>?@ABCDEGHIJKLMNOPQSTUVWXYZ[\]^_x
+Ç !%&,-/359:>?CGHUVW[
