@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Common.Enums;
+using UnoLisServer.Services.Validators;
+using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
@@ -15,7 +13,7 @@ namespace UnoLisServer.Services
     public class LogoutManager : ILogoutManager
     {
         private readonly ILogoutCallback _callback;
-        private ServiceResponse<object> _response;
+        private ResponseInfo<object> _responseInfo;
 
         public LogoutManager()
         {
@@ -24,42 +22,52 @@ namespace UnoLisServer.Services
 
         public void Logout(string nickname)
         {
+            string userNickname = nickname ?? "Unknown";
             try
             {
-                if (string.IsNullOrWhiteSpace(nickname))
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.InvalidData);
-                    _callback.LogoutResponse(_response);
-                    return;
-                }
-
-                if (!SessionManager.IsOnline(nickname))
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.UserNotConnected);
-                    _callback.LogoutResponse(_response);
-                    Logger.Log($"Intento de logout inválido para '{nickname}'.");
-                    return;
-                }
+                Logger.Log($"[INFO] Intentando cerrar la sesión de '{userNickname}'...");
+                LogoutValidator.ValidateLogout(userNickname);
 
                 SessionManager.RemoveSession(nickname);
-                _response = new ServiceResponse<object>(true, MessageCode.LogoutSuccessful);
-                _callback.LogoutResponse(_response);
-                Logger.Log($"Usuario '{nickname}' cerró sesión correctamente.");
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.LogoutSuccessful,
+                    true,
+                    $"[INFO] Jugador '{userNickname}' cerró sesión correctamente."
+                );
+            }
+            catch (ValidationException validationEx)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    validationEx.ErrorCode,
+                    false,
+                    $"[WARNING] Validación fallida durante el logout para '{userNickname}'. Error: {validationEx.Message}"
+                );
             }
             catch (CommunicationException communicationEx)
             {
-                Logger.Log($"Error de comunicación durante logout para '{nickname}'. Error: {communicationEx.Message}");
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.ConnectionFailed,
+                    false,
+                    $"[ERROR] Comunicación durante el logout para '{userNickname}'. Error: {communicationEx.Message}"
+                );
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Log($"Tiempo de espera agotado durante el logout para '{nickname}'. Error: {timeoutEx.Message}");
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    $"[ERROR] Tiempo de espera agotado durante el logout para '{userNickname}'. Error: {timeoutEx.Message}"
+                );
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error durante el logout para '{nickname}': {ex.Message}");
-                _response = new ServiceResponse<object>(false, MessageCode.LogoutInternalError);
-                _callback.LogoutResponse(_response);
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.LogoutInternalError,
+                    false,
+                    $"[FATAL] Error inesperado durante el logout para '{userNickname}'. Error: {ex.Message}"
+                );
             }
+            ResponseHelper.SendResponse(_callback.LogoutResponse, _responseInfo);
         }
     }
 }

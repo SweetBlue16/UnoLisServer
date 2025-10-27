@@ -72,8 +72,14 @@
     <Compile Include="ProfileViewManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegisterManager.cs" />
+    <Compile Include="Validators\ConfirmationValidator.cs" />
+    <Compile Include="Validators\LoginValidator.cs" />
     <Compile Include="SessionManager.cs" />
     <Compile Include="ShopManager.cs" />
+    <Compile Include="Validators\LogoutValidator.cs" />
+    <Compile Include="Validators\ProfileEditValidator.cs" />
+    <Compile Include="Validators\ProfileViewValidator.cs" />
+    <Compile Include="Validators\RegisterValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UnoLisServer.Common\UnoLisServer.Common.csproj">

@@ -1,27 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
-using System.Globalization;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Services.Validators;
+using UnoLisServer.Common.Exceptions;
+using System.Data.SqlClient;
 
 namespace UnoLisServer.Services
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class RegisterManager : IRegisterManager
     {
-        private readonly UNOContext _context;
         private readonly IRegisterCallback _callback;
-        private ServiceResponse<object> _response;
+        private ResponseInfo<object> _responseInfo;
 
         private readonly INotificationSender _notificationSender;
         private readonly IVerificationCodeHelper _verificationCodeHelper;
@@ -29,7 +25,6 @@ namespace UnoLisServer.Services
 
         public RegisterManager()
         {
-            _context = new UNOContext();
             _callback = OperationContext.Current.GetCallbackChannel<IRegisterCallback>();
 
             _notificationSender = NotificationSender.Instance;
@@ -39,34 +34,13 @@ namespace UnoLisServer.Services
 
         public void Register(RegistrationData data)
         {
-            if (data == null)
-            {
-                _response = new ServiceResponse<object>(false, MessageCode.InvalidData);
-                _callback.RegisterResponse(_response);
-                return;
-            }
-
+            string email = data?.Email ?? "Unknown";
+            string nickname = data?.Nickname ?? "Unknown";
             try
             {
-                Logger.Log($"Intentando registrar el usuario '{data.Nickname}'...");
-
-                bool existsPlayer = _context.Player.Any(p => p.nickname == data.Nickname);
-                if (existsPlayer)
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.NicknameAlreadyTaken);
-                    _callback.RegisterResponse(_response);
-                    Logger.Log($"El nickname '{data.Nickname}' ya está registrado.");
-                    return;
-                }
-
-                bool existsAccount = _context.Account.Any(a => a.email == data.Email);
-                if (existsAccount)
-                {
-                    _response = new ServiceResponse<object>(false, MessageCode.EmailAlreadyRegistered);
-                    _callback.RegisterResponse(_response);
-                    Logger.Log($"El email '{data.Email}' ya está registrado.");
-                    return;
-                }
+                RegisterValidator.ValidateRegistrationData(data);
+                Logger.Log($"[INFO] Intentando registrar el usuario '{nickname}' con el correo '{email}'...");
+                RegisterValidator.CheckExistingUser(data);
 
                 var pendingData = new PendingRegistration
                 {
@@ -79,28 +53,53 @@ namespace UnoLisServer.Services
                 var code = _verificationCodeHelper.GenerateAndStoreCode(data.Email, CodeType.EmailVerification);
                 _notificationSender.SendAccountVerificationEmailAsync(data.Email, code);
 
-                _response = new ServiceResponse<object>(true, MessageCode.VerificationCodeSent);
-                _callback.RegisterResponse(_response);
-                Logger.Log($"Código enviado a {data.Email}. Esperando confirmación...");
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.VerificationCodeSent,
+                    true,
+                    $"[INFO] Código de verificación enviado a '{email}' para el usuario '{nickname}'. Esperando confirmación..."
+                );
+            }
+            catch (ValidationException validationEx)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    validationEx.ErrorCode,
+                    false,
+                    $"[WARNING] Validación durante el registro de '{nickname}' con el correo '{email}': {validationEx.Message}"
+                );
+            }
+            catch (SqlException dbEx)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.DatabaseError,
+                    false,
+                    $"[ERROR] Error de base de datos durante el registro de '{nickname}' con el correo '{email}': {dbEx.Message}"
+                );
             }
             catch (CommunicationException communicationEx)
             {
-                Logger.Log($"Error de comunicación en Register({data.Email}): {communicationEx.Message}");
-                _response = new ServiceResponse<object>(false, MessageCode.ConnectionFailed);
-                _callback.RegisterResponse(_response);
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.ConnectionFailed,
+                    false,
+                    $"[ERROR] Comunicación durante el registro de '{nickname}' con el correo '{email}'. Error: {communicationEx.Message}"
+                );
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Log($"Timeout en Register({data.Email}): {timeoutEx.Message}");
-                _response = new ServiceResponse<object>(false, MessageCode.Timeout);
-                _callback.RegisterResponse(_response);
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    $"[ERROR] Tiempo de espera agotado durante el registro de '{nickname}' con el correo '{email}'. Error: {timeoutEx.Message}"
+                );
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error en Register({data.Email}): {ex.Message}");
-                _response = new ServiceResponse<object>(false, MessageCode.GeneralServerError);
-                _callback.RegisterResponse(_response);
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.RegistrationInternalError,
+                    false,
+                    $"[ERROR] Error general durante el registro de '{nickname}' con el correo '{email}': {ex.Message}"
+                );
             }
+            ResponseHelper.SendResponse(_callback.RegisterResponse, _responseInfo);
         }
     }
 }

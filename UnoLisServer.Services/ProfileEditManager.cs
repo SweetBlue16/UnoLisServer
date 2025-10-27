@@ -4,14 +4,14 @@ using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Services.Validators;
+using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
@@ -24,7 +24,7 @@ namespace UnoLisServer.Services
 
         private readonly UNOContext _context;
         private readonly IProfileEditCallback _callback;
-        private ServiceResponse<ProfileData> _response;
+        private ResponseInfo<ProfileData> _responseInfo;
 
         public ProfileEditManager()
         {
@@ -34,45 +34,84 @@ namespace UnoLisServer.Services
 
         public void UpdateProfileData(ProfileData data)
         {
-            if (data == null)
+            string userNickname = data?.Nickname ?? "Unknown";
+            try
             {
-                _response = new ServiceResponse<ProfileData>(false, MessageCode.InvalidData);
-                _callback.ProfileUpdateResponse(_response);
-                return;
-            }
+                Logger.Log($"[INFO] Solicitud de actualización de perfil para '{userNickname}'...");
+                ProfileEditValidator.ValidateProfileUpdate(data);
 
+                UpdateProfile(data);
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileUpdated,
+                    true,
+                    $"[INFO] Perfil de '{userNickname}' actualizado correctamente."
+                );
+            }
+            catch (ValidationException validationEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    validationEx.ErrorCode,
+                    false,
+                    $"[WARNING] Validación fallida para actualización de perfil de '{userNickname}'. Error: {validationEx.Message}"
+                );
+            }
+            catch (DbUpdateException dbUpdateEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.DatabaseError,
+                    false,
+                    $"[FATAL] Error de base de datos al actualizar perfil de '{userNickname}'. Error: {dbUpdateEx.Message}"
+                );
+            }
+            catch (SqlException sqlEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.DatabaseError,
+                    false,
+                    $"[FATAL] Error SQL al actualizar perfil de '{userNickname}'. Error: {sqlEx.Message}"
+                );
+            }
+            catch (CommunicationException communicationEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ConnectionFailed,
+                    false,
+                    $"[ERROR] Comunicación al actualizar perfil de '{userNickname}'. Error: {communicationEx.Message}"
+                );
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.Timeout,
+                    false,
+                    $"[ERROR] Tiempo de espera al actualizar perfil de '{userNickname}'. Error: {timeoutEx.Message}"
+                );
+            }
+            catch (Exception ex)
+            {
+                _responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileUpdateFailed,
+                    false,
+                    $"[FATAL] Error inesperado al actualizar perfil de '{userNickname}'. Error: {ex.Message}"
+                );
+            }
+            ResponseHelper.SendResponse(_callback.ProfileUpdateResponse, _responseInfo);
+        }
+
+        private void UpdateProfile(ProfileData data)
+        {
             using (var transaction = _context.Database.BeginTransaction())
             {
                 try
                 {
                     var player = _context.Player.FirstOrDefault(p => p.nickname == data.Nickname);
-                    if (player == null)
-                    {
-                        _response = new ServiceResponse<ProfileData>(false, MessageCode.PlayerNotFound);
-                        _callback.ProfileUpdateResponse(_response);
-                        return;
-                    }
-
-                    var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
-                    if (account == null)
-                    {
-                        _response = new ServiceResponse<ProfileData>(false, MessageCode.PlayerNotFound);
-                        _callback.ProfileUpdateResponse(_response);
-                        return;
-                    }
+                    var account = _context.Account.FirstOrDefault(a => a.Player.idPlayer == player.idPlayer);
 
                     player.fullName = data.FullName;
                     account.email = data.Email;
 
                     if (!string.IsNullOrWhiteSpace(data.Password))
                     {
-                        bool samePassword = PasswordHelper.VerifyPassword(data.Password, account.password);
-                        if (samePassword)
-                        {
-                            _response = new ServiceResponse<ProfileData>(false, MessageCode.SamePassword);
-                            _callback.ProfileUpdateResponse(_response);
-                            return;
-                        }
                         account.password = PasswordHelper.HashPassword(data.Password);
                     }
 
@@ -100,40 +139,11 @@ namespace UnoLisServer.Services
 
                     _context.SaveChanges();
                     transaction.Commit();
-
-                    _response = new ServiceResponse<ProfileData>(true, MessageCode.ProfileUpdated);
-                    _callback.ProfileUpdateResponse(_response);
                 }
-                catch (CommunicationException communicationEx)
+                catch (Exception)
                 {
-                    Logger.Log($"Error de comunicación durante la actualización de perfil para '{data.Nickname}'. Error: {communicationEx.Message}");
                     transaction.Rollback();
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    Logger.Log($"Timeout durante la actualización de perfil para '{data.Nickname}'. Error: {timeoutEx.Message}");
-                    transaction.Rollback();
-                }
-                catch (DbUpdateException dbUpdateEx)
-                {
-                    _response = new ServiceResponse<ProfileData>(false, MessageCode.DatabaseError);
-                    Logger.Log($"Error de base de datos durante la actualización de perfil para '{data.Nickname}'. Error: {dbUpdateEx.Message}");
-                    transaction.Rollback();
-                    _callback.ProfileUpdateResponse(_response);
-                }
-                catch (SqlException sqlEx)
-                {
-                    _response = new ServiceResponse<ProfileData>(false, MessageCode.SqlError);
-                    Logger.Log($"Error SQL durante la actualización de perfil para '{data.Nickname}'. Error: {sqlEx.Message}");
-                    transaction.Rollback();
-                    _callback.ProfileUpdateResponse(_response);
-                }
-                catch (Exception ex)
-                {
-                    _response = new ServiceResponse<ProfileData>(false, MessageCode.ProfileUpdateFailed);
-                    Logger.Log($"Error inesperado durante la actualización de perfil para '{data.Nickname}'. Error: {ex.Message}");
-                    transaction.Rollback();
-                    _callback.ProfileUpdateResponse(_response);
+                    throw;
                 }
             }
         }
