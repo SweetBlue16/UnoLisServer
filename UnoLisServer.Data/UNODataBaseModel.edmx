@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="UNODataBaseModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="UNODataBaseModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Account">
           <Key>
             <PropertyRef Name="idAccount" />
@@ -70,6 +70,8 @@
           <Property Name="idPlayer" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="nickname" Type="varchar" MaxLength="45" Nullable="false" />
           <Property Name="fullName" Type="varchar" MaxLength="45" />
+          <Property Name="SelectedAvatar_Player_idPlayer" Type="int" />
+          <Property Name="SelectedAvatar_Avatar_idAvatar" Type="int" />
         </EntityType>
         <EntityType Name="PlayerStatistics">
           <Key>
@@ -245,6 +247,20 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_Player_SelectedAvatar">
+          <End Role="AvatarsUnlocked" Type="Self.AvatarsUnlocked" Multiplicity="0..1" />
+          <End Role="Player" Type="Self.Player" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="AvatarsUnlocked">
+              <PropertyRef Name="Player_idPlayer" />
+              <PropertyRef Name="Avatar_idAvatar" />
+            </Principal>
+            <Dependent Role="Player">
+              <PropertyRef Name="SelectedAvatar_Player_idPlayer" />
+              <PropertyRef Name="SelectedAvatar_Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <EntityContainer Name="UNODataBaseModelStoreContainer">
           <EntitySet Name="Account" EntityType="Self.Account" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Achievements" EntityType="Self.Achievements" Schema="dbo" store:Type="Tables" />
@@ -301,9 +317,12 @@
             <End Role="LootBoxType" EntitySet="LootBoxType" />
             <End Role="Avatar" EntitySet="Avatar" />
           </AssociationSet>
+          <AssociationSet Name="FK_Player_SelectedAvatar" Association="Self.FK_Player_SelectedAvatar">
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+            <End Role="Player" EntitySet="Player" />
+          </AssociationSet>
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="UNODataBaseModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -351,6 +370,7 @@
           <Property Name="unlockedDate" Type="DateTime" Precision="0" />
           <NavigationProperty Name="Avatar" Relationship="Self.FK__AvatarsUn__Avata__44FF419A" FromRole="AvatarsUnlocked" ToRole="Avatar" />
           <NavigationProperty Name="Player" Relationship="Self.FK__AvatarsUn__Playe__440B1D61" FromRole="AvatarsUnlocked" ToRole="Player" />
+          <NavigationProperty Name="Player1" Relationship="UNODataBaseModel.FK_Player_SelectedAvatar" FromRole="AvatarsUnlocked" ToRole="Player" />
         </EntityType>
         <EntityType Name="FriendList">
           <Key>
@@ -390,6 +410,9 @@
           <NavigationProperty Name="SocialNetwork" Relationship="Self.FK__RedSocial__Playe__4AB81AF0" FromRole="Player" ToRole="SocialNetwork" />
           <NavigationProperty Name="Report" Relationship="Self.FK__Report__Player_i__5165187F" FromRole="Player" ToRole="Report" />
           <NavigationProperty Name="Sanction" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Player" ToRole="Sanction" />
+          <Property Name="SelectedAvatar_Player_idPlayer" Type="Int32" />
+          <Property Name="SelectedAvatar_Avatar_idAvatar" Type="Int32" />
+          <NavigationProperty Name="AvatarsUnlocked1" Relationship="UNODataBaseModel.FK_Player_SelectedAvatar" FromRole="Player" ToRole="AvatarsUnlocked" />
         </EntityType>
         <EntityType Name="PlayerStatistics">
           <Key>
@@ -625,7 +648,25 @@
             <End Role="Player" EntitySet="Player" />
             <End Role="Sanction" EntitySet="Sanction" />
           </AssociationSet>
+          <AssociationSet Name="FK_Player_SelectedAvatar" Association="UNODataBaseModel.FK_Player_SelectedAvatar">
+            <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
+            <End Role="Player" EntitySet="Player" />
+          </AssociationSet>
         </EntityContainer>
+        <Association Name="FK_Player_SelectedAvatar">
+          <End Type="UNODataBaseModel.AvatarsUnlocked" Role="AvatarsUnlocked" Multiplicity="0..1" />
+          <End Type="UNODataBaseModel.Player" Role="Player" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="AvatarsUnlocked">
+              <PropertyRef Name="Player_idPlayer" />
+              <PropertyRef Name="Avatar_idAvatar" />
+            </Principal>
+            <Dependent Role="Player">
+              <PropertyRef Name="SelectedAvatar_Player_idPlayer" />
+              <PropertyRef Name="SelectedAvatar_Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -698,6 +739,8 @@
           <EntitySetMapping Name="Player">
             <EntityTypeMapping TypeName="UNODataBaseModel.Player">
               <MappingFragment StoreEntitySet="Player">
+                <ScalarProperty Name="SelectedAvatar_Avatar_idAvatar" ColumnName="SelectedAvatar_Avatar_idAvatar" />
+                <ScalarProperty Name="SelectedAvatar_Player_idPlayer" ColumnName="SelectedAvatar_Player_idPlayer" />
                 <ScalarProperty Name="idPlayer" ColumnName="idPlayer" />
                 <ScalarProperty Name="nickname" ColumnName="nickname" />
                 <ScalarProperty Name="fullName" ColumnName="fullName" />

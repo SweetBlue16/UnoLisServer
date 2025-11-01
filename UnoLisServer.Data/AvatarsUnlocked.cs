@@ -14,11 +14,19 @@ namespace UnoLisServer.Data
     
     public partial class AvatarsUnlocked
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public AvatarsUnlocked()
+        {
+            this.Player1 = new HashSet<Player>();
+        }
+    
         public int Player_idPlayer { get; set; }
         public int Avatar_idAvatar { get; set; }
         public Nullable<System.DateTime> unlockedDate { get; set; }
     
         public virtual Avatar Avatar { get; set; }
         public virtual Player Player { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Player> Player1 { get; set; }
     }
 }

@@ -31,6 +31,8 @@ namespace UnoLisServer.Data
         public int idPlayer { get; set; }
         public string nickname { get; set; }
         public string fullName { get; set; }
+        public Nullable<int> SelectedAvatar_Player_idPlayer { get; set; }
+        public Nullable<int> SelectedAvatar_Avatar_idAvatar { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Account> Account { get; set; }
@@ -50,5 +52,6 @@ namespace UnoLisServer.Data
         public virtual ICollection<Report> Report { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Sanction> Sanction { get; set; }
+        public virtual AvatarsUnlocked AvatarsUnlocked1 { get; set; }
     }
 }

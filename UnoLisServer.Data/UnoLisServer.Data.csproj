@@ -59,22 +59,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Achievements.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Avatar.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="AvatarsUnlocked.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="FriendList.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="LootBoxType.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Model1.Context.cs">
       <AutoGen>True</AutoGen>
@@ -86,27 +86,32 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
+    <Compile Include="UNODataBaseModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="UNODataBaseModel.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>UNODataBaseModel.edmx</DependentUpon>
     </Compile>
     <Compile Include="Player.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="PlayerStatistics.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Report.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Sanction.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
     <Compile Include="SocialNetwork.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
+      <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +135,11 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <DependentUpon>UNODataBaseModel.edmx</DependentUpon>
       <LastGenOutput>Model1.cs</LastGenOutput>
+    </Content>
+    <Content Include="UNODataBaseModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>UNODataBaseModel.cs</LastGenOutput>
+      <DependentUpon>UNODataBaseModel.edmx</DependentUpon>
     </Content>
   </ItemGroup>
   <ItemGroup>
