@@ -1,1 +1,0 @@
-aRSC:\Users\meler\Source\Repos\UnoLisServer\UnoLisServer.Data\UnoLisServer.Data.csprojò	CSharp7_3

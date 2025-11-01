@@ -1,6 +1,0 @@
-projectKey=UnoLisServer2
-serverUrl=http://localhost:9000
-serverVersion=25.10.0.114319
-dashboardUrl=http://localhost:9000/dashboard?id=UnoLisServer2
-ceTaskId=9d04b149-b091-4810-9d6a-150a78ebcf3c
-ceTaskUrl=http://localhost:9000/api/ce/task?id=9d04b149-b091-4810-9d6a-150a78ebcf3c

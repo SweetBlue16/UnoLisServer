@@ -3,6 +3,10 @@ bin/
 obj/
 [Bb]uild/
 [Ll]og/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
 *.log
 
 ## Visual Studio cache
@@ -24,10 +28,24 @@ obj/
 packages/
 *.nuget.props
 *.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+## Entity Framework
+[Mm]igrations/
+*.mdf
+*.ldf
+
+## log4net
+Logs/
+Log/
+*.log
 
 ## Local config
 *.local.json
 appsettings.Development.json
+web.config.user
+app.config.user
 
 ## Rider / VSCode / JetBrains
 .vscode/
@@ -38,3 +56,23 @@ appsettings.Development.json
 [Tt]humbs.db
 [Dd]esktop.ini
 *.DS_Store
+
+## SonarQube
+.sonarqube/
+.scannerwork/
+.sonarlint/
+.sonarlint-out/
+sonar-report.json
+sonar-project.properties
+.analysis/
+*.code-analysis.xml
+
+## Temporary files
+build/
+output/
+out/
+temp/
+*.tmp
+*.bak
+*.old
+*.orig
