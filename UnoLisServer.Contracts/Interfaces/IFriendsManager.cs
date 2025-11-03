@@ -15,6 +15,9 @@ namespace UnoLisServer.Contracts.Interfaces
         void GetFriendsList(string nickname);
 
         [OperationContract(IsOneWay = true)]
+        void GetPendingRequests(string nickname);
+
+        [OperationContract(IsOneWay = true)]
         void SendFriendRequest(FriendRequestData request);
 
         [OperationContract(IsOneWay = true)]
