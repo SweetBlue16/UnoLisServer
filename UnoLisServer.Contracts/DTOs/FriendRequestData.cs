@@ -10,5 +10,6 @@ namespace UnoLisServer.Contracts.DTOs
     {
         public string RequesterNickname { get; set; }
         public string TargetNickname { get; set; }
+        public int FriendListId { get; set; }
     }
 }

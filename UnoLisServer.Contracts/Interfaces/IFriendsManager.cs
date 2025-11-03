@@ -21,6 +21,9 @@ namespace UnoLisServer.Contracts.Interfaces
         void AcceptFriendRequest(FriendRequestData request);
 
         [OperationContract(IsOneWay = true)]
+        void RejectFriendRequest(FriendRequestData request);
+
+        [OperationContract(IsOneWay = true)]
         void RemoveFriend(FriendRequestData request);
     }
 
@@ -32,6 +35,9 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract]
         void FriendRequestReceived(string fromNickname);
+
+        [OperationContract]
+        void PendingRequestsReceived(List<FriendRequestData> requests);
 
         [OperationContract]
         void FriendRequestResult(bool success, string message);
