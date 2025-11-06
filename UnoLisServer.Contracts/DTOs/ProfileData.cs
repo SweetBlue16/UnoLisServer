@@ -23,6 +23,7 @@ namespace UnoLisServer.Contracts.DTOs
         public string FacebookUrl { get; set; }
         public string InstagramUrl { get; set; }
         public string TikTokUrl { get; set; }
+        public string SelectedAvatarName { get; set; }
     }
 }
 

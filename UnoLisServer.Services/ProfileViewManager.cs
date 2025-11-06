@@ -19,13 +19,11 @@ namespace UnoLisServer.Services
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ProfileViewManager : IProfileViewManager
     {
-        private readonly UNOContext _context;
         private readonly IProfileViewCallback _callback;
         private ResponseInfo<ProfileData> _responseInfo;
 
         public ProfileViewManager()
         {
-            _context = new UNOContext();
             _callback = OperationContext.Current.GetCallbackChannel<IProfileViewCallback>();
         }
 
@@ -91,21 +89,28 @@ namespace UnoLisServer.Services
 
         private ProfileData GetProfileData(Player player)
         {
-            var account = _context.Account.FirstOrDefault(a => a.Player_idPlayer == player.idPlayer);
-            var statistics = _context.PlayerStatistics.FirstOrDefault(s => s.Player_idPlayer == player.idPlayer);
-            var socialNetworks = _context.SocialNetwork
-                .Where(sn => sn.Player_idPlayer == player.idPlayer)
-                .ToList();
+            var account = player.Account.FirstOrDefault();
+            var statistics = player.PlayerStatistics.FirstOrDefault();
+            var socialNetworks = player.SocialNetwork;
 
             string facebookUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Facebook")?.linkRedSocial;
             string instagramUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "Instagram")?.linkRedSocial;
             string tikTokUrl = socialNetworks.FirstOrDefault(sn => sn.tipoRedSocial == "TikTok")?.linkRedSocial;
+
+            string selectedAvatarName = "LogoUNO";
+            if (player.SelectedAvatar_Avatar_idAvatar != null)
+            {
+                selectedAvatarName = player.AvatarsUnlocked
+                    .FirstOrDefault(au => au.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar)
+                    ?.Avatar.avatarName ?? selectedAvatarName;
+            }
 
             var profileData = new ProfileData
             {
                 Nickname = player.nickname,
                 FullName = player.fullName,
                 Email = account?.email,
+                SelectedAvatarName = selectedAvatarName,
 
                 ExperiencePoints = statistics?.globalPoints ?? 0,
                 MatchesPlayed = statistics?.matchesPlayed ?? 0,
