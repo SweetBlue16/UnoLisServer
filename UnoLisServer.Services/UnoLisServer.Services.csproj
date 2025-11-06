@@ -58,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AvatarManager.cs" />
     <Compile Include="ChatManager.cs" />
     <Compile Include="ConfirmationManager.cs" />
     <Compile Include="FriendsManager.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="ProfileViewManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegisterManager.cs" />
+    <Compile Include="Validators\AvatarValidator.cs" />
     <Compile Include="Validators\ConfirmationValidator.cs" />
     <Compile Include="Validators\LoginValidator.cs" />
     <Compile Include="SessionManager.cs" />
