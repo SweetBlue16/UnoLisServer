@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
@@ -150,6 +151,8 @@ namespace UnoLisServer.Services
                         fullName = pendingData.FullName
                     };
                     _context.Player.Add(newPlayer);
+                    _context.SaveChanges();
+
                     var newAccount = new Account
                     {
                         email = email,
@@ -157,6 +160,19 @@ namespace UnoLisServer.Services
                         Player = newPlayer
                     };
                     _context.Account.Add(newAccount);
+
+                    var defaultAvatar = _context.Avatar.FirstOrDefault(a => a.avatarName == "LogoUNO");
+                    if (defaultAvatar != null)
+                    {
+                        var unlocked = new AvatarsUnlocked
+                        {
+                            Player_idPlayer = newPlayer.idPlayer,
+                            Avatar_idAvatar = defaultAvatar.idAvatar
+                        };
+                        _context.AvatarsUnlocked.Add(unlocked);
+                        newPlayer.SelectedAvatar_Avatar_idAvatar = defaultAvatar.idAvatar;
+                    }
+
                     _context.SaveChanges();
                     transaction.Commit();
                 }

@@ -58,6 +58,7 @@
     <Compile Include="DTOs\NotificationType.cs" />
     <Compile Include="DTOs\PartyActionData.cs" />
     <Compile Include="DTOs\PlayCardData.cs" />
+    <Compile Include="DTOs\PlayerAvatar.cs" />
     <Compile Include="DTOs\ProfileData.cs" />
     <Compile Include="DTOs\PurchaseRequest.cs" />
     <Compile Include="DTOs\RegistrationData.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Enums\NotificationType.cs" />
     <Compile Include="Enums\PlayerStatus.cs" />
     <Compile Include="Enums\RarityType.cs" />
+    <Compile Include="Interfaces\IAvatarManager.cs" />
     <Compile Include="Interfaces\IChatManager.cs" />
     <Compile Include="Interfaces\IConfirmationManager.cs" />
     <Compile Include="Interfaces\IFriendsLogicManager.cs" />

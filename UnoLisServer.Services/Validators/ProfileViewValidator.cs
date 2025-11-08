@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using UnoLisServer.Data;
 using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Enums;
+using System.Data.Entity;
 
 namespace UnoLisServer.Services.Validators
 {
@@ -17,7 +14,13 @@ namespace UnoLisServer.Services.Validators
         {
             _context = new UNOContext();
 
-            var player = _context.Player.FirstOrDefault(p => p.nickname == nickname);
+            var player = _context.Player
+                .Include(p => p.Account)
+                .Include(p => p.PlayerStatistics)
+                .Include(p => p.SocialNetwork)
+                .Include(p => p.AvatarsUnlocked.Select(au => au.Avatar))
+                .FirstOrDefault(p => p.nickname == nickname);
+
             if (player == null)
             {
                 throw new ValidationException(MessageCode.PlayerNotFound,

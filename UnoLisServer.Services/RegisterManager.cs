@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
-using UnoLisServer.Data;
 using UnoLisServer.Services.Validators;
 using UnoLisServer.Common.Exceptions;
 using System.Data.SqlClient;
@@ -48,6 +46,8 @@ namespace UnoLisServer.Services
                     FullName = data.FullName,
                     HashedPassword = PasswordHelper.HashPassword(data.Password)
                 };
+
+                RegisterValidator.CanRequestVerificationCode(data.Email);
 
                 _pendingRegistrationHelper.StorePendingRegistration(data.Email, pendingData);
                 var code = _verificationCodeHelper.GenerateAndStoreCode(data.Email, CodeType.EmailVerification);

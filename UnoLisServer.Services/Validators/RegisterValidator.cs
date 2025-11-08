@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
+using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Data;
 
@@ -13,6 +14,8 @@ namespace UnoLisServer.Services.Validators
     public static class RegisterValidator
     {
         private static UNOContext _context;
+        private static readonly IVerificationCodeHelper _verificationCodeHelper =
+            VerificationCodeHelper.Instance;
 
         public static void ValidateRegistrationData(RegistrationData data)
         {
@@ -43,6 +46,21 @@ namespace UnoLisServer.Services.Validators
             {
                 throw new ValidationException(MessageCode.EmailAlreadyRegistered,
                     $"El email '{data.Email}' ya está registrado.");
+            }
+        }
+
+        public static void CanRequestVerificationCode(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ValidationException(MessageCode.InvalidData,
+                    "El email no puede estar vacío.");
+            }
+
+            if (!_verificationCodeHelper.CanRequestCode(email, CodeType.EmailVerification))
+            {
+                throw new ValidationException(MessageCode.RateLimitExceeded,
+                    $"Demasiadas solicitudes de código para '{email}'.");
             }
         }
     }

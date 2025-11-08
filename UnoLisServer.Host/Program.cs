@@ -43,7 +43,8 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(ChatManager)),
                 new ServiceHost(typeof(LeaderboardsManager)),
                 new ServiceHost(typeof(ShopManager)),
-                new ServiceHost(typeof(LogoutManager))
+                new ServiceHost(typeof(LogoutManager)),
+                new ServiceHost(typeof(AvatarManager))
             };
 
             Console.WriteLine();
