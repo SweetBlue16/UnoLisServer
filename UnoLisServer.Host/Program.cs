@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.ServiceModel;
 using UnoLisServer.Services;
+using UnoLisServer.Common.Helpers;
 
 namespace UnoLisServer.Host
 {
@@ -10,6 +11,10 @@ namespace UnoLisServer.Host
         static void Main(string[] args)
         {
             Console.Title = "UNO LIS - WCF Server";
+
+
+            Logger.Log("Iniciando servidor UNO LIS...");
+            Logger.Log($"Conexión configurada para servidor: {Environment.MachineName}");
 
             try
             {

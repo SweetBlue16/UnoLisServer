@@ -2,299 +2,318 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
 using System.Threading.Tasks;
-using UnoLisServer.Contracts;
+using System.Data.Entity.Core;
+using System.Data.SqlClient;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
-using UnoLisServer.Services;
 using UnoLisServer.Common.Helpers;
 
 namespace UnoLisServer.Services
 {
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
-    public class FriendsManager : IFriendsManager
+    [ServiceBehavior(
+        InstanceContextMode = InstanceContextMode.PerSession,
+        ConcurrencyMode = ConcurrencyMode.Reentrant)]
+    public class FriendsManager : IFriendsManager, IDisposable
     {
         private readonly IFriendsCallback _callback;
-        private readonly UNOContext _context;
-        // Asumo que SessionManager es estático y no requiere una instancia inyectada
-        // private readonly SessionManager _sessionManager; 
+        private readonly IFriendsLogicManager _logicManager;
+        private bool _disposed = false;
 
         public FriendsManager()
         {
             _callback = OperationContext.Current.GetCallbackChannel<IFriendsCallback>();
-            _context = new UNOContext();
-            // _sessionManager = SessionManager.Instance; // Si no es estático, úsalo aquí.
+            _logicManager = new FriendsLogicManager();
+            OperationContext.Current.Channel.Closed += (s, e) => Dispose();
         }
 
-        // --- I. OBTENER AMIGOS (ESTADO = 1) ---
-        public void GetFriendsList(string nickname)
+        public void Dispose()
+        {
+            if (_disposed) return;
+            // Se asume que en el login/logout se pasa el nickname real a SessionManager para remover
+            // Aquí se usaría el nickname de la sesión actual
+            _disposed = true;
+        }
+        public void SubscribeToFriendUpdates(string nickname)
         {
             try
             {
-                var playerId = _context.Player.FirstOrDefault(p => p.nickname == nickname)?.idPlayer;
-
-                if (!playerId.HasValue)
-                {
-                    _callback.FriendRequestResult(false, "Error: El usuario no existe.");
-                    return;
-                }
-
-                // Busca relaciones donde el estado es 'Aceptado' (true/1)
-                var friendsList = _context.FriendList
-                    .Where(fl => fl.friendRequest == true &&
-                                 (fl.Player_idPlayer == playerId.Value || fl.Player_idPlayer1 == playerId.Value))
-                    .ToList();
-
-                var friendDataList = new List<FriendData>();
-
-                foreach (var fl in friendsList)
-                {
-                    var friendId = (fl.Player_idPlayer == playerId.Value) ? fl.Player_idPlayer1 : fl.Player_idPlayer;
-                    var friendPlayer = _context.Player.Find(friendId);
-
-                    if (friendPlayer != null)
-                    {
-                        friendDataList.Add(new FriendData
-                        {
-                            FriendNickname = friendPlayer.nickname,
-                            // Usa la clase estática SessionManager para el estado online
-                            IsOnline = SessionManager.IsOnline(friendPlayer.nickname),
-                            StatusMessage = "Amigo"
-                        });
-                    }
-                }
-
-                _callback.FriendsListReceived(friendDataList);
+                SessionManager.AddSession(nickname, _callback);
+                Logger.Log($"Player {nickname} subscribed to Friends updates.");
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error en GetFriendsList para {nickname}: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al obtener amigos.");
+                Logger.Error($"Error subscribing {nickname}: {ex.Message}", ex);
             }
         }
 
-        // --- II. OBTENER SOLICITUDES PENDIENTES (ESTADO = 0, YO SOY EL RECEPTOR) ---
-        public void GetPendingRequests(string nickname)
+        public void UnsubscribeFromFriendUpdates(string nickname)
+        {
+            SessionManager.RemoveSession(nickname);
+            Logger.Log($"Player {nickname} unsubscribed from Friends updates.");
+        }
+
+        public async Task<List<FriendData>> GetFriendsListAsync(string nickname)
         {
             try
             {
-                var targetPlayer = _context.Player.FirstOrDefault(p => p.nickname == nickname);
-
-                if (targetPlayer == null)
-                {
-                    _callback.FriendRequestResult(false, "Error: Usuario no válido.");
-                    return;
-                }
-
-                // Busca las filas donde el Player_idPlayer1 (Receptor) es el usuario actual 
-                // Y el estado es Pendiente (friendRequest == false / 0).
-                var pendingRequests = _context.FriendList
-                    .Where(fl => fl.Player_idPlayer1 == targetPlayer.idPlayer && fl.friendRequest == false)
-                    .ToList();
-
-                var requestDataList = new List<FriendRequestData>();
-
-                foreach (var request in pendingRequests)
-                {
-                    var requester = _context.Player.Find(request.Player_idPlayer);
-
-                    if (requester != null)
-                    {
-                        requestDataList.Add(new FriendRequestData
-                        {
-                            RequesterNickname = requester.nickname,
-                            TargetNickname = nickname
-                        });
-                    }
-                }
-
-                _callback.PendingRequestsReceived(requestDataList);
+                return await _logicManager.GetFriendsListAsync(nickname);
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error en GetPendingRequests para {nickname}: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al obtener solicitudes pendientes.");
+                Logger.Error($"Error in GetFriendsListAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendData>();
             }
         }
 
-
-        // --- III. ENVIAR SOLICITUD (CREAR FILA CON ESTADO = 0) ---
-        public void SendFriendRequest(FriendRequestData request)
+        public async Task<List<FriendRequestData>> GetPendingRequestsAsync(string nickname)
         {
             try
             {
-                var requester = _context.Player.FirstOrDefault(p => p.nickname == request.RequesterNickname);
-                var target = _context.Player.FirstOrDefault(p => p.nickname == request.TargetNickname);
+                return await _logicManager.GetPendingRequestsAsync(nickname);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in GetPendingRequestsAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendRequestData>();
+            }
+        }
 
-                if (requester == null || target == null || requester.idPlayer == target.idPlayer)
+        public async Task<FriendRequestResult> SendFriendRequestAsync(string requesterNickname, string targetNickname)
+        {
+            try
+            {
+                var validationResult = await _logicManager.ValidateAndCheckExistingRequestAsync(
+                    requesterNickname, targetNickname);
+
+                if (validationResult.Result != FriendRequestResult.Success)
                 {
-                    _callback.FriendRequestResult(false, "El usuario objetivo no es válido.");
-                    return;
+                    return validationResult.Result;
                 }
 
-                // Verificar si ya existe una relación (pendiente o aceptada) en ambas direcciones
-                var existingRequest = _context.FriendList
-                    .FirstOrDefault(fl => (fl.Player_idPlayer == requester.idPlayer && fl.Player_idPlayer1 == target.idPlayer) ||
-                                          (fl.Player_idPlayer1 == requester.idPlayer && fl.Player_idPlayer == target.idPlayer));
-
-                if (existingRequest != null)
+                using (var context = new UNOContext())
+                using (var transaction = context.Database.BeginTransaction())
                 {
-                    if (existingRequest.friendRequest)
-                        _callback.FriendRequestResult(false, "Ya son amigos.");
-                    else
-                        _callback.FriendRequestResult(false, "Ya existe una solicitud pendiente.");
-                    return;
+                    try
+                    {
+                        await _logicManager.CreatePendingRequestAsync(
+                            validationResult.RequesterId, validationResult.TargetId);
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        throw new EntityException("DB Commit failed during request insertion.", ex);
+                    }
                 }
 
-                // Crear la solicitud (Requester -> Target, friendRequest = false/0)
-                var newRequest = new FriendList
+                NotifyTargetPlayer(requesterNickname, targetNickname, validationResult.RequesterId);
+
+                Logger.Log($"[FriendsManager] Request sent: {requesterNickname} -> {targetNickname}");
+                return FriendRequestResult.Success;
+            }
+            catch (CommunicationException ex)
+            {
+                Logger.Error($"WCF Communication Error: {ex.Message}", ex);
+                return FriendRequestResult.Failed;
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Server Error: {ex.Message}", ex);
+                return FriendRequestResult.Failed;
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error (Commit/Validation): {ex.Message}", ex);
+                return FriendRequestResult.Failed;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Fatal/Unexpected Error in SendFriendRequestAsync: {ex.Message}", ex);
+                return FriendRequestResult.Failed;
+            }
+        }
+
+        public async Task<bool> AcceptFriendRequestAsync(FriendRequestData request)
+        {
+            try
+            {
+                using (var context = new UNOContext())
+                using (var transaction = context.Database.BeginTransaction())
                 {
-                    Player_idPlayer = requester.idPlayer,
-                    Player_idPlayer1 = target.idPlayer,
-                    friendRequest = false // 0 = Pendiente
+                    bool success = await _logicManager.AcceptRequestAsync(request);
+                    if (success)
+                    {
+                        transaction.Commit();
+                        await NotifyFriendshipAcceptedAsync(request.RequesterNickname, request.TargetNickname);
+                        return true;
+                    }
+                    transaction.Rollback();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in AcceptFriendRequestAsync: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> RejectFriendRequestAsync(FriendRequestData request)
+        {
+            try
+            {
+                using (var context = new UNOContext())
+                using (var transaction = context.Database.BeginTransaction())
+                {
+                    bool success = await _logicManager.RejectPendingRequestAsync(
+                        request.TargetNickname,
+                        request.RequesterNickname);
+
+                    if (success)
+                    {
+                        transaction.Commit();
+                        Logger.Log($"Request rejected: {request.TargetNickname} rejected {request.RequesterNickname}");
+                        return true;
+                    }
+                    transaction.Rollback();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in RejectFriendRequestAsync: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> RemoveFriendAsync(FriendRequestData request)
+        {
+            try
+            {
+                using (var context = new UNOContext())
+                using (var transaction = context.Database.BeginTransaction())
+                {
+                    bool success = await _logicManager.RemoveConfirmedFriendshipAsync(
+                        request.RequesterNickname,
+                        request.TargetNickname);
+
+                    if (success)
+                    {
+                        transaction.Commit();
+                        await NotifyFriendshipRemovedAsync(request.RequesterNickname, request.TargetNickname);
+                        return true;
+                    }
+                    transaction.Rollback();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in RemoveFriendAsync: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        private void NotifyTargetPlayer(string requesterNickname, string targetNickname, int newFriendListId)
+        {
+            TryNotifyCallback(targetNickname, cb =>
+            {
+                var newRequestDTO = new FriendRequestData
+                {
+                    RequesterNickname = requesterNickname,
+                    TargetNickname = targetNickname,
+                    FriendListId = newFriendListId
                 };
 
-                _context.FriendList.Add(newRequest);
-                _context.SaveChanges();
+                cb.FriendRequestReceived(newRequestDTO);
+            });
+        }
 
-                _callback.FriendRequestResult(true, $"Solicitud enviada a {request.TargetNickname}.");
+        private async Task NotifyFriendshipAcceptedAsync(string requesterNickname, string targetNickname)
+        {
+            TryNotifyCallback(requesterNickname, cb =>
+            {
 
-                // Notificar al jugador objetivo si está online (asumiendo que SessionManager.NotifyPlayer existe)
-                var targetCallback = SessionManager.GetSession(target.nickname) as IFriendsCallback;
-                if (targetCallback != null)
+                Task.Run(async () =>
                 {
-                    targetCallback.FriendRequestReceived(requester.nickname);
-                }
+                    try
+                    {
+                        cb.FriendActionNotification($"{targetNickname} accepted your request.", true);
+
+                        var friends = await _logicManager.GetFriendsListAsync(requesterNickname);
+                        cb.FriendListUpdated(friends);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error in async callback for {requesterNickname}: {ex.Message}", ex);
+                    }
+                });
+            });
+
+            var targetFriends = await _logicManager.GetFriendsListAsync(targetNickname);
+            _callback.FriendListUpdated(targetFriends);
+        }
+
+        private async Task NotifyFriendshipRemovedAsync(string removerNickname, string removedNickname)
+        {
+            TryNotifyCallback(removedNickname, cb =>
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        cb.FriendActionNotification($"{removerNickname} has removed you from their friends list.", true);
+                        cb.FriendListUpdated(new List<FriendData>());
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error in removed player callback for {removedNickname}: {ex.Message}", ex);
+                    }
+                });
+            });
+
+            try
+            {
+                var friends = await _logicManager.GetFriendsListAsync(removerNickname);
+                _callback.FriendListUpdated(friends);
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error en SendFriendRequest: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al enviar solicitud.");
+                Logger.Error($"Error updating remover's list ({removerNickname}): {ex.Message}", ex);
             }
         }
 
-        // --- IV. ACEPTAR SOLICITUD (ACTUALIZAR FILA A ESTADO = 1) ---
-        public void AcceptFriendRequest(FriendRequestData request)
+        private void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
         {
+            var cb = SessionManager.GetSession(nickname) as IFriendsCallback;
+
+            if (cb == null)
+            {
+                Logger.Log($"Skipping notification to {nickname}: Player is offline or not subscribed.");
+                return;
+            }
+
             try
             {
-                var target = _context.Player.FirstOrDefault(p => p.nickname == request.TargetNickname); // El que ACEPTA
-                var requester = _context.Player.FirstOrDefault(p => p.nickname == request.RequesterNickname); // El que ENVIÓ
+                action.Invoke(cb);
 
-                if (target == null || requester == null) return;
-
-                // Encontrar la solicitud PENDIENTE (Requester -> Target, friendRequest = 0)
-                var pendingRequest = _context.FriendList
-                    .FirstOrDefault(fl => fl.Player_idPlayer == requester.idPlayer &&
-                                          fl.Player_idPlayer1 == target.idPlayer &&
-                                          fl.friendRequest == false);
-
-                if (pendingRequest == null)
+                var communicationObject = cb as ICommunicationObject;
+                if (communicationObject != null && communicationObject.State != CommunicationState.Opened)
                 {
-                    _callback.FriendRequestResult(false, "No se encontró la solicitud pendiente.");
-                    return;
+                    throw new CommunicationException($"Channel to {nickname} is in state: {communicationObject.State}");
                 }
-
-                // Cambiar el estado a ACEPTADO (true/1)
-                pendingRequest.friendRequest = true;
-                _context.SaveChanges();
-
-                _callback.FriendRequestResult(true, $"Has aceptado la solicitud de {request.RequesterNickname}.");
-
-                // Notificar al jugador solicitante (Requester) sobre la aceptación
-                var requesterCallback = SessionManager.GetSession(requester.nickname) as IFriendsCallback;
-                if (requesterCallback != null)
-                {
-                    requesterCallback.FriendRequestResult(true, $"{request.TargetNickname} ha aceptado tu solicitud.");
-                    // Opcional: forzar una actualización de lista si está en la página de amigos
-                    requesterCallback.FriendListUpdated(new List<FriendData>());
-                }
+            }
+            catch (CommunicationException ex)
+            {
+                Logger.Warn($"Communication failed while notifying {nickname}. Removing session. Error: {ex.Message}");
+                SessionManager.RemoveSession(nickname);
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error en AcceptFriendRequest: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al aceptar solicitud.");
-            }
-        }
-
-        // --- V. RECHAZAR SOLICITUD (ELIMINAR FILA CON ESTADO = 0) ---
-        public void RejectFriendRequest(FriendRequestData request)
-        {
-            try
-            {
-                var target = _context.Player.FirstOrDefault(p => p.nickname == request.TargetNickname); // El que RECHAZA
-                var requester = _context.Player.FirstOrDefault(p => p.nickname == request.RequesterNickname); // El que ENVIÓ
-
-                if (target == null || requester == null) return;
-
-                // Encontrar la solicitud PENDIENTE (Requester -> Target, friendRequest = 0)
-                var pendingRequest = _context.FriendList
-                    .FirstOrDefault(fl => fl.Player_idPlayer == requester.idPlayer &&
-                                          fl.Player_idPlayer1 == target.idPlayer &&
-                                          fl.friendRequest == false);
-
-                if (pendingRequest != null)
-                {
-                    _context.FriendList.Remove(pendingRequest);
-                    _context.SaveChanges();
-                    _callback.FriendRequestResult(true, $"Solicitud de {request.RequesterNickname} rechazada.");
-                }
-                else
-                {
-                    _callback.FriendRequestResult(false, "No se encontró la solicitud pendiente.");
-                }
-
-                // Opcional: Notificar al solicitante que fue rechazada (o simplemente no hacer nada)
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"Error en RejectFriendRequest: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al rechazar solicitud.");
-            }
-        }
-
-        // --- VI. ELIMINAR AMIGO (ELIMINAR FILA CON ESTADO = 1) ---
-        public void RemoveFriend(FriendRequestData request)
-        {
-            try
-            {
-                var user1 = _context.Player.FirstOrDefault(p => p.nickname == request.RequesterNickname); // Usuario activo
-                var user2 = _context.Player.FirstOrDefault(p => p.nickname == request.TargetNickname); // Amigo a eliminar
-
-                if (user1 == null || user2 == null) return;
-
-                // Buscar la relación ACEPTADA (Estado = 1) en cualquier dirección
-                var acceptedRelationship = _context.FriendList
-                    .FirstOrDefault(fl => fl.friendRequest == true &&
-                                          ((fl.Player_idPlayer == user1.idPlayer && fl.Player_idPlayer1 == user2.idPlayer) ||
-                                           (fl.Player_idPlayer1 == user1.idPlayer && fl.Player_idPlayer == user2.idPlayer)));
-
-                if (acceptedRelationship != null)
-                {
-                    _context.FriendList.Remove(acceptedRelationship);
-                    _context.SaveChanges();
-
-                    _callback.FriendRequestResult(true, $"{request.TargetNickname} ha sido eliminado de tu lista.");
-                }
-                else
-                {
-                    _callback.FriendRequestResult(false, "Error: No se encontró la amistad.");
-                }
-
-                // Notificar al amigo eliminado
-                var friendCallback = SessionManager.GetSession(user2.nickname) as IFriendsCallback;
-                if (friendCallback != null)
-                {
-                    friendCallback.FriendListUpdated(new List<FriendData>()); // Señal para que actualice/refresque
-                    friendCallback.FriendRequestResult(true, $"{user1.nickname} te ha eliminado de su lista.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"Error en RemoveFriend: {ex.Message}");
-                _callback.FriendRequestResult(false, "Error interno al eliminar amigo.");
+                Logger.Error($"Unexpected error while notifying {nickname}. Error: {ex.Message}", ex);
             }
         }
     }

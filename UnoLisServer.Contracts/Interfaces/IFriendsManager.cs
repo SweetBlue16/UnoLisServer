@@ -1,51 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.ServiceModel;
+using System.Threading.Tasks;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
-    [ServiceContract(CallbackContract = typeof(IFriendsCallback), SessionMode = SessionMode.Required)]
+    [ServiceContract(
+        CallbackContract = typeof(IFriendsCallback),
+        SessionMode = SessionMode.Required)]
     public interface IFriendsManager
     {
-        [OperationContract(IsOneWay = true)]
-        void GetFriendsList(string nickname);
+
+        [OperationContract]
+        Task<List<FriendData>> GetFriendsListAsync(string nickname);
+
+        [OperationContract]
+        Task<List<FriendRequestData>> GetPendingRequestsAsync(string nickname);
+
+        [OperationContract]
+        Task<FriendRequestResult> SendFriendRequestAsync(string requesterNickname, string targetNickname);
+
+        [OperationContract]
+        Task<bool> AcceptFriendRequestAsync(FriendRequestData request);
+
+        [OperationContract]
+        Task<bool> RejectFriendRequestAsync(FriendRequestData request);
+
+        [OperationContract]
+        Task<bool> RemoveFriendAsync(FriendRequestData request);
 
         [OperationContract(IsOneWay = true)]
-        void GetPendingRequests(string nickname);
+        void SubscribeToFriendUpdates(string nickname);
 
         [OperationContract(IsOneWay = true)]
-        void SendFriendRequest(FriendRequestData request);
-
-        [OperationContract(IsOneWay = true)]
-        void AcceptFriendRequest(FriendRequestData request);
-
-        [OperationContract(IsOneWay = true)]
-        void RejectFriendRequest(FriendRequestData request);
-
-        [OperationContract(IsOneWay = true)]
-        void RemoveFriend(FriendRequestData request);
+        void UnsubscribeFromFriendUpdates(string nickname);
     }
 
     [ServiceContract]
-    public interface IFriendsCallback : ISessionCallback
+    public interface IFriendsCallback: ISessionCallback
     {
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void FriendsListReceived(List<FriendData> friends);
 
-        [OperationContract]
-        void FriendRequestReceived(string fromNickname);
+        [OperationContract(IsOneWay = true)]
+        void FriendRequestReceived(FriendRequestData newRequest);
 
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void PendingRequestsReceived(List<FriendRequestData> requests);
 
-        [OperationContract]
-        void FriendRequestResult(bool success, string message);
-
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void FriendListUpdated(List<FriendData> updatedList);
+
+        [OperationContract(IsOneWay = true)]
+        void FriendActionNotification(string message, bool isSuccess);
     }
 }

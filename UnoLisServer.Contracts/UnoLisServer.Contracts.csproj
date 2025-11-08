@@ -31,9 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=3.2.0.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.3.2.0\lib\net462\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -66,13 +63,16 @@
     <Compile Include="DTOs\RegistrationData.cs" />
     <Compile Include="DTOs\ResultData.cs" />
     <Compile Include="DTOs\ShopItem.cs" />
+    <Compile Include="DTOs\ValidationResultData.cs" />
     <Compile Include="Enums\CardColor.cs" />
     <Compile Include="Enums\CardValue.cs" />
+    <Compile Include="Enums\FriendRequestResult.cs" />
     <Compile Include="Enums\NotificationType.cs" />
     <Compile Include="Enums\PlayerStatus.cs" />
     <Compile Include="Enums\RarityType.cs" />
     <Compile Include="Interfaces\IChatManager.cs" />
     <Compile Include="Interfaces\IConfirmationManager.cs" />
+    <Compile Include="Interfaces\IFriendsLogicManager.cs" />
     <Compile Include="Interfaces\IFriendsManager.cs" />
     <Compile Include="Interfaces\IGameplayManager.cs" />
     <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
@@ -87,9 +87,6 @@
     <Compile Include="Interfaces\ISessionCallback.cs" />
     <Compile Include="Interfaces\IShopManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UnoLisServer.Common\UnoLisServer.Common.csproj">

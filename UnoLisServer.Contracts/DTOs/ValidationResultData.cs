@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace UnoLisServer.Contracts.DTOs
 {
     [DataContract]
-    public class FriendData
+    public class ValidationResultData
     {
         [DataMember]
-        public string FriendNickname { get; set; }
+        public FriendRequestResult Result { get; set; }
 
         [DataMember]
-        public bool IsOnline { get; set; }
+        public int RequesterId { get; set; }
 
         [DataMember]
-        public string StatusMessage { get; set; }
+        public int TargetId { get; set; }
     }
 }
