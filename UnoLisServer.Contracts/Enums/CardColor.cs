@@ -12,6 +12,7 @@ namespace UnoLisServer.Contracts.Enums
         Yellow,
         Green,
         Blue,
-        Wild // Para las cartas especiales sin color asignado
+        Black,
+        Silver 
     }
 }
