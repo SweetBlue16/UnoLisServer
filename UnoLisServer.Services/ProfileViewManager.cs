@@ -45,7 +45,7 @@ namespace UnoLisServer.Services
                 );
             }
             catch (ValidationException validationEx)
-            {
+                {
                 _responseInfo = new ResponseInfo<ProfileData>(
                     validationEx.ErrorCode,
                     false,

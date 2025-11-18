@@ -31,8 +31,6 @@ namespace UnoLisServer.Services
         public void Dispose()
         {
             if (_disposed) return;
-            // Se asume que en el login/logout se pasa el nickname real a SessionManager para remover
-            // Aquí se usaría el nickname de la sesión actual
             _disposed = true;
         }
         public void SubscribeToFriendUpdates(string nickname)
@@ -92,24 +90,17 @@ namespace UnoLisServer.Services
                     return validationResult.Result;
                 }
 
-                using (var context = new UNOContext())
-                using (var transaction = context.Database.BeginTransaction())
+                var createRequestDto = new CreateRequestDto
                 {
-                    try
-                    {
-                        await _logicManager.CreatePendingRequestAsync(
-                            validationResult.RequesterId, validationResult.TargetId);
+                    RequesterId = validationResult.RequesterId,
+                    TargetId = validationResult.TargetId,
+                    RequesterNickname = requesterNickname,
+                    TargetNickname = targetNickname
+                };
 
-                        transaction.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        throw new EntityException("DB Commit failed during request insertion.", ex);
-                    }
-                }
+                FriendRequestData newRequestDTO = await _logicManager.CreatePendingRequestAsync(createRequestDto);
 
-                NotifyTargetPlayer(requesterNickname, targetNickname, validationResult.RequesterId);
+                NotifyRequestReceived(newRequestDTO);
 
                 Logger.Log($"[FriendsManager] Request sent: {requesterNickname} -> {targetNickname}");
                 return FriendRequestResult.Success;
@@ -217,21 +208,6 @@ namespace UnoLisServer.Services
             }
         }
 
-        private void NotifyTargetPlayer(string requesterNickname, string targetNickname, int newFriendListId)
-        {
-            TryNotifyCallback(targetNickname, cb =>
-            {
-                var newRequestDTO = new FriendRequestData
-                {
-                    RequesterNickname = requesterNickname,
-                    TargetNickname = targetNickname,
-                    FriendListId = newFriendListId
-                };
-
-                cb.FriendRequestReceived(newRequestDTO);
-            });
-        }
-
         private async Task NotifyFriendshipAcceptedAsync(string requesterNickname, string targetNickname)
         {
             TryNotifyCallback(requesterNickname, cb =>
@@ -241,8 +217,6 @@ namespace UnoLisServer.Services
                 {
                     try
                     {
-                        cb.FriendActionNotification($"{targetNickname} accepted your request.", true);
-
                         var friends = await _logicManager.GetFriendsListAsync(requesterNickname);
                         cb.FriendListUpdated(friends);
                     }
@@ -265,8 +239,8 @@ namespace UnoLisServer.Services
                 {
                     try
                     {
-                        cb.FriendActionNotification($"{removerNickname} has removed you from their friends list.", true);
-                        cb.FriendListUpdated(new List<FriendData>());
+                        var friends = await _logicManager.GetFriendsListAsync(removedNickname);
+                        cb.FriendListUpdated(friends);
                     }
                     catch (Exception ex)
                     {
@@ -286,7 +260,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
+        private static void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
         {
             var cb = SessionManager.GetSession(nickname) as IFriendsCallback;
 
@@ -315,6 +289,14 @@ namespace UnoLisServer.Services
             {
                 Logger.Error($"Unexpected error while notifying {nickname}. Error: {ex.Message}", ex);
             }
+        }
+
+        private static void NotifyRequestReceived(FriendRequestData request)
+        {
+            TryNotifyCallback(request.TargetNickname, cb =>
+            {
+                cb.FriendRequestReceived(request);
+            });
         }
     }
 }

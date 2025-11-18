@@ -122,18 +122,37 @@ namespace UnoLisServer.Services
             }
         }
 
-        public async Task CreatePendingRequestAsync(int requesterId, int targetId)
+        public async Task<FriendRequestData> CreatePendingRequestAsync(
+            CreateRequestDto request)
         {
             using (var context = new UNOContext())
+            using (var transaction = context.Database.BeginTransaction())
             {
-                var newRequest = new FriendList
+                try
                 {
-                    Player_idPlayer = requesterId,
-                    Player_idPlayer1 = targetId,
-                    friendRequest = false
-                };
-                context.FriendList.Add(newRequest);
-                await context.SaveChangesAsync();
+                    var newRequest = new FriendList
+                    {
+                        Player_idPlayer = request.RequesterId,
+                        Player_idPlayer1 = request.TargetId,
+                        friendRequest = false
+                    };
+                    context.FriendList.Add(newRequest);
+                    await context.SaveChangesAsync();
+
+                    transaction.Commit();
+
+                    return new FriendRequestData
+                    {
+                        RequesterNickname = request.RequesterNickname,
+                        TargetNickname = request.TargetNickname,
+                        FriendListId = newRequest.idFriendList
+                    };
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }  
             }
         }
 

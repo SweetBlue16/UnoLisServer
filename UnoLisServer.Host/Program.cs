@@ -18,16 +18,14 @@ namespace UnoLisServer.Host
 
             try
             {
-                // ⚙️ Configurar conexión EF desde variables de entorno
                 ConfigInitializer.ApplyDatabaseConnectionFromEnv();
             }
             catch (Exception ex)
             {
                 WriteError("Error al aplicar configuración de base de datos.", ex);
-                return; // no continuar si no hay conexión válida
+                return;
             }
 
-            // 📦 Lista de servicios a hospedar
             ServiceHost[] hosts =
             {
                 new ServiceHost(typeof(LoginManager)),
@@ -44,7 +42,8 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(LeaderboardsManager)),
                 new ServiceHost(typeof(ShopManager)),
                 new ServiceHost(typeof(LogoutManager)),
-                new ServiceHost(typeof(AvatarManager))
+                new ServiceHost(typeof(AvatarManager)),
+                new ServiceHost(typeof(MatchmakingManager))
             };
 
             Console.WriteLine();
@@ -52,7 +51,6 @@ namespace UnoLisServer.Host
             Console.WriteLine("🚀 Iniciando servicios UNO LIS...");
             Console.ResetColor();
 
-            // 🧱 Iniciar cada servicio individualmente con control de excepciones
             foreach (var host in hosts)
             {
                 try
@@ -135,7 +133,6 @@ namespace UnoLisServer.Host
             Console.ResetColor();
         }
 
-        // 🧾 Método auxiliar para imprimir errores uniformemente
         private static void WriteError(string context, Exception ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -145,8 +142,6 @@ namespace UnoLisServer.Host
             Console.WriteLine($"   → {ex.GetType().Name}: {ex.Message}\n");
             Console.ResetColor();
         }
-
-        // 🔒 Cerrar host con seguridad
         private static void AbortHost(ServiceHost host)
         {
             if (host.State == CommunicationState.Faulted)

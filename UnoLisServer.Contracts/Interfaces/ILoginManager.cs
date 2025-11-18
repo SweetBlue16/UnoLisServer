@@ -19,7 +19,7 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract]
     public interface ILoginCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void LoginResponse(ServiceResponse<object> response);
     }
 }

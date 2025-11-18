@@ -21,10 +21,10 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract]
     public interface IConfirmationCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void ConfirmationResponse(ServiceResponse<object> response);
 
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void ResendCodeResponse(ServiceResponse<object> response);
     }
 }

@@ -8,7 +8,7 @@ using UnoLisServer.Contracts.Interfaces;
 namespace UnoLisServer.Services
 {
     /// <summary>
-    /// Servicio duplex de chat para el lobby. 
+    /// Duplex service for chat.
     /// Permite registro de jugadores, envío y recepción de mensajes.
     /// </summary>
     [ServiceBehavior(

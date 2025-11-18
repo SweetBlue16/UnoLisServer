@@ -104,8 +104,21 @@ namespace UnoLisServer.Services
             {
                 try
                 {
+                    Logger.Log($"[DEBUG] Buscando player: {data.Nickname}");
                     var player = _context.Player.FirstOrDefault(p => p.nickname == data.Nickname);
+
+                    if (player == null)
+                    {
+                        Logger.Log($"[ERROR] Player no encontrado: {data.Nickname}");
+                        throw new ValidationException(MessageCode.PlayerNotFound, "Jugador no encontrado");
+                    }
+
                     var account = _context.Account.FirstOrDefault(a => a.Player.idPlayer == player.idPlayer);
+
+                    if (account == null)
+                    {
+                        throw new ValidationException(MessageCode.AccountNotVerified, "Cuenta no encontrada");
+                    }
 
                     player.fullName = data.FullName;
                     account.email = data.Email;
@@ -138,10 +151,15 @@ namespace UnoLisServer.Services
                     });
 
                     _context.SaveChanges();
+
                     transaction.Commit();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.Log($"[DEBUG] ERROR en UpdateProfile: {ex.Message}");
+                    Logger.Log($"[DEBUG] Inner Exception: {ex.InnerException?.Message}");
+                    Logger.Log($"[DEBUG] StackTrace: {ex.StackTrace}");
+
                     transaction.Rollback();
                     throw;
                 }
@@ -150,7 +168,7 @@ namespace UnoLisServer.Services
 
         private void UpdateOrAddNetwork(int playerId, List<SocialNetwork> existingNetworks, NetworkUpdateData data)
         {
-            if (data == null)
+            if (data == null || string.IsNullOrWhiteSpace(data.Type))
             {
                 return;
             }

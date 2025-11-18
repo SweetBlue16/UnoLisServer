@@ -49,10 +49,14 @@
     <Compile Include="DTOs\AuthCredentials.cs" />
     <Compile Include="DTOs\Card.cs" />
     <Compile Include="DTOs\ChatMessageData.cs" />
+    <Compile Include="DTOs\CreateMatchResponse.cs" />
+    <Compile Include="DTOs\CreateRequest.cs" />
     <Compile Include="DTOs\FriendData.cs" />
     <Compile Include="DTOs\FriendRequestData.cs" />
+    <Compile Include="DTOs\JoinMatchResponse.cs" />
     <Compile Include="DTOs\JoinPartyRequest.cs" />
     <Compile Include="DTOs\LeaderboardEntry.cs" />
+    <Compile Include="DTOs\MatchSettings.cs" />
     <Compile Include="DTOs\NetworkUpdateData.cs" />
     <Compile Include="DTOs\NotificationData.cs" />
     <Compile Include="DTOs\NotificationType.cs" />
@@ -80,6 +84,7 @@
     <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
     <Compile Include="Interfaces\ILoginManager.cs" />
     <Compile Include="Interfaces\ILogoutManager.cs" />
+    <Compile Include="Interfaces\IMatchmakingManager.cs" />
     <Compile Include="Interfaces\INotificationsManager.cs" />
     <Compile Include="Interfaces\IPartyClientManager.cs" />
     <Compile Include="Interfaces\IPartyHostManager.cs" />
@@ -88,6 +93,7 @@
     <Compile Include="Interfaces\IRegisterManager.cs" />
     <Compile Include="Interfaces\ISessionCallback.cs" />
     <Compile Include="Interfaces\IShopManager.cs" />
+    <Compile Include="Models\LobbyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -19,7 +19,7 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract]
     public interface IRegisterCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void RegisterResponse(ServiceResponse<object> response);
     }
 }

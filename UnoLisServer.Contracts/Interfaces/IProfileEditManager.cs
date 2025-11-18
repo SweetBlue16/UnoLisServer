@@ -19,7 +19,7 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract]
     public interface IProfileEditCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void ProfileUpdateResponse(ServiceResponse<ProfileData> response);
     }
 }

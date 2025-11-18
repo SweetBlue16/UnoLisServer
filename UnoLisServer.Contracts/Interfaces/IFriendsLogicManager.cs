@@ -9,7 +9,7 @@ namespace UnoLisServer.Contracts.Interfaces
         Task<ValidationResultData> ValidateAndCheckExistingRequestAsync(
             string requesterNickname, string targetNickname);
 
-        Task CreatePendingRequestAsync(int requesterId, int targetId);
+        Task<FriendRequestData> CreatePendingRequestAsync(CreateRequestDto request);
 
         Task<bool> AcceptRequestAsync(FriendRequestData request);
 

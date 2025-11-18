@@ -8,18 +8,18 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract(CallbackContract = typeof(IAvatarCallback), SessionMode = SessionMode.Required)]
     public interface IAvatarManager
     {
-        [OperationContract(IsOneWay = true)]
+        [OperationContract (IsOneWay = true)]
         void GetPlayerAvatars(string nickname);
-        [OperationContract(IsOneWay = true)]
+        [OperationContract (IsOneWay = true)]
         void SetPlayerAvatar(string nickname, int newAvatarId);
     }
 
     [ServiceContract]
     public interface IAvatarCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void AvatarsDataReceived(ServiceResponse<List<PlayerAvatar>> response);
-        [OperationContract]
+        [OperationContract (IsOneWay = true)]
         void AvatarUpdateResponse(ServiceResponse<object> response);
     }
 }

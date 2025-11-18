@@ -1,6 +1,7 @@
 ﻿using System;
 using UnoLisServer.Common.Models;
 
+
 namespace UnoLisServer.Common.Helpers
 {
     public static class ResponseHelper
@@ -13,12 +14,22 @@ namespace UnoLisServer.Common.Helpers
                 Code = info.MessageCode,
                 Data = info.Data
             };
-            callback?.Invoke(response);
+
+            try
+            {
+                callback?.Invoke(response);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[UNEXPECTED ERROR] {ex.GetType().Name}: {ex.Message}");
+                Logger.Log(ex.StackTrace);
+            }
 
             if (!string.IsNullOrWhiteSpace(info.LogMessage))
             {
                 Logger.Log(info.LogMessage);
             }
         }
+
     }
 }
