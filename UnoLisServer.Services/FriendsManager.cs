@@ -210,7 +210,7 @@ namespace UnoLisServer.Services
 
         private async Task NotifyFriendshipAcceptedAsync(string requesterNickname, string targetNickname)
         {
-            TryNotifyCallback(requesterNickname, cb =>
+            TryNotifyCallback(requesterNickname, callback =>
             {
 
                 Task.Run(async () =>
@@ -218,7 +218,7 @@ namespace UnoLisServer.Services
                     try
                     {
                         var friends = await _logicManager.GetFriendsListAsync(requesterNickname);
-                        cb.FriendListUpdated(friends);
+                        callback.FriendListUpdated(friends);
                     }
                     catch (Exception ex)
                     {
@@ -233,14 +233,14 @@ namespace UnoLisServer.Services
 
         private async Task NotifyFriendshipRemovedAsync(string removerNickname, string removedNickname)
         {
-            TryNotifyCallback(removedNickname, cb =>
+            TryNotifyCallback(removedNickname, callback =>
             {
                 Task.Run(async () =>
                 {
                     try
                     {
                         var friends = await _logicManager.GetFriendsListAsync(removedNickname);
-                        cb.FriendListUpdated(friends);
+                        callback.FriendListUpdated(friends);
                     }
                     catch (Exception ex)
                     {
@@ -262,9 +262,9 @@ namespace UnoLisServer.Services
 
         private static void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
         {
-            var cb = SessionManager.GetSession(nickname) as IFriendsCallback;
+            var callback = SessionManager.GetSession(nickname) as IFriendsCallback;
 
-            if (cb == null)
+            if (callback == null)
             {
                 Logger.Log($"Skipping notification to {nickname}: Player is offline or not subscribed.");
                 return;
@@ -272,9 +272,9 @@ namespace UnoLisServer.Services
 
             try
             {
-                action.Invoke(cb);
+                action.Invoke(callback);
 
-                var communicationObject = cb as ICommunicationObject;
+                var communicationObject = callback as ICommunicationObject;
                 if (communicationObject != null && communicationObject.State != CommunicationState.Opened)
                 {
                     throw new CommunicationException($"Channel to {nickname} is in state: {communicationObject.State}");
@@ -293,9 +293,9 @@ namespace UnoLisServer.Services
 
         private static void NotifyRequestReceived(FriendRequestData request)
         {
-            TryNotifyCallback(request.TargetNickname, cb =>
+            TryNotifyCallback(request.TargetNickname, callback =>
             {
-                cb.FriendRequestReceived(request);
+                callback.FriendRequestReceived(request);
             });
         }
     }
