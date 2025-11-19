@@ -15,7 +15,7 @@ namespace UnoLisServer.Contracts.Models
     {
         public string LobbyCode { get; set; }
         public MatchSettings Settings { get; set; }
-        public List<string> Players { get; set; }
+        public List<LobbyPlayerData> Players { get; set; }
         public string SelectedBackgroundVideo { get; set; }
 
         /// <summary>
@@ -27,15 +27,14 @@ namespace UnoLisServer.Contracts.Models
         {
             LobbyCode = lobbyCode;
             Settings = settings;
-            Players = new List<string> { settings.HostNickname };
+            Players = new List<LobbyPlayerData>();
             SelectedBackgroundVideo = "default_video.mp4";
         }
 
         /// <summary>
         /// Attempts to add a player to this lobby.
         /// </summary>
-        /// <returns>True if the player was added or already existed, false if the lobby was full.</returns>
-        public bool AddPlayer(string nickname)
+        public bool AddPlayer(string nickname, string avatarName)
         {
             lock (LobbyLock)
             {
@@ -43,12 +42,20 @@ namespace UnoLisServer.Contracts.Models
                 {
                     return false;
                 }
-                if (Players.Contains(nickname))
+
+                var existingPlayer = Players.FirstOrDefault(p => p.Nickname == nickname);
+                if (existingPlayer != null)
                 {
-                    return true; // Player is already here (reconnecting)
+                    existingPlayer.AvatarName = avatarName;
+                    return true;
                 }
 
-                Players.Add(nickname);
+                Players.Add(new LobbyPlayerData
+                {
+                    Nickname = nickname,
+                    AvatarName = avatarName
+                });
+
                 return true;
             }
         }
@@ -60,7 +67,11 @@ namespace UnoLisServer.Contracts.Models
         {
             lock (LobbyLock)
             {
-                Players.Remove(nickname);
+                var playerToRemove = Players.FirstOrDefault(p => p.Nickname == nickname);
+                if (playerToRemove != null)
+                {
+                    Players.Remove(playerToRemove);
+                }
             }
         }
     }

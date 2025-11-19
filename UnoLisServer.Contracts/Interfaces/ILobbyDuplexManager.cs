@@ -4,6 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
@@ -23,13 +24,13 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface ILobbyDuplexCallback
     {
         [OperationContract(IsOneWay = true)]
-        void PlayerJoined(string nickname);
+        void PlayerJoined(string nickname, string avatarName);
 
         [OperationContract(IsOneWay = true)]
         void PlayerLeft(string nickname);
 
         [OperationContract(IsOneWay = true)]
-        void UpdatePlayerList(string[] nicknames);
+        void UpdatePlayerList(LobbyPlayerData[] nicknames);
 
         [OperationContract(IsOneWay = true)]
         void PlayerReadyStatusChanged(string nickname, bool isReady);

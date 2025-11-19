@@ -9,6 +9,7 @@ using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Contracts.Models;
 using UnoLisServer.Services.ManagerInterfaces;
+using UnoLisServer.Data;
 
 namespace UnoLisServer.Services
 {
@@ -43,7 +44,12 @@ namespace UnoLisServer.Services
                 {
                     string newCode = GenerateUniqueLobbyCode();
                     var newLobby = new LobbyInfo(newCode, settings);
+
+                    string hostAvatar = GetPlayerAvatarFromDb(settings.HostNickname);
+                    newLobby.AddPlayer(settings.HostNickname, hostAvatar);
+
                     _activeLobbies.Add(newCode, newLobby);
+                    _lobbyCallbacks.Add(newCode, new List<ILobbyDuplexCallback>());
 
                     Logger.Log($"Lobby Created. Code: {newCode}. Host: {settings.HostNickname}.");
 
@@ -83,8 +89,8 @@ namespace UnoLisServer.Services
                 }
             }
 
-            //TODO: Looking for the Avatar in the DB
-            bool joined = lobby.AddPlayer(nickname);
+            string avatarName = GetPlayerAvatarFromDb(nickname);
+            bool joined = lobby.AddPlayer(nickname, avatarName);
 
             if (joined)
             {
@@ -96,41 +102,28 @@ namespace UnoLisServer.Services
                     Message = "Joined successfully."
                 };
             }
-            else
+
+            return new JoinMatchResponse
             {
-                return new JoinMatchResponse
-                {
-                    Success = false,
-                    Message = "Lobby is full or player already exists.",
-                    LobbyCode = null
-                };
-            }
+                Success = false,
+                Message = "Lobby is full or player already exists.",
+                LobbyCode = null
+            };
         }
 
         public void RegisterPlayerConnection(string lobbyCode, string nickname)
         {
             var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
 
-            lock (_dictionaryLock)
-            {
-                if (!_activeLobbies.ContainsKey(lobbyCode)) return;
+            string currentAvatar = SafeRegisterCallback(lobbyCode, nickname, callback);
+            SendInitialStateToPlayer(lobbyCode, callback);
 
-                if (!_lobbyCallbacks.ContainsKey(lobbyCode))
-                    _lobbyCallbacks[lobbyCode] = new List<ILobbyDuplexCallback>();
-
-                if (!_lobbyCallbacks[lobbyCode].Contains(callback))
-                {
-                    _lobbyCallbacks[lobbyCode].Add(callback);
-                    Logger.Log($"Player {nickname} connected duplex to {lobbyCode}");
-                }
-            }
-
-            BroadcastToLobby(lobbyCode, cb => cb.PlayerJoined(nickname));
+            BroadcastToLobby(lobbyCode, cb => cb.PlayerJoined(nickname, currentAvatar));
 
             if (_activeLobbies.TryGetValue(lobbyCode, out var lobbyInfo))
             {
-                var namesList = lobbyInfo.Players.ToArray();
-                BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(namesList));
+                var list = lobbyInfo.Players.ToArray();
+                BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(list));
             }
         }
 
@@ -157,6 +150,75 @@ namespace UnoLisServer.Services
             {
                 var namesList = lobbyInfo.Players.ToArray();
                 BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(namesList));
+            }
+        }
+
+        private string GetPlayerAvatarFromDb(string nickname)
+        {
+            try
+            {
+                using (var context = new UNOContext())
+                {
+                    var player = context.Player.Include("AvatarsUnlocked.Avatar").FirstOrDefault(p => p.nickname == nickname);
+
+                    if (player != null && player.SelectedAvatar_Avatar_idAvatar != null)
+                    {
+                        var unlocked = player.AvatarsUnlocked
+                            .FirstOrDefault(au => au.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar);
+
+                        if (unlocked != null && unlocked.Avatar != null)
+                        {
+                            return unlocked.Avatar.avatarName;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error fetching avatar for {nickname}: {ex.Message}", ex);
+            }
+
+            return "LogoUNO";
+        }
+
+        private string SafeRegisterCallback(string lobbyCode, string nickname, ILobbyDuplexCallback callback)
+        {
+            string avatar = "LogoUNO";
+
+            lock (_dictionaryLock)
+            {
+                if (!_activeLobbies.ContainsKey(lobbyCode)) return avatar;
+
+                if (!_lobbyCallbacks.ContainsKey(lobbyCode))
+                    _lobbyCallbacks[lobbyCode] = new List<ILobbyDuplexCallback>();
+
+                if (!_lobbyCallbacks[lobbyCode].Contains(callback))
+                {
+                    _lobbyCallbacks[lobbyCode].Add(callback);
+                    Logger.Log($"Player {nickname} connected duplex to {lobbyCode}");
+                }
+
+                if (_activeLobbies.TryGetValue(lobbyCode, out var lobby))
+                {
+                    var p = lobby.Players.FirstOrDefault(x => x.Nickname == nickname);
+                    if (p != null) avatar = p.AvatarName;
+                }
+            }
+            return avatar;
+        }
+
+        private void SendInitialStateToPlayer(string lobbyCode, ILobbyDuplexCallback callback)
+        {
+            if (_activeLobbies.TryGetValue(lobbyCode, out var lobbyInfo))
+            {
+                try
+                {
+                    callback.UpdatePlayerList(lobbyInfo.Players.ToArray());
+                }
+                catch
+                {
+                    Logger.Error("Error sending initial player list to newly connected player.");
+                }
             }
         }
         public void BroadcastReadyStatus(string lobbyCode, string nickname, bool isReady)
