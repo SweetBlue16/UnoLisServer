@@ -34,5 +34,8 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void PlayerReadyStatusChanged(string nickname, bool isReady);
+
+        [OperationContract(IsOneWay = true)]
+        void GameStarted();
     }
 }

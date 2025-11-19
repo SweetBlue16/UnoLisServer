@@ -15,5 +15,8 @@ namespace UnoLisServer.Contracts.DTOs
 
         [DataMember]
         public string AvatarName { get; set; }
+
+        [DataMember]
+        public bool IsReady { get; set; }
     }
 }

@@ -159,7 +159,8 @@ namespace UnoLisServer.Services
             {
                 using (var context = new UNOContext())
                 {
-                    var player = context.Player.Include("AvatarsUnlocked.Avatar").FirstOrDefault(p => p.nickname == nickname);
+                    var player = context.Player.Include("AvatarsUnlocked.Avatar").FirstOrDefault(p => p.nickname == 
+                    nickname);
 
                     if (player != null && player.SelectedAvatar_Avatar_idAvatar != null)
                     {
@@ -223,7 +224,35 @@ namespace UnoLisServer.Services
         }
         public void BroadcastReadyStatus(string lobbyCode, string nickname, bool isReady)
         {
+            bool allReady = false;
+            int playerCount = 0;
+            lock(_dictionaryLock)
+            {
+                if (_activeLobbies.TryGetValue(lobbyCode, out var lobby))
+                {
+                    var player = lobby.Players.FirstOrDefault(p => p.Nickname == nickname);
+                    if (player != null)
+                    {
+                        player.IsReady = isReady;
+                    }
+
+                    playerCount = lobby.Players.Count;
+
+                    if (playerCount >= 2 && lobby.Players.All(p => p.IsReady))
+                    {
+                        allReady = true;
+                    }
+                }
+            }
+
             BroadcastToLobby(lobbyCode, cb => cb.PlayerReadyStatusChanged(nickname, isReady));
+
+            if (allReady)
+            {
+                Logger.Log($"All players ready in lobby {lobbyCode}. Starting game.");
+                System.Threading.Thread.Sleep(5000);
+                BroadcastToLobby(lobbyCode, cb => cb.GameStarted());
+            }
         }
 
         private void BroadcastToLobby(string lobbyCode, Action<ILobbyDuplexCallback> action)
