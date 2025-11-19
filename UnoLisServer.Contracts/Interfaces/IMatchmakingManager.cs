@@ -19,5 +19,8 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract]
         Task<JoinMatchResponse> JoinMatchAsync(string lobbyCode, string nickname);
+
+        [OperationContract]
+        Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames);
     }
 }

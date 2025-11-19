@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ServiceModel;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Helpers;
+using System.Data.Entity.Core;
+using System.Data.SqlClient;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
-using UnoLisServer.Common.Helpers;
+using UnoLisServer.Data;
 using UnoLisServer.Services.ManagerInterfaces;
 
 namespace UnoLisServer.Services
@@ -133,6 +136,86 @@ namespace UnoLisServer.Services
                     };
                 }
             });
+        }
+
+        public Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames)
+        {
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    if (invitedNicknames == null || !invitedNicknames.Any()) return false;
+
+                    List<string> emailsToSend = GetEmailsForNicknames(invitedNicknames);
+
+                    if (!emailsToSend.Any())
+                    {
+                        Logger.Log($"No valid emails found for invitation to lobby {lobbyCode}.");
+                        return false;
+                    }
+
+                    await ExecuteEmailSendingAsync(lobbyCode, senderNickname, emailsToSend);
+
+                    return true;
+                }
+                catch (TimeoutException ex)
+                {
+                    Logger.Error($"Timeout sending invitations for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (SqlException ex)
+                {
+                    Logger.Error($"Database error sending invitations for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (EntityException ex)
+                {
+                    Logger.Error($"Entity Framework error sending invitations for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (CommunicationException ex)
+                {
+                    Logger.Error($"Communication error sending invitations for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Unexpected error sending invitations for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+            });
+        }
+
+        private List<string> GetEmailsForNicknames(List<string> invitedNicknames)
+        {
+            var emails = new List<string>();
+            using (var context = new UNOContext())
+            {
+                var players = context.Player
+                    .Include("Account")
+                    .Where(p => invitedNicknames.Contains(p.nickname))
+                    .ToList();
+
+                foreach (var player in players)
+                {
+                    var account = player.Account.FirstOrDefault();
+                    if (account != null && !string.IsNullOrEmpty(account.email))
+                    {
+                        emails.Add(account.email);
+                    }
+                }
+            }
+            return emails;
+        }
+
+        private async Task ExecuteEmailSendingAsync(string lobbyCode, string senderNickname, List<string> emailsToSend)
+        {
+            var tasks = emailsToSend.Select(email =>
+                NotificationSender.Instance.SendMatchInvitationAsync(email, senderNickname, lobbyCode));
+
+            await Task.WhenAll(tasks);
+
+            Logger.Log($"Invitations sent for lobby {lobbyCode} from {senderNickname} to {emailsToSend.Count} recipients.");
         }
     }
 }

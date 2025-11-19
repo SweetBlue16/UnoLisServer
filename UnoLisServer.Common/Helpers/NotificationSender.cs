@@ -10,6 +10,7 @@ namespace UnoLisServer.Common.Helpers
     {
         Task SendAccountVerificationEmailAsync(string email, string code);
         Task SendPasswordResetEmailAsync(string email, string code);
+        Task SendMatchInvitationAsync(string email, string inviterNickname, string lobbyCode);
     }
     public class NotificationSender : INotificationSender
     {
@@ -41,6 +42,27 @@ namespace UnoLisServer.Common.Helpers
                        $"<p>Tu código para restablecer la contraseña es:</p>" +
                        $"<h1 style='color: #FFC107;'>{code}</h1>" +
                        $"<p>Este código expirará en 5 minutos.</p></body></html>";
+            return _sender.SendEmailAsync(email, subject, body);
+        }
+
+        public Task SendMatchInvitationAsync(string email, string inviterNickname, string lobbyCode)
+        {
+            var subject = "¡Invitación a Partida! - UNO LIS";
+            var body = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; text-align: center;'>
+                    <h2>¡Has sido invitado a jugar!</h2>
+                    <p>Tu amigo <strong>{inviterNickname}</strong> te ha invitado a una partida de UNO LIS.</p>
+                    <br/>
+                    <div style='background-color: #f0f0f0; padding: 20px; border-radius: 10px; display: inline-block;'>
+                        <p style='margin: 0; font-size: 14px; color: #555;'>Código de la Sala:</p>
+                        <h1 style='margin: 10px 0; color: #28a745; font-size: 40px; letter-spacing: 5px;'>{lobbyCode}</h1>
+                    </div>
+                    <br/><br/>
+                    <p>Ingresa este código en la sección 'Join Match' del juego.</p>
+                </body>
+                </html>";
+
             return _sender.SendEmailAsync(email, subject, body);
         }
     }
