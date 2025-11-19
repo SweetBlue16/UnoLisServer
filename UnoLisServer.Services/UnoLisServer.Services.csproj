@@ -62,6 +62,7 @@
     <Compile Include="FriendsManager.cs" />
     <Compile Include="GameplayManager.cs" />
     <Compile Include="LeaderboardsManager.cs" />
+    <Compile Include="LobbyDuplexManager.cs" />
     <Compile Include="LobbyManager.cs" />
     <Compile Include="LoginManager.cs" />
     <Compile Include="LogoutManager.cs" />

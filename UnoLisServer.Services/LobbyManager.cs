@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
+using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Contracts.Models;
 using UnoLisServer.Services.ManagerInterfaces;
 
@@ -22,10 +24,16 @@ namespace UnoLisServer.Services
         public static LobbyManager Instance => _instance.Value;
 
         private readonly Dictionary<string, LobbyInfo> _activeLobbies = new Dictionary<string, LobbyInfo>();
+
+        private readonly Dictionary<string,List<ILobbyDuplexCallback>> _lobbyCallbacks =
+            new Dictionary<string, List<ILobbyDuplexCallback>>();
+
         private readonly object _dictionaryLock = new object();
         private readonly Random _random = new Random();
 
-        private LobbyManager() { }
+        private LobbyManager() 
+        { 
+        }
 
         public CreateMatchResponse CreateLobby(MatchSettings settings)
         {
@@ -75,6 +83,7 @@ namespace UnoLisServer.Services
                 }
             }
 
+            //TODO: Looking for the Avatar in the DB
             bool joined = lobby.AddPlayer(nickname);
 
             if (joined)
@@ -98,6 +107,92 @@ namespace UnoLisServer.Services
             }
         }
 
+        public void RegisterPlayerConnection(string lobbyCode, string nickname)
+        {
+            var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+
+            lock (_dictionaryLock)
+            {
+                if (!_activeLobbies.ContainsKey(lobbyCode)) return;
+
+                if (!_lobbyCallbacks.ContainsKey(lobbyCode))
+                    _lobbyCallbacks[lobbyCode] = new List<ILobbyDuplexCallback>();
+
+                if (!_lobbyCallbacks[lobbyCode].Contains(callback))
+                {
+                    _lobbyCallbacks[lobbyCode].Add(callback);
+                    Logger.Log($"Player {nickname} connected duplex to {lobbyCode}");
+                }
+            }
+
+            BroadcastToLobby(lobbyCode, cb => cb.PlayerJoined(nickname));
+
+            if (_activeLobbies.TryGetValue(lobbyCode, out var lobbyInfo))
+            {
+                var namesList = lobbyInfo.Players.ToArray();
+                BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(namesList));
+            }
+        }
+
+        public void RemovePlayerConnection(string lobbyCode, string nickname)
+        {
+            var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+
+            lock (_dictionaryLock)
+            {
+                if (_lobbyCallbacks.ContainsKey(lobbyCode))
+                {
+                    _lobbyCallbacks[lobbyCode].Remove(callback);
+                }
+
+                if (_activeLobbies.TryGetValue(lobbyCode, out var lobby))
+                {
+                    lobby.RemovePlayer(nickname);
+                }
+            }
+
+            BroadcastToLobby(lobbyCode, cb => cb.PlayerLeft(nickname));
+
+            if (_activeLobbies.TryGetValue(lobbyCode, out var lobbyInfo))
+            {
+                var namesList = lobbyInfo.Players.ToArray();
+                BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(namesList));
+            }
+        }
+        public void BroadcastReadyStatus(string lobbyCode, string nickname, bool isReady)
+        {
+            BroadcastToLobby(lobbyCode, cb => cb.PlayerReadyStatusChanged(nickname, isReady));
+        }
+
+        private void BroadcastToLobby(string lobbyCode, Action<ILobbyDuplexCallback> action)
+        {
+            List<ILobbyDuplexCallback> targets = null;
+
+            lock (_dictionaryLock)
+            {
+                if (_lobbyCallbacks.ContainsKey(lobbyCode))
+                {
+                    targets = new List<ILobbyDuplexCallback>(_lobbyCallbacks[lobbyCode]);
+                }
+            }
+
+            if (targets == null) return;
+
+            foreach (var cb in targets)
+            {
+                try
+                {
+                    if (((ICommunicationObject)cb).State == CommunicationState.Opened)
+                    {
+                        action(cb);
+                    }
+                }
+                catch 
+                {
+                    Logger.Error("Error broadcasting to lobby callbacks.");
+                }
+            }
+        }
         private string GenerateUniqueLobbyCode()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

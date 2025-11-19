@@ -40,6 +40,14 @@ namespace UnoLisServer.Services
                 SessionManager.AddSession(nickname, _callback);
                 Logger.Log($"Player {nickname} subscribed to Friends updates.");
             }
+            catch (TimeoutException ex)
+            {
+                Logger.Error($"Timeout subscribing {nickname}: {ex.Message}", ex);
+            }
+            catch (CommunicationException ex)
+            {
+                Logger.Error($"Communication error subscribing {nickname}: {ex.Message}", ex);
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Error subscribing {nickname}: {ex.Message}", ex);
@@ -48,8 +56,15 @@ namespace UnoLisServer.Services
 
         public void UnsubscribeFromFriendUpdates(string nickname)
         {
-            SessionManager.RemoveSession(nickname);
-            Logger.Log($"Player {nickname} unsubscribed from Friends updates.");
+            try
+            {
+                SessionManager.RemoveSession(nickname);
+                Logger.Log($"Player {nickname} unsubscribed from Friends updates.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error unsubscribing {nickname}: {ex.Message}", ex);
+            }
         }
 
         public async Task<List<FriendData>> GetFriendsListAsync(string nickname)
@@ -57,6 +72,21 @@ namespace UnoLisServer.Services
             try
             {
                 return await _logicManager.GetFriendsListAsync(nickname);
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Error($"Timeout in GetFriendsListAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendData>();
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Error in GetFriendsListAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendData>();
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error in GetFriendsListAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendData>();
             }
             catch (Exception ex)
             {
@@ -70,6 +100,21 @@ namespace UnoLisServer.Services
             try
             {
                 return await _logicManager.GetPendingRequestsAsync(nickname);
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Error($"Timeout in GetPendingRequestsAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendRequestData>();
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Error in GetPendingRequestsAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendRequestData>();
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error in GetPendingRequestsAsync for {nickname}: {ex.Message}", ex);
+                return new List<FriendRequestData>();
             }
             catch (Exception ex)
             {
@@ -90,7 +135,7 @@ namespace UnoLisServer.Services
                     return validationResult.Result;
                 }
 
-                var createRequestDto = new CreateRequestDto
+                var createRequest = new CreateRequestDto
                 {
                     RequesterId = validationResult.RequesterId,
                     TargetId = validationResult.TargetId,
@@ -98,7 +143,7 @@ namespace UnoLisServer.Services
                     TargetNickname = targetNickname
                 };
 
-                FriendRequestData newRequestDTO = await _logicManager.CreatePendingRequestAsync(createRequestDto);
+                FriendRequestData newRequestDTO = await _logicManager.CreatePendingRequestAsync(createRequest);
 
                 NotifyRequestReceived(newRequestDTO);
 
@@ -134,16 +179,34 @@ namespace UnoLisServer.Services
                 using (var context = new UNOContext())
                 using (var transaction = context.Database.BeginTransaction())
                 {
-                    bool success = await _logicManager.AcceptRequestAsync(request);
-                    if (success)
+                    try
                     {
-                        transaction.Commit();
-                        await NotifyFriendshipAcceptedAsync(request.RequesterNickname, request.TargetNickname);
-                        return true;
+                        bool success = await _logicManager.AcceptRequestAsync(request);
+                        if (success)
+                        {
+                            transaction.Commit();
+                            await NotifyFriendshipAcceptedAsync(request.RequesterNickname, request.TargetNickname);
+                            return true;
+                        }
+                        transaction.Rollback();
+                        return false;
                     }
-                    transaction.Rollback();
-                    return false;
+                    catch (Exception innerEx)
+                    {
+                        transaction.Rollback();
+                        throw innerEx;
+                    }
                 }
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Error in AcceptFriendRequestAsync: {ex.Message}", ex);
+                return false;
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error in AcceptFriendRequestAsync: {ex.Message}", ex);
+                return false;
             }
             catch (Exception ex)
             {
@@ -159,19 +222,37 @@ namespace UnoLisServer.Services
                 using (var context = new UNOContext())
                 using (var transaction = context.Database.BeginTransaction())
                 {
-                    bool success = await _logicManager.RejectPendingRequestAsync(
-                        request.TargetNickname,
-                        request.RequesterNickname);
-
-                    if (success)
+                    try
                     {
-                        transaction.Commit();
-                        Logger.Log($"Request rejected: {request.TargetNickname} rejected {request.RequesterNickname}");
-                        return true;
+                        bool success = await _logicManager.RejectPendingRequestAsync(
+                            request.TargetNickname,
+                            request.RequesterNickname);
+
+                        if (success)
+                        {
+                            transaction.Commit();
+                            Logger.Log($"Request rejected: {request.TargetNickname} rejected {request.RequesterNickname}");
+                            return true;
+                        }
+                        transaction.Rollback();
+                        return false;
                     }
-                    transaction.Rollback();
-                    return false;
+                    catch (Exception innerEx)
+                    {
+                        transaction.Rollback();
+                        throw innerEx;
+                    }
                 }
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Error in RejectFriendRequestAsync: {ex.Message}", ex);
+                return false;
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error in RejectFriendRequestAsync: {ex.Message}", ex);
+                return false;
             }
             catch (Exception ex)
             {
@@ -187,19 +268,37 @@ namespace UnoLisServer.Services
                 using (var context = new UNOContext())
                 using (var transaction = context.Database.BeginTransaction())
                 {
-                    bool success = await _logicManager.RemoveConfirmedFriendshipAsync(
-                        request.RequesterNickname,
-                        request.TargetNickname);
-
-                    if (success)
+                    try
                     {
-                        transaction.Commit();
-                        await NotifyFriendshipRemovedAsync(request.RequesterNickname, request.TargetNickname);
-                        return true;
+                        bool success = await _logicManager.RemoveConfirmedFriendshipAsync(
+                            request.RequesterNickname,
+                            request.TargetNickname);
+
+                        if (success)
+                        {
+                            transaction.Commit();
+                            await NotifyFriendshipRemovedAsync(request.RequesterNickname, request.TargetNickname);
+                            return true;
+                        }
+                        transaction.Rollback();
+                        return false;
                     }
-                    transaction.Rollback();
-                    return false;
+                    catch (Exception innerEx)
+                    {
+                        transaction.Rollback();
+                        throw innerEx;
+                    }
                 }
+            }
+            catch (SqlException ex)
+            {
+                Logger.Error($"SQL Error in RemoveFriendAsync: {ex.Message}", ex);
+                return false;
+            }
+            catch (EntityException ex)
+            {
+                Logger.Error($"Entity Framework Error in RemoveFriendAsync: {ex.Message}", ex);
+                return false;
             }
             catch (Exception ex)
             {
@@ -212,13 +311,16 @@ namespace UnoLisServer.Services
         {
             TryNotifyCallback(requesterNickname, callback =>
             {
-
                 Task.Run(async () =>
                 {
                     try
                     {
                         var friends = await _logicManager.GetFriendsListAsync(requesterNickname);
                         callback.FriendListUpdated(friends);
+                    }
+                    catch (SqlException ex)
+                    {
+                        Logger.Error($"SQL Error in async callback for {requesterNickname}: {ex.Message}", ex);
                     }
                     catch (Exception ex)
                     {
@@ -227,8 +329,15 @@ namespace UnoLisServer.Services
                 });
             });
 
-            var targetFriends = await _logicManager.GetFriendsListAsync(targetNickname);
-            _callback.FriendListUpdated(targetFriends);
+            try
+            {
+                var targetFriends = await _logicManager.GetFriendsListAsync(targetNickname);
+                _callback.FriendListUpdated(targetFriends);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error notifying target {targetNickname} (Accepted): {ex.Message}", ex);
+            }
         }
 
         private async Task NotifyFriendshipRemovedAsync(string removerNickname, string removedNickname)
@@ -262,9 +371,9 @@ namespace UnoLisServer.Services
 
         private static void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
         {
-            var callback = SessionManager.GetSession(nickname) as IFriendsCallback;
+            var cb = SessionManager.GetSession(nickname) as IFriendsCallback;
 
-            if (callback == null)
+            if (cb == null)
             {
                 Logger.Log($"Skipping notification to {nickname}: Player is offline or not subscribed.");
                 return;
@@ -272,13 +381,18 @@ namespace UnoLisServer.Services
 
             try
             {
-                action.Invoke(callback);
+                action.Invoke(cb);
 
-                var communicationObject = callback as ICommunicationObject;
+                var communicationObject = cb as ICommunicationObject;
                 if (communicationObject != null && communicationObject.State != CommunicationState.Opened)
                 {
                     throw new CommunicationException($"Channel to {nickname} is in state: {communicationObject.State}");
                 }
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Warn($"Timeout while notifying {nickname}. Removing session. Error: {ex.Message}");
+                SessionManager.RemoveSession(nickname);
             }
             catch (CommunicationException ex)
             {

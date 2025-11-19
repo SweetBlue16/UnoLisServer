@@ -82,6 +82,7 @@
     <Compile Include="Interfaces\IFriendsManager.cs" />
     <Compile Include="Interfaces\IGameplayManager.cs" />
     <Compile Include="Interfaces\ILeaderBoardsManager.cs" />
+    <Compile Include="Interfaces\ILobbyDuplexManager.cs" />
     <Compile Include="Interfaces\ILoginManager.cs" />
     <Compile Include="Interfaces\ILogoutManager.cs" />
     <Compile Include="Interfaces\IMatchmakingManager.cs" />
