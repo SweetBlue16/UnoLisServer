@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services
@@ -40,8 +41,18 @@ namespace UnoLisServer.Services
                         channel.Closed -= (sender, args) => RemoveSession(nickname);
                         channel.Faulted -= (sender, args) => RemoveSession(nickname);
                     }
-                    catch { }
-                    Console.WriteLine($"[INFO] Sesión de '{nickname}' eliminada.");
+                    catch (CommunicationException commEx)
+                    {
+                        Logger.Log($"[WARNING] No se pudieron desvincular eventos para '{nickname}': {commEx.Message}");
+                    }
+                    catch (TimeoutException timeoutEx)
+                    {
+                        Logger.Log($"[WARNING] Tiempo de espera agotado al desvincular eventos para '{nickname}': {timeoutEx.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log($"[ERROR] Error inesperado al desvincular eventos para '{nickname}': {ex.Message}");
+                    }
                 }
             }
         }
