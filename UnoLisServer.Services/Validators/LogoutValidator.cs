@@ -13,12 +13,6 @@ namespace UnoLisServer.Services.Validators
                 throw new ValidationException(MessageCode.InvalidData,
                     $"Nickname inválido para '{nickname}'.");
             }
-
-            if (!SessionManager.IsOnline(nickname))
-            {
-                throw new ValidationException(MessageCode.UserNotConnected,
-                    $"Usuario '{nickname}' no está conectado.");
-            }
         }
     }
 }

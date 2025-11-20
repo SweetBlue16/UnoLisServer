@@ -28,12 +28,23 @@ namespace UnoLisServer.Services
                 Logger.Log($"[INFO] Intentando cerrar la sesión de '{userNickname}'...");
                 LogoutValidator.ValidateLogout(userNickname);
 
-                SessionManager.RemoveSession(nickname);
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.LogoutSuccessful,
-                    true,
-                    $"[INFO] Jugador '{userNickname}' cerró sesión correctamente."
-                );
+                if (!SessionManager.IsOnline(userNickname))
+                {
+                    _responseInfo = new ResponseInfo<object>(
+                        MessageCode.LogoutSuccessful,
+                        true,
+                        $"[WARNING] Usuario '{userNickname}' ya estaba desconectado."
+                    );
+                }
+                else
+                {
+                    SessionManager.RemoveSession(userNickname);
+                    _responseInfo = new ResponseInfo<object>(
+                        MessageCode.LogoutSuccessful,
+                        true,
+                        $"[INFO] Jugador '{userNickname}' cerró sesión correctamente."
+                    );
+                }
             }
             catch (ValidationException validationEx)
             {
