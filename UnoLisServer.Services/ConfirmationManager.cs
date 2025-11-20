@@ -161,17 +161,23 @@ namespace UnoLisServer.Services
                     };
                     _context.Account.Add(newAccount);
 
-                    var defaultAvatar = _context.Avatar.FirstOrDefault(a => a.avatarName == "LogoUNO");
-                    if (defaultAvatar != null)
+                    var commonAvatarsIds = new int[] { 1, 10, 11 };
+                    var now = DateTime.UtcNow;
+
+                    foreach (var avatarId in commonAvatarsIds)
                     {
-                        var unlocked = new AvatarsUnlocked
+                        var unlockedAvatar = new AvatarsUnlocked
                         {
-                            Player_idPlayer = newPlayer.idPlayer,
-                            Avatar_idAvatar = defaultAvatar.idAvatar
+                            Player = newPlayer,
+                            Avatar_idAvatar = avatarId,
+                            unlockedDate = now
                         };
-                        _context.AvatarsUnlocked.Add(unlocked);
-                        newPlayer.SelectedAvatar_Avatar_idAvatar = defaultAvatar.idAvatar;
+                        _context.AvatarsUnlocked.Add(unlockedAvatar);
                     }
+                    _context.SaveChanges();
+
+                    newPlayer.SelectedAvatar_Player_idPlayer = newPlayer.idPlayer;
+                    newPlayer.SelectedAvatar_Avatar_idAvatar = 1;
 
                     _context.SaveChanges();
                     transaction.Commit();
