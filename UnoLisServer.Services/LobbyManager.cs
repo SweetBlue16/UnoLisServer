@@ -111,6 +111,36 @@ namespace UnoLisServer.Services
             };
         }
 
+        public bool SetLobbyBackground(string lobbyCode, string backgroundName)
+        {
+            lock (_dictionaryLock)
+            {
+                if (_activeLobbies.TryGetValue(lobbyCode, out var lobby))
+                {
+                    lobby.SelectedBackgroundVideo = backgroundName;
+                    Logger.Log($"Background for lobby {lobbyCode} set to: {backgroundName}");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public LobbySettings GetLobbySettings(string lobbyCode)
+        {
+            lock (_dictionaryLock)
+            {
+                if (_activeLobbies.TryGetValue(lobbyCode, out var lobby))
+                {
+                    return new LobbySettings
+                    {
+                        BackgroundVideoName = lobby.SelectedBackgroundVideo,
+                        UseSpecialRules = lobby.Settings.UseSpecialRules
+                    };
+                }
+            }
+            return null;
+        }
+
         public void RegisterPlayerConnection(string lobbyCode, string nickname)
         {
             var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();

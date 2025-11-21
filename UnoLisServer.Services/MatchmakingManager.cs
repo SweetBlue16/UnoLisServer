@@ -138,6 +138,68 @@ namespace UnoLisServer.Services
             });
         }
 
+        public Task<bool> SetLobbyBackgroundAsync(string lobbyCode, string backgroundName)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(backgroundName))
+                    {
+                        return false;
+                    }
+
+                    return _lobbyManager.SetLobbyBackground(lobbyCode, backgroundName);
+                }
+                catch (TimeoutException ex)
+                {
+                    Logger.Error($"Timeout setting background for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (CommunicationException ex)
+                {
+                    Logger.Error($"Communication error setting background for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Unexpected error setting background for lobby {lobbyCode}: {ex.Message}", ex);
+                    return false;
+                }
+            });
+        }
+
+        public Task<LobbySettings> GetLobbySettingsAsync(string lobbyCode)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(lobbyCode))
+                    {
+                        return new LobbySettings();
+                    }
+
+                    return _lobbyManager.GetLobbySettings(lobbyCode) ?? new LobbySettings();
+                }
+                catch (TimeoutException ex)
+                {
+                    Logger.Error($"Timeout getting settings for lobby {lobbyCode}: {ex.Message}", ex);
+                    return new LobbySettings();
+                }
+                catch (CommunicationException ex)
+                {
+                    Logger.Error($"Communication error getting settings for lobby {lobbyCode}: {ex.Message}", ex);
+                    return new LobbySettings(); 
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Unexpected error getting settings for lobby {lobbyCode}: {ex.Message}", ex);
+                    return new LobbySettings(); 
+                }
+            });
+        }
+
         public Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames)
         {
             return Task.Run(async () =>

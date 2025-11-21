@@ -57,6 +57,7 @@
     <Compile Include="DTOs\JoinPartyRequest.cs" />
     <Compile Include="DTOs\LeaderboardEntry.cs" />
     <Compile Include="DTOs\LobbyPlayerData.cs" />
+    <Compile Include="DTOs\LobbySettings.cs" />
     <Compile Include="DTOs\MatchSettings.cs" />
     <Compile Include="DTOs\NetworkUpdateData.cs" />
     <Compile Include="DTOs\NotificationData.cs" />

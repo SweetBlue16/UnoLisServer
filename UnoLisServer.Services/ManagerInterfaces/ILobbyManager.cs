@@ -16,5 +16,9 @@ namespace UnoLisServer.Services.ManagerInterfaces
         CreateMatchResponse CreateLobby(MatchSettings settings);
 
         JoinMatchResponse JoinLobby(string lobbyCode, string nickname);
+
+        bool SetLobbyBackground(string lobbyCode, string backgroundName);
+
+        LobbySettings GetLobbySettings(string lobbyCode);
     }
 }

@@ -21,6 +21,12 @@ namespace UnoLisServer.Contracts.Interfaces
         Task<JoinMatchResponse> JoinMatchAsync(string lobbyCode, string nickname);
 
         [OperationContract]
+        Task<bool> SetLobbyBackgroundAsync(string lobbyCode, string backgroundName);
+
+        [OperationContract]
         Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames);
+
+        [OperationContract]
+        Task<LobbySettings> GetLobbySettingsAsync(string lobbyCode);
     }
 }
