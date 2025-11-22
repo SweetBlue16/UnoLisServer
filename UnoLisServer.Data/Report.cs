@@ -18,7 +18,11 @@ namespace UnoLisServer.Data
         public int Player_idPlayer { get; set; }
         public string reportDescription { get; set; }
         public Nullable<System.DateTime> reportDate { get; set; }
+        public int ReportedPlayer_idPlayer { get; set; }
+        public int ReporterPlayer_idPlayer { get; set; }
     
         public virtual Player Player { get; set; }
+        public virtual Player Player1 { get; set; }
+        public virtual Player Player11 { get; set; }
     }
 }

@@ -28,6 +28,8 @@
         <AssociationConnector Association="UNODataBaseModel.FK__Report__Player_i__5165187F" ManuallyRouted="false" />
         <AssociationConnector Association="UNODataBaseModel.FK__Sanction__Player__47DBAE45" ManuallyRouted="false" />
         <AssociationConnector Association="UNODataBaseModel.FK_Player_SelectedAvatar" />
+        <AssociationConnector Association="UNODataBaseModel.FK__Report__Player_i__5165187F1" />
+        <AssociationConnector Association="UNODataBaseModel.FK_Report_ReporterPlayer" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

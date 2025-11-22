@@ -32,7 +32,7 @@
           <Property Name="idAvatar" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="avatarName" Type="varchar" MaxLength="45" Nullable="false" />
           <Property Name="avatarDescription" Type="varchar" MaxLength="255" />
-          <Property Name="avatarRarity" Type="varchar" MaxLength="20" />
+          <Property Name="avatarRarity" Type="varchar" MaxLength="20" Nullable="false" />
           <Property Name="LootBoxType_idLootBoxType" Type="int" />
         </EntityType>
         <EntityType Name="AvatarsUnlocked">
@@ -72,6 +72,7 @@
           <Property Name="fullName" Type="varchar" MaxLength="45" />
           <Property Name="SelectedAvatar_Player_idPlayer" Type="int" />
           <Property Name="SelectedAvatar_Avatar_idAvatar" Type="int" />
+          <Property Name="revoCoins" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="PlayerStatistics">
           <Key>
@@ -85,16 +86,16 @@
           <Property Name="streak" Type="int" />
           <Property Name="maxStreak" Type="int" />
           <Property Name="Player_idPlayer" Type="int" Nullable="false" />
-          <Property Name="MatchGame_idMatchGame" Type="int" />
         </EntityType>
         <EntityType Name="Report">
           <Key>
             <PropertyRef Name="idReport" />
           </Key>
           <Property Name="idReport" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="ReportedPlayer_idPlayer" Type="int" Nullable="false" />
           <Property Name="reportDescription" Type="varchar" MaxLength="255" />
           <Property Name="reportDate" Type="date" />
+          <Property Name="ReporterPlayer_idPlayer" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="Sanction">
           <Key>
@@ -103,8 +104,9 @@
           <Property Name="idSanction" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="sanctionType" Type="varchar" MaxLength="45" />
           <Property Name="sanctionDescription" Type="varchar" MaxLength="255" />
-          <Property Name="sanctionDate" Type="date" />
+          <Property Name="sanctionStartDate" Type="datetime" />
           <Property Name="Player_idPlayer" Type="int" Nullable="false" />
+          <Property Name="sanctionEndDate" Type="datetime" />
         </EntityType>
         <EntityType Name="SocialNetwork">
           <Key>
@@ -219,7 +221,7 @@
               <PropertyRef Name="idPlayer" />
             </Principal>
             <Dependent Role="Report">
-              <PropertyRef Name="Player_idPlayer" />
+              <PropertyRef Name="ReportedPlayer_idPlayer" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -258,6 +260,18 @@
             <Dependent Role="Player">
               <PropertyRef Name="SelectedAvatar_Player_idPlayer" />
               <PropertyRef Name="SelectedAvatar_Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Report_ReporterPlayer">
+          <End Role="Player" Type="Self.Player" Multiplicity="1" />
+          <End Role="Report" Type="Self.Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="ReporterPlayer_idPlayer" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -321,6 +335,10 @@
             <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
             <End Role="Player" EntitySet="Player" />
           </AssociationSet>
+          <AssociationSet Name="FK_Report_ReporterPlayer" Association="Self.FK_Report_ReporterPlayer">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
         </EntityContainer>
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
@@ -355,7 +373,7 @@
           <Property Name="idAvatar" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="avatarName" Type="String" MaxLength="45" FixedLength="false" Unicode="false" Nullable="false" />
           <Property Name="avatarDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
-          <Property Name="avatarRarity" Type="String" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="avatarRarity" Type="String" MaxLength="20" FixedLength="false" Unicode="false" Nullable="false" />
           <Property Name="LootBoxType_idLootBoxType" Type="Int32" />
           <NavigationProperty Name="AvatarsUnlocked" Relationship="Self.FK__AvatarsUn__Avata__44FF419A" FromRole="Avatar" ToRole="AvatarsUnlocked" />
           <NavigationProperty Name="LootBoxType" Relationship="Self.FK_Avatar_LootBoxType" FromRole="Avatar" ToRole="LootBoxType" />
@@ -408,49 +426,57 @@
           <NavigationProperty Name="FriendList1" Relationship="Self.FK__FriendLis__Playe__59063A47" FromRole="Player" ToRole="FriendList" />
           <NavigationProperty Name="PlayerStatistics" Relationship="Self.FK__PlayerSta__Playe__412EB0B6" FromRole="Player" ToRole="PlayerStatistics" />
           <NavigationProperty Name="SocialNetwork" Relationship="Self.FK__RedSocial__Playe__4AB81AF0" FromRole="Player" ToRole="SocialNetwork" />
-          <NavigationProperty Name="Report" Relationship="Self.FK__Report__Player_i__5165187F" FromRole="Player" ToRole="Report" />
+         
           <NavigationProperty Name="Sanction" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Player" ToRole="Sanction" />
           <Property Name="SelectedAvatar_Player_idPlayer" Type="Int32" />
           <Property Name="SelectedAvatar_Avatar_idAvatar" Type="Int32" />
           <NavigationProperty Name="AvatarsUnlocked1" Relationship="UNODataBaseModel.FK_Player_SelectedAvatar" FromRole="Player" ToRole="AvatarsUnlocked" />
+          <Property Name="revoCoins" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Report1" Relationship="UNODataBaseModel.FK__Report__Player_i__5165187F1" FromRole="Player" ToRole="Report" />
+          <NavigationProperty Name="Report11" Relationship="UNODataBaseModel.FK_Report_ReporterPlayer" FromRole="Player" ToRole="Report" />
         </EntityType>
-        <EntityType Name="PlayerStatistics">
-          <Key>
-            <PropertyRef Name="idPlayerStatistics" />
-          </Key>
-          <Property Name="idPlayerStatistics" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="matchesPlayed" Type="Int32" />
-          <Property Name="wins" Type="Int32" />
-          <Property Name="loses" Type="Int32" />
-          <Property Name="globalPoints" Type="Int32" />
-          <Property Name="streak" Type="Int32" />
-          <Property Name="maxStreak" Type="Int32" />
-          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
-          <Property Name="MatchGame_idMatchGame" Type="Int32" />
-          <NavigationProperty Name="Player" Relationship="Self.FK__PlayerSta__Playe__412EB0B6" FromRole="PlayerStatistics" ToRole="Player" />
-        </EntityType>
-        <EntityType Name="Report">
-          <Key>
-            <PropertyRef Name="idReport" />
-          </Key>
-          <Property Name="idReport" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
-          <Property Name="reportDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
-          <Property Name="reportDate" Type="DateTime" Precision="0" />
-          <NavigationProperty Name="Player" Relationship="Self.FK__Report__Player_i__5165187F" FromRole="Report" ToRole="Player" />
-        </EntityType>
-        <EntityType Name="Sanction">
-          <Key>
-            <PropertyRef Name="idSanction" />
-          </Key>
-          <Property Name="idSanction" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="sanctionType" Type="String" MaxLength="45" FixedLength="false" Unicode="false" />
-          <Property Name="sanctionDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
-          <Property Name="sanctionDate" Type="DateTime" Precision="0" />
-          <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="Player" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Sanction" ToRole="Player" />
-        </EntityType>
-        <EntityType Name="SocialNetwork">
+		  <EntityType Name="PlayerStatistics">
+			  <Key>
+				  <PropertyRef Name="idPlayerStatistics" />
+			  </Key>
+			  <Property Name="idPlayerStatistics" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+			  <Property Name="matchesPlayed" Type="Int32" />
+			  <Property Name="wins" Type="Int32" />
+			  <Property Name="loses" Type="Int32" />
+			  <Property Name="globalPoints" Type="Int32" />
+			  <Property Name="streak" Type="Int32" />
+			  <Property Name="maxStreak" Type="Int32" />
+			  <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+			  <NavigationProperty Name="Player" Relationship="Self.FK__PlayerSta__Playe__412EB0B6" FromRole="PlayerStatistics" ToRole="Player" />
+		  </EntityType>
+		  <EntityType Name="Report">
+			  <Key>
+				  <PropertyRef Name="idReport" />
+			  </Key>
+			  <Property Name="idReport" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+			  <Property Name="reportDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+			  <Property Name="reportDate" Type="DateTime" Precision="0" />
+			  <Property Name="ReportedPlayer_idPlayer" Type="Int32" Nullable="false" />
+			  <Property Name="ReporterPlayer_idPlayer" Type="Int32" Nullable="false" />
+			  
+			  <NavigationProperty Name="Player1" Relationship="UNODataBaseModel.FK__Report__Player_i__5165187F1" FromRole="Report" ToRole="Player" />
+			  <NavigationProperty Name="Player11" Relationship="UNODataBaseModel.FK_Report_ReporterPlayer" FromRole="Report" ToRole="Player" />
+		  </EntityType>
+
+		  <EntityType Name="Sanction">
+			  <Key>
+				  <PropertyRef Name="idSanction" />
+			  </Key>
+			  <Property Name="idSanction" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+			  <Property Name="sanctionType" Type="String" MaxLength="45" FixedLength="false" Unicode="false" />
+			  <Property Name="sanctionDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
+			  <Property Name="Player_idPlayer" Type="Int32" Nullable="false" />
+			  <NavigationProperty Name="Player" Relationship="Self.FK__Sanction__Player__47DBAE45" FromRole="Sanction" ToRole="Player" />
+			  <Property Name="sanctionStartDate" Type="DateTime" Precision="3" />
+			  <Property Name="sanctionEndDate" Type="DateTime" Precision="3" />
+		  </EntityType>
+
+		  <EntityType Name="SocialNetwork">
           <Key>
             <PropertyRef Name="idRedSocial" />
           </Key>
@@ -568,18 +594,7 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK__Report__Player_i__5165187F">
-          <End Role="Player" Type="Self.Player" Multiplicity="1" />
-          <End Role="Report" Type="Self.Report" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Player">
-              <PropertyRef Name="idPlayer" />
-            </Principal>
-            <Dependent Role="Report">
-              <PropertyRef Name="Player_idPlayer" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
+       
         <Association Name="FK__Sanction__Player__47DBAE45">
           <End Role="Player" Type="Self.Player" Multiplicity="1" />
           <End Role="Sanction" Type="Self.Sanction" Multiplicity="*" />
@@ -640,10 +655,7 @@
             <End Role="Player" EntitySet="Player" />
             <End Role="SocialNetwork" EntitySet="SocialNetwork" />
           </AssociationSet>
-          <AssociationSet Name="FK__Report__Player_i__5165187F" Association="Self.FK__Report__Player_i__5165187F">
-            <End Role="Player" EntitySet="Player" />
-            <End Role="Report" EntitySet="Report" />
-          </AssociationSet>
+        
           <AssociationSet Name="FK__Sanction__Player__47DBAE45" Association="Self.FK__Sanction__Player__47DBAE45">
             <End Role="Player" EntitySet="Player" />
             <End Role="Sanction" EntitySet="Sanction" />
@@ -651,6 +663,14 @@
           <AssociationSet Name="FK_Player_SelectedAvatar" Association="UNODataBaseModel.FK_Player_SelectedAvatar">
             <End Role="AvatarsUnlocked" EntitySet="AvatarsUnlocked" />
             <End Role="Player" EntitySet="Player" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Report__Player_i__5165187F1" Association="UNODataBaseModel.FK__Report__Player_i__5165187F1">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Report_ReporterPlayer" Association="UNODataBaseModel.FK_Report_ReporterPlayer">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="Report" EntitySet="Report" />
           </AssociationSet>
         </EntityContainer>
         <Association Name="FK_Player_SelectedAvatar">
@@ -664,6 +684,30 @@
             <Dependent Role="Player">
               <PropertyRef Name="SelectedAvatar_Player_idPlayer" />
               <PropertyRef Name="SelectedAvatar_Avatar_idAvatar" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Report__Player_i__5165187F1">
+          <End Type="UNODataBaseModel.Player" Role="Player" Multiplicity="1" />
+          <End Type="UNODataBaseModel.Report" Role="Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="ReportedPlayer_idPlayer" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Report_ReporterPlayer">
+          <End Type="UNODataBaseModel.Player" Role="Player" Multiplicity="1" />
+          <End Type="UNODataBaseModel.Report" Role="Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="idPlayer" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="ReporterPlayer_idPlayer" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -739,6 +783,7 @@
           <EntitySetMapping Name="Player">
             <EntityTypeMapping TypeName="UNODataBaseModel.Player">
               <MappingFragment StoreEntitySet="Player">
+                <ScalarProperty Name="revoCoins" ColumnName="revoCoins" />
                 <ScalarProperty Name="SelectedAvatar_Avatar_idAvatar" ColumnName="SelectedAvatar_Avatar_idAvatar" />
                 <ScalarProperty Name="SelectedAvatar_Player_idPlayer" ColumnName="SelectedAvatar_Player_idPlayer" />
                 <ScalarProperty Name="idPlayer" ColumnName="idPlayer" />
@@ -758,15 +803,15 @@
                 <ScalarProperty Name="streak" ColumnName="streak" />
                 <ScalarProperty Name="maxStreak" ColumnName="maxStreak" />
                 <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
-                <ScalarProperty Name="MatchGame_idMatchGame" ColumnName="MatchGame_idMatchGame" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Report">
             <EntityTypeMapping TypeName="UNODataBaseModel.Report">
               <MappingFragment StoreEntitySet="Report">
+                <ScalarProperty Name="ReporterPlayer_idPlayer" ColumnName="ReporterPlayer_idPlayer" />
+                <ScalarProperty Name="ReportedPlayer_idPlayer" ColumnName="ReportedPlayer_idPlayer" />
                 <ScalarProperty Name="idReport" ColumnName="idReport" />
-                <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
                 <ScalarProperty Name="reportDescription" ColumnName="reportDescription" />
                 <ScalarProperty Name="reportDate" ColumnName="reportDate" />
               </MappingFragment>
@@ -775,10 +820,11 @@
           <EntitySetMapping Name="Sanction">
             <EntityTypeMapping TypeName="UNODataBaseModel.Sanction">
               <MappingFragment StoreEntitySet="Sanction">
+                <ScalarProperty Name="sanctionEndDate" ColumnName="sanctionEndDate" />
+                <ScalarProperty Name="sanctionStartDate" ColumnName="sanctionStartDate" />
                 <ScalarProperty Name="idSanction" ColumnName="idSanction" />
                 <ScalarProperty Name="sanctionType" ColumnName="sanctionType" />
                 <ScalarProperty Name="sanctionDescription" ColumnName="sanctionDescription" />
-                <ScalarProperty Name="sanctionDate" ColumnName="sanctionDate" />
                 <ScalarProperty Name="Player_idPlayer" ColumnName="Player_idPlayer" />
               </MappingFragment>
             </EntityTypeMapping>

@@ -19,6 +19,8 @@ namespace UnoLisServer.Data
         public string sanctionDescription { get; set; }
         public Nullable<System.DateTime> sanctionDate { get; set; }
         public int Player_idPlayer { get; set; }
+        public Nullable<System.DateTime> sanctionStartDate { get; set; }
+        public Nullable<System.DateTime> sanctionEndDate { get; set; }
     
         public virtual Player Player { get; set; }
     }

@@ -26,6 +26,8 @@ namespace UnoLisServer.Data
             this.SocialNetwork = new HashSet<SocialNetwork>();
             this.Report = new HashSet<Report>();
             this.Sanction = new HashSet<Sanction>();
+            this.Report1 = new HashSet<Report>();
+            this.Report11 = new HashSet<Report>();
         }
     
         public int idPlayer { get; set; }
@@ -33,6 +35,7 @@ namespace UnoLisServer.Data
         public string fullName { get; set; }
         public Nullable<int> SelectedAvatar_Player_idPlayer { get; set; }
         public Nullable<int> SelectedAvatar_Avatar_idAvatar { get; set; }
+        public int revoCoins { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Account> Account { get; set; }
@@ -53,5 +56,9 @@ namespace UnoLisServer.Data
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Sanction> Sanction { get; set; }
         public virtual AvatarsUnlocked AvatarsUnlocked1 { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Report> Report1 { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Report> Report11 { get; set; }
     }
 }
