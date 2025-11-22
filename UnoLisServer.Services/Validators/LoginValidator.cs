@@ -4,6 +4,7 @@ using UnoLisServer.Common.Enums;
 using UnoLisServer.Data;
 using System.Linq;
 using UnoLisServer.Common.Helpers;
+using System;
 
 namespace UnoLisServer.Services.Validators
 {
@@ -45,7 +46,28 @@ namespace UnoLisServer.Services.Validators
             {
                 throw new ValidationException(MessageCode.DuplicateSession,
                     $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
+            }
+            CheckActiveSanction(account.Player);
+        }
 
+        private static void CheckActiveSanction(Player player)
+        {
+            _context.Entry(player).Collection(p => p.Sanction).Load();
+
+            var activeSanction = player.Sanction
+                .Where(s => s.sanctionEndDate > DateTime.UtcNow)
+                .OrderByDescending(s => s.sanctionEndDate)
+                .FirstOrDefault();
+
+            if (activeSanction != null)
+            {
+                var remainingTime = activeSanction.sanctionEndDate.Value - DateTime.UtcNow;
+                string timeString = remainingTime.TotalHours >= 24
+                    ? $"{(int)remainingTime.TotalDays} días"
+                    : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
+                string message = $"Cuenta suspendida. Restante: {timeString}.";
+
+                throw new ValidationException(MessageCode.PlayerBanned, message);
             }
         }
     }

@@ -1,0 +1,19 @@
+﻿using System.ServiceModel;
+using UnoLisServer.Common.Models;
+using UnoLisServer.Contracts.DTOs;
+
+namespace UnoLisServer.Contracts.Interfaces
+{
+    [ServiceContract(CallbackContract = typeof(IReportCallback), SessionMode = SessionMode.Required)]
+    public interface IReportManager
+    {
+        [OperationContract(IsOneWay = true)]
+        void ReportPlayer(ReportData reportData);
+    }
+
+    public interface IReportCallback : ISessionCallback
+    {
+        [OperationContract(IsOneWay = true)]
+        void ReportPlayerResponse(ServiceResponse<object> response);
+    }
+}

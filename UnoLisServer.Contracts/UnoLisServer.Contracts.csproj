@@ -68,6 +68,7 @@
     <Compile Include="DTOs\ProfileData.cs" />
     <Compile Include="DTOs\PurchaseRequest.cs" />
     <Compile Include="DTOs\RegistrationData.cs" />
+    <Compile Include="DTOs\ReportData.cs" />
     <Compile Include="DTOs\ResultData.cs" />
     <Compile Include="DTOs\ShopItem.cs" />
     <Compile Include="DTOs\ValidationResultData.cs" />
@@ -94,6 +95,7 @@
     <Compile Include="Interfaces\IProfileEditManager.cs" />
     <Compile Include="Interfaces\IProfileViewManager.cs" />
     <Compile Include="Interfaces\IRegisterManager.cs" />
+    <Compile Include="Interfaces\IReportManager.cs" />
     <Compile Include="Interfaces\ISessionCallback.cs" />
     <Compile Include="Interfaces\IShopManager.cs" />
     <Compile Include="Models\LobbyInfo.cs" />

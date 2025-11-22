@@ -44,7 +44,8 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(LogoutManager)),
                 new ServiceHost(typeof(AvatarManager)),
                 new ServiceHost(typeof(MatchmakingManager)),
-                new ServiceHost(typeof(LobbyDuplexManager))
+                new ServiceHost(typeof(LobbyDuplexManager)),
+                new ServiceHost(typeof(ReportManager))
             };
 
             Console.WriteLine();
@@ -110,7 +111,7 @@ namespace UnoLisServer.Host
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("=================================");
             Console.WriteLine("   UNO LIS SERVER EN EJECUCIÓN");
-            Console.WriteLine("=================================");
+            Console.WriteLine("=================================\n");
             Console.ResetColor();
             Console.WriteLine("Presiona [ENTER] para detener...");
             Console.ReadLine();

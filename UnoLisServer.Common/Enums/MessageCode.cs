@@ -41,6 +41,8 @@ namespace UnoLisServer.Common.Enums
         MatchWinnerDeclared = 1034,
         MatchUnoDeclared = 1035,
         MatchScoreUpdated = 1036,
+        SanctionApplied = 1037,
+        ReportSubmitted = 1038,
 
         BadRequest = 2000,
         InvalidData = 2001,
@@ -76,6 +78,7 @@ namespace UnoLisServer.Common.Enums
         ItemNotInShop = 2031,
         PlayerReported = 2032,
         InvalidSearchQuery = 2033,
+        AlreadyReportedRecently = 2034,
 
         SessionExpired = 3000,
         UnauthorizedAccess = 3001,
@@ -108,6 +111,7 @@ namespace UnoLisServer.Common.Enums
         ServiceInitializationFailed = 4018,
         LeaderboardInternalError = 4019,
         ShopInternalError = 4020,
+        ReportInternalError = 4021,
 
         ConnectionLost = 5000,
         Timeout = 5001,
