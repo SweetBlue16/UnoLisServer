@@ -115,7 +115,6 @@ namespace UnoLisServer.Host
             Console.WriteLine("Presiona [ENTER] para detener...");
             Console.ReadLine();
 
-            // 🧹 Cierre seguro
             foreach (var host in hosts)
             {
                 try
@@ -130,17 +129,17 @@ namespace UnoLisServer.Host
             }
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("\n🛑 Servidor detenido correctamente.");
+            Console.WriteLine("\n Servidor detenido correctamente.");
             Console.ResetColor();
         }
 
         private static void WriteError(string context, Exception ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"❌ {context}");
+            Console.WriteLine($" {context}");
             Console.ResetColor();
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine($"   → {ex.GetType().Name}: {ex.Message}\n");
+            Console.WriteLine($"   {ex.GetType().Name}: {ex.Message}\n");
             Console.ResetColor();
         }
         private static void AbortHost(ServiceHost host)
@@ -149,7 +148,7 @@ namespace UnoLisServer.Host
             {
                 host.Abort();
                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine($"   ⚠️ {host.Description.ServiceType.Name} abortado por error.");
+                Console.WriteLine($"    {host.Description.ServiceType.Name} abortado por error.");
                 Console.ResetColor();
             }
         }
