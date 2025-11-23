@@ -10,8 +10,6 @@ namespace UnoLisServer.Services.Validators
 {
     public static class LoginValidator
     {
-        private static UNOContext _context;
-
         public static void ValidateCredentials(AuthCredentials credentials)
         {
             if (credentials == null ||
@@ -25,34 +23,38 @@ namespace UnoLisServer.Services.Validators
 
         public static void AuthenticatePlayer(AuthCredentials credentials)
         {
-            ValidateCredentials(credentials);
-            _context = new UNOContext();
-
-            var account = _context.Account.FirstOrDefault(a => a.Player.nickname == credentials.Nickname);
-            if (account == null)
+            using (var context = new UNOContext())
             {
-                throw new ValidationException(MessageCode.PlayerNotFound,
-                    $"No se encontró al jugador {credentials.Nickname}.");
-            }
+                ValidateCredentials(credentials);
 
-            bool isPasswordValid = PasswordHelper.VerifyPassword(credentials.Password, account.password);
-            if (!isPasswordValid)
-            {
-                throw new ValidationException(MessageCode.InvalidCredentials,
-                    $"Credenciales inválidas para {credentials.Nickname}");
-            }
+                var account = context.Account
+                    .Include("Player")
+                    .FirstOrDefault(a => a.Player.nickname == credentials.Nickname);
+                if (account == null)
+                {
+                    throw new ValidationException(MessageCode.PlayerNotFound,
+                        $"No se encontró al jugador {credentials.Nickname}.");
+                }
 
-            if (SessionManager.IsOnline(account.Player.nickname))
-            {
-                throw new ValidationException(MessageCode.DuplicateSession,
-                    $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
+                bool isPasswordValid = PasswordHelper.VerifyPassword(credentials.Password, account.password);
+                if (!isPasswordValid)
+                {
+                    throw new ValidationException(MessageCode.InvalidCredentials,
+                        $"Credenciales inválidas para {credentials.Nickname}");
+                }
+
+                if (SessionManager.IsOnline(account.Player.nickname))
+                {
+                    throw new ValidationException(MessageCode.DuplicateSession,
+                        $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
+                }
+                CheckActiveSanction(context, account.Player);
             }
-            CheckActiveSanction(account.Player);
         }
 
-        private static void CheckActiveSanction(Player player)
+        private static void CheckActiveSanction(UNOContext context, Player player)
         {
-            _context.Entry(player).Collection(p => p.Sanction).Load();
+            context.Entry(player).Collection(p => p.Sanction).Load();
 
             var activeSanction = player.Sanction
                 .Where(s => s.sanctionEndDate > DateTime.UtcNow)
@@ -63,9 +65,9 @@ namespace UnoLisServer.Services.Validators
             {
                 var remainingTime = activeSanction.sanctionEndDate.Value - DateTime.UtcNow;
                 string timeString = remainingTime.TotalHours >= 24
-                    ? $"{(int)remainingTime.TotalDays} días"
+                    ? $"{(int)remainingTime.TotalDays}d"
                     : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
-                string message = $"Cuenta suspendida. Restante: {timeString}.";
+                string message = $"{timeString}";
 
                 throw new ValidationException(MessageCode.PlayerBanned, message);
             }
