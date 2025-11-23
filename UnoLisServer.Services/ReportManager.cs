@@ -181,8 +181,8 @@ namespace UnoLisServer.Services
                 Player_idPlayer = player.idPlayer,
                 sanctionType = type,
                 sanctionDescription = $"Automatic sanction applied due to reports. Duration: {hours} hours.",
-                sanctionDate = startDate,
                 sanctionStartDate = startDate,
+                sanctionEndDate = endDate,
             };
 
             _context.Sanction.Add(sanction);

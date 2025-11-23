@@ -1,5 +1,4 @@
-﻿using System;
-using UnoLisServer.Common.Enums;
+﻿using UnoLisServer.Common.Enums;
 
 namespace UnoLisServer.Common.Models
 {
