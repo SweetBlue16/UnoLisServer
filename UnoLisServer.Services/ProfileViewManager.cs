@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Core;
 using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
+using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Data.Repositories;
+using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services.Validators;
-using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
@@ -20,74 +23,90 @@ namespace UnoLisServer.Services
     public class ProfileViewManager : IProfileViewManager
     {
         private readonly IProfileViewCallback _callback;
-        private ResponseInfo<ProfileData> _responseInfo;
-
-        public ProfileViewManager()
+        private readonly IPlayerRepository _playerRepository;
+        public ProfileViewManager() : this(new PlayerRepository())
         {
-            _callback = OperationContext.Current.GetCallbackChannel<IProfileViewCallback>();
         }
 
-        public void GetProfileData(string nickname)
+        public ProfileViewManager(IPlayerRepository playerRepository, IProfileViewCallback callbackTest = null)
+        {
+            _playerRepository = playerRepository;
+            _callback = callbackTest ?? OperationContext.Current?.GetCallbackChannel<IProfileViewCallback>();
+        }
+
+        public async void GetProfileData(string nickname)
         {
             string userNickname = nickname ?? "Unknown";
+            ResponseInfo<ProfileData> responseInfo;
+
             try
             {
-                Logger.Log($"[INFO] Iniciando obtención de perfil para '{userNickname}'.");
-
-                var player = ProfileViewValidator.ValidateProfileData(userNickname);
-                var profileData = GetProfileData(player);
-
-                _responseInfo = new ResponseInfo<ProfileData>(
-                    MessageCode.ProfileDataRetrieved,
-                    true,
-                    $"[INFO] Perfil obtenido exitosamente para '{userNickname}'.",
-                    profileData
-                );
-            }
-            catch (ValidationException validationEx)
-                {
-                _responseInfo = new ResponseInfo<ProfileData>(
-                    validationEx.ErrorCode,
-                    false,
-                    $"[WARNING] Validación fallida al obtener perfil para '{userNickname}'. Error: {validationEx.Message}"
-                );
-            }
-            catch (CommunicationException communicationEx)
-            {
-                _responseInfo = new ResponseInfo<ProfileData>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación al obtener perfil para '{userNickname}'. Error: {communicationEx.Message}"
-                );
+                responseInfo = await ExecuteGetProfileLogic(userNickname);
             }
             catch (TimeoutException timeoutEx)
             {
-                _responseInfo = new ResponseInfo<ProfileData>(
-                    MessageCode.Timeout,
-                    false,
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.Timeout, false,
                     $"[ERROR] Tiempo de espera agotado al obtener perfil para '{userNickname}'. Error: {timeoutEx.Message}"
                 );
+                Logger.Error(responseInfo.LogMessage, timeoutEx);
+            }
+            catch (CommunicationException communicationEx)
+            {
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.ConnectionFailed, false,
+                    $"[ERROR] Comunicación al obtener perfil para '{userNickname}'. Error: {communicationEx.Message}"
+                );
+                Logger.Error(responseInfo.LogMessage, communicationEx);
             }
             catch (SqlException dbEx)
             {
-                _responseInfo = new ResponseInfo<ProfileData>(
-                    MessageCode.DatabaseError,
-                    false,
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.DatabaseError, false,
                     $"[FATAL] Error de base de datos al obtener perfil para '{userNickname}'. Error: {dbEx.Message}"
                 );
+                Logger.Error(responseInfo.LogMessage, dbEx);
+            }
+            catch (EntityException entityEx)
+            {
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.DatabaseError, false,
+                    $"[FATAL] Error de Entity Framework: {entityEx.Message}");
+                Logger.Error(responseInfo.LogMessage, entityEx);
             }
             catch (Exception ex)
             {
-                _responseInfo = new ResponseInfo<ProfileData>(
+                responseInfo = new ResponseInfo<ProfileData>(
                     MessageCode.ProfileFetchFailed,
                     false,
                     $"[FATAL] Error inesperado al obtener perfil para '{userNickname}'. Error: {ex.Message}"
                 );
+                Logger.Error(responseInfo.LogMessage, ex);
             }
-            ResponseHelper.SendResponse(_callback.ProfileDataReceived, _responseInfo);
+
+            if (_callback != null)
+            {
+                ResponseHelper.SendResponse(_callback.ProfileDataReceived, responseInfo);
+            }
         }
 
-        private ProfileData GetProfileData(Player player)
+        private async Task<ResponseInfo<ProfileData>> ExecuteGetProfileLogic(string userNickname)
+        {
+            Logger.Log($"[INFO] Iniciando obtención de perfil para '{userNickname}'.");
+
+            var player = await _playerRepository.GetPlayerProfileByNicknameAsync(userNickname);
+
+            if (player == null)
+            {
+                return new ResponseInfo<ProfileData>(MessageCode.PlayerNotFound, false,
+                    $"[INFO] No se encontró el perfil para '{userNickname}'.", null
+                );
+            }
+
+            var profileData = MapToProfileData(player);
+
+            return new ResponseInfo<ProfileData>(MessageCode.ProfileDataRetrieved, true,
+                $"[INFO] Perfil obtenido exitosamente para '{userNickname}'.", profileData
+            );
+        }
+
+        private ProfileData MapToProfileData(Player player)
         {
             var account = player.Account.FirstOrDefault();
             var statistics = player.PlayerStatistics.FirstOrDefault();
@@ -105,7 +124,7 @@ namespace UnoLisServer.Services
                     ?.Avatar.avatarName ?? selectedAvatarName;
             }
 
-            var profileData = new ProfileData
+            return new ProfileData
             {
                 Nickname = player.nickname,
                 FullName = player.fullName,
@@ -123,7 +142,6 @@ namespace UnoLisServer.Services
                 InstagramUrl = instagramUrl,
                 TikTokUrl = tikTokUrl
             };
-            return profileData;
         }
     }
 }

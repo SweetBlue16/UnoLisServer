@@ -92,6 +92,8 @@
     <Compile Include="Report.cs">
       <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="Repositories\PlayerRepository.cs" />
+    <Compile Include="RepositoryInterfaces\IPlayerRepository.cs" />
     <Compile Include="Sanction.cs">
       <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
@@ -116,6 +118,7 @@
       <Generator>EntityModelCodeGenerator</Generator>
       <LastGenOutput>UNODataBaseModel.Designer.cs</LastGenOutput>
     </EntityDeploy>
+    <Compile Include="UNOContext.Parcial.cs" />
     <None Include="UNODataBaseModel.edmx.diagram">
       <DependentUpon>UNODataBaseModel.edmx</DependentUpon>
     </None>
@@ -141,6 +144,7 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
