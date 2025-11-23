@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Runtime.Serialization;
-using System.Threading; // Necesario para AutoResetEvent
+using System.Threading;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Models;
@@ -34,79 +34,51 @@ namespace UnoLisServer.Test.ManagerTest
             return new ProfileViewManager(_mockRepository.Object, _mockCallback.Object);
         }
 
+        // --- PRUEBAS EXISTENTES (3) ---
+
         [Fact]
         public void GetProfileData_UserExists_ShouldReturnSuccessAndData()
         {
-            // ARRANGE
             string nickname = "TikiMaster";
-            var fakePlayer = new Player
-            {
-                nickname = nickname,
-                fullName = "Tiki",
-                Account = new List<Account> { new Account { email = "tiki@test.com" } },
-                PlayerStatistics = new List<PlayerStatistics> { new PlayerStatistics { wins = 10, globalPoints = 100 } },
-                SocialNetwork = new List<SocialNetwork>(),
-                AvatarsUnlocked = new List<AvatarsUnlocked>()
-            };
+            var fakePlayer = CreateFakePlayer(nickname);
 
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
                            .ReturnsAsync(fakePlayer);
 
-            // CONFIGURAMOS EL CALLBACK PARA QUE LIBERE EL SEMÁFORO
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-
-            // ACT
             manager.GetProfileData(nickname);
-
-            // Esperamos hasta 1 segundo a que el callback se ejecute.
-            // Si devuelve false, es que hubo timeout (el código falló o se colgó).
-            bool signaled = _waitHandle.WaitOne(2000);
-
-            // ASSERT
-            Assert.True(signaled, "El callback no fue invocado a tiempo (Timeout).");
+            _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r =>
-                    r.Success == true &&
-                    r.Data.Nickname == "TikiMaster")
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == true && r.Data.Nickname == "TikiMaster")
             ), Times.Once);
         }
 
         [Fact]
         public void GetProfileData_UserNotFound_ShouldReturnPlayerNotFoundCode()
         {
-            // ARRANGE
             string nickname = "GhostUser";
-
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
                            .ReturnsAsync((Player)null);
 
-            // Configurar espera
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-
-            // ACT
             manager.GetProfileData(nickname);
-            bool signaled = _waitHandle.WaitOne(2000);
+            _waitHandle.WaitOne(1000);
 
-            // ASSERT
-            Assert.True(signaled, "Timeout esperando respuesta.");
             _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r =>
-                    r.Success == false &&
-                    r.Code == MessageCode.PlayerNotFound)
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.PlayerNotFound)
             ), Times.Once);
         }
 
         [Fact]
         public void GetProfileData_DatabaseError_ShouldReturnDatabaseErrorCode()
         {
-            // ARRANGE
             string nickname = "ErrorUser";
             var sqlException = FormatterServices.GetUninitializedObject(typeof(SqlException)) as SqlException;
 
@@ -117,18 +89,136 @@ namespace UnoLisServer.Test.ManagerTest
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-
-            // ACT
             manager.GetProfileData(nickname);
-            bool signaled = _waitHandle.WaitOne(2000);
+            _waitHandle.WaitOne(1000);
 
-            // ASSERT
-            Assert.True(signaled, "Timeout esperando reporte de error.");
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.DatabaseError)
+            ), Times.Once);
+        }
+
+        // --- NUEVAS PRUEBAS (5) ---
+
+        [Fact]
+        public void GetProfileData_TimeoutError_ShouldReturnTimeoutCode()
+        {
+            // Objetivo: Probar que el Manager atrapa TimeoutException específicamente
+            string nickname = "SlowUser";
+            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
+                           .ThrowsAsync(new TimeoutException("DB Timeout"));
+
+            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.GetProfileData(nickname);
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.Timeout)
+            ), Times.Once);
+        }
+
+        [Fact]
+        public void GetProfileData_UserHasNoSelectedAvatar_ShouldReturnDefaultLogoUNO()
+        {
+            // Objetivo: Lógica de negocio. Si no hay avatar, debe decir "LogoUNO".
+            string nickname = "NoAvatarUser";
+            var fakePlayer = CreateFakePlayer(nickname);
+            fakePlayer.SelectedAvatar_Avatar_idAvatar = null; // Forzamos null
+
+            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
+                           .ReturnsAsync(fakePlayer);
+
+            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.GetProfileData(nickname);
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Data.SelectedAvatarName == "LogoUNO")
+            ), Times.Once);
+        }
+
+        [Fact]
+        public void GetProfileData_UserHasNoStats_ShouldReturnZeroes()
+        {
+            // Objetivo: Lógica de mapeo. Listas vacías deben resultar en 0, no crashear.
+            string nickname = "NewUser";
+            var fakePlayer = new Player { nickname = nickname, Account = new List<Account>(), PlayerStatistics = new List<PlayerStatistics>(), SocialNetwork = new List<SocialNetwork>(), AvatarsUnlocked = new List<AvatarsUnlocked>() };
+
+            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
+                           .ReturnsAsync(fakePlayer);
+
+            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.GetProfileData(nickname);
+            _waitHandle.WaitOne(1000);
+
             _mockCallback.Verify(cb => cb.ProfileDataReceived(
                 It.Is<ServiceResponse<ProfileData>>(r =>
-                    r.Success == false &&
-                    r.Code == MessageCode.DatabaseError)
+                    r.Success == true &&
+                    r.Data.Wins == 0 &&
+                    r.Data.MatchesPlayed == 0)
             ), Times.Once);
+        }
+
+        [Fact]
+        public void GetProfileData_GeneralException_ShouldReturnFetchFailedCode()
+        {
+            // Objetivo: Catch genérico (Exception ex)
+            string nickname = "CrashUser";
+            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
+                           .ThrowsAsync(new Exception("Unknown error"));
+
+            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.GetProfileData(nickname);
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.ProfileFetchFailed)
+            ), Times.Once);
+        }
+
+        [Fact]
+        public void GetProfileData_NullNickname_ShouldHandleGracefully()
+        {
+            // Objetivo: Probar que el método no truena si le mandan null
+            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(It.IsAny<string>()))
+                           .ReturnsAsync((Player)null);
+
+            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.GetProfileData(null); // Enviamos NULL
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false)
+            ), Times.Once);
+        }
+
+        // Helper para crear datos falsos rápido
+        private Player CreateFakePlayer(string nickname)
+        {
+            return new Player
+            {
+                nickname = nickname,
+                fullName = "Test User",
+                SelectedAvatar_Avatar_idAvatar = 1,
+                Account = new List<Account> { new Account { email = "test@test.com" } },
+                PlayerStatistics = new List<PlayerStatistics> { new PlayerStatistics { wins = 10, globalPoints = 100 } },
+                SocialNetwork = new List<SocialNetwork>(),
+                AvatarsUnlocked = new List<AvatarsUnlocked> { new AvatarsUnlocked { Avatar = new Avatar { avatarName = "CoolAvatar" } } }
+            };
         }
     }
 }
