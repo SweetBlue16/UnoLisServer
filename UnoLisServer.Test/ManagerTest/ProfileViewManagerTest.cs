@@ -34,8 +34,6 @@ namespace UnoLisServer.Test.ManagerTest
             return new ProfileViewManager(_mockRepository.Object, _mockCallback.Object);
         }
 
-        // --- PRUEBAS EXISTENTES (3) ---
-
         [Fact]
         public void GetProfileData_UserExists_ShouldReturnSuccessAndData()
         {
@@ -97,12 +95,9 @@ namespace UnoLisServer.Test.ManagerTest
             ), Times.Once);
         }
 
-        // --- NUEVAS PRUEBAS (5) ---
-
         [Fact]
         public void GetProfileData_TimeoutError_ShouldReturnTimeoutCode()
         {
-            // Objetivo: Probar que el Manager atrapa TimeoutException específicamente
             string nickname = "SlowUser";
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
                            .ThrowsAsync(new TimeoutException("DB Timeout"));
@@ -122,10 +117,9 @@ namespace UnoLisServer.Test.ManagerTest
         [Fact]
         public void GetProfileData_UserHasNoSelectedAvatar_ShouldReturnDefaultLogoUNO()
         {
-            // Objetivo: Lógica de negocio. Si no hay avatar, debe decir "LogoUNO".
             string nickname = "NoAvatarUser";
             var fakePlayer = CreateFakePlayer(nickname);
-            fakePlayer.SelectedAvatar_Avatar_idAvatar = null; // Forzamos null
+            fakePlayer.SelectedAvatar_Avatar_idAvatar = null;
 
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
                            .ReturnsAsync(fakePlayer);
@@ -145,7 +139,6 @@ namespace UnoLisServer.Test.ManagerTest
         [Fact]
         public void GetProfileData_UserHasNoStats_ShouldReturnZeroes()
         {
-            // Objetivo: Lógica de mapeo. Listas vacías deben resultar en 0, no crashear.
             string nickname = "NewUser";
             var fakePlayer = new Player { nickname = nickname, Account = new List<Account>(), PlayerStatistics = new List<PlayerStatistics>(), SocialNetwork = new List<SocialNetwork>(), AvatarsUnlocked = new List<AvatarsUnlocked>() };
 
@@ -170,7 +163,6 @@ namespace UnoLisServer.Test.ManagerTest
         [Fact]
         public void GetProfileData_GeneralException_ShouldReturnFetchFailedCode()
         {
-            // Objetivo: Catch genérico (Exception ex)
             string nickname = "CrashUser";
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
                            .ThrowsAsync(new Exception("Unknown error"));
@@ -190,7 +182,6 @@ namespace UnoLisServer.Test.ManagerTest
         [Fact]
         public void GetProfileData_NullNickname_ShouldHandleGracefully()
         {
-            // Objetivo: Probar que el método no truena si le mandan null
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(It.IsAny<string>()))
                            .ReturnsAsync((Player)null);
 
@@ -198,7 +189,7 @@ namespace UnoLisServer.Test.ManagerTest
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-            manager.GetProfileData(null); // Enviamos NULL
+            manager.GetProfileData(null);
             _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ProfileDataReceived(
@@ -206,7 +197,6 @@ namespace UnoLisServer.Test.ManagerTest
             ), Times.Once);
         }
 
-        // Helper para crear datos falsos rápido
         private Player CreateFakePlayer(string nickname)
         {
             return new Player

@@ -9,15 +9,11 @@ namespace UnoLisServer.Test.Common
     public abstract class UnoLisTestBase : IDisposable
     {
         private readonly TransactionScope _scope;
-
-        // Propiedad protegida para que los hijos la usen
         protected string EntityConnectionString { get; private set; }
 
         protected UnoLisTestBase()
         {
             ConfigureConnection();
-
-            // Iniciamos la transacción automática
             _scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
         }
 
@@ -25,16 +21,13 @@ namespace UnoLisServer.Test.Common
         {
             var sqlBuilder = new SqlConnectionStringBuilder
             {
-                DataSource = ".", // Servidor Local
-                InitialCatalog = "UNOLIS_TEST", // Base de Datos de Pruebas
+                DataSource = ".", 
+                InitialCatalog = "UNOLIS_TEST",
                 IntegratedSecurity = true,
                 MultipleActiveResultSets = true,
                 ApplicationName = "EntityFramework"
             };
 
-            // NOTA: Usamos el comodín 'res://*/' que le dice a EF: 
-            // "Busca los metadatos en cualquier DLL cargada en memoria". 
-            // Esto es ideal para pruebas unitarias.
             var entityBuilder = new EntityConnectionStringBuilder
             {
                 Provider = "System.Data.SqlClient",
