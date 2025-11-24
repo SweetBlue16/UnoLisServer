@@ -35,7 +35,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_UserExists_ShouldReturnSuccessAndData()
+        public void TestGetProfileDataUserExistsShouldReturnSuccessAndData()
         {
             string nickname = "TikiMaster";
             var fakePlayer = CreateFakePlayer(nickname);
@@ -56,7 +56,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_UserNotFound_ShouldReturnPlayerNotFoundCode()
+        public void TestGetProfileDataUserNotFoundShouldReturnPlayerNotFoundCode()
         {
             string nickname = "GhostUser";
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
@@ -75,7 +75,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_DatabaseError_ShouldReturnDatabaseErrorCode()
+        public void TestGetProfileDataDatabaseErrorShouldReturnDatabaseErrorCode()
         {
             string nickname = "ErrorUser";
             var sqlException = FormatterServices.GetUninitializedObject(typeof(SqlException)) as SqlException;
@@ -96,7 +96,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_TimeoutError_ShouldReturnTimeoutCode()
+        public void TestGetProfileDataTimeoutErrorShouldReturnTimeoutCode()
         {
             string nickname = "SlowUser";
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
@@ -115,7 +115,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_UserHasNoSelectedAvatar_ShouldReturnDefaultLogoUNO()
+        public void TestGetProfileDataUserHasNoSelectedAvatarShouldReturnDefaultLogoUNO()
         {
             string nickname = "NoAvatarUser";
             var fakePlayer = CreateFakePlayer(nickname);
@@ -137,7 +137,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_UserHasNoStats_ShouldReturnZeroes()
+        public void TestGetProfileDataUserHasNoStatsShouldReturnZeroes()
         {
             string nickname = "NewUser";
             var fakePlayer = new Player { nickname = nickname, Account = new List<Account>(), PlayerStatistics = new List<PlayerStatistics>(), SocialNetwork = new List<SocialNetwork>(), AvatarsUnlocked = new List<AvatarsUnlocked>() };
@@ -161,7 +161,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_GeneralException_ShouldReturnFetchFailedCode()
+        public void TestGetProfileDataGeneralExceptionShouldReturnFetchFailedCode()
         {
             string nickname = "CrashUser";
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
@@ -180,7 +180,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void GetProfileData_NullNickname_ShouldHandleGracefully()
+        public void TestGetProfileDataNullNicknameShouldHandleGracefully()
         {
             _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(It.IsAny<string>()))
                            .ReturnsAsync((Player)null);

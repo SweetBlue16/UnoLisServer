@@ -36,7 +36,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_ValidData_ShouldCallUpdateAndReturnSuccess()
+        public void TestUpdateProfileDataValidDataShouldCallUpdateAndReturnSuccess()
         {
             var inputData = new ProfileData
             {
@@ -72,7 +72,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_SamePassword_ShouldReturnSamePasswordError()
+        public void TestUpdateProfileDataSamePasswordShouldReturnSamePasswordError()
         {
             string oldPassword = "OldPassword1!";
             string hashedOld = PasswordHelper.HashPassword(oldPassword);
@@ -106,7 +106,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_InvalidEmailFormat_ShouldReturnValidationError()
+        public void TestUpdateProfileDataInvalidEmailFormatShouldReturnValidationError()
         {
             var inputData = new ProfileData { Nickname = "TikiMaster", Email = "bad-email" };
 
@@ -126,7 +126,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_PlayerNotFound_ShouldReturnNotFoundError()
+        public void TestUpdateProfileDataPlayerNotFoundShouldReturnNotFoundError()
         {
             var inputData = new ProfileData { Nickname = "GhostUser", Email = "ghost@test.com" };
 
@@ -147,7 +147,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_DatabaseError_ShouldReturnUpdateFailedError()
+        public void TestUpdateProfileDataDatabaseErrorShouldReturnUpdateFailedError()
         {
             var inputData = new ProfileData { Nickname = "TikiMaster", Email = "ok@test.com" };
             var existingPlayer = CreateFakePlayer("TikiMaster");
@@ -171,7 +171,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void UpdateProfileData_WeakPassword_ShouldReturnWeakPasswordError()
+        public void TestUpdateProfileDataWeakPasswordShouldReturnWeakPasswordError()
         {
             var inputData = new ProfileData { Nickname = "Tiki", Email = "a@a.com", Password = "123" }; 
 

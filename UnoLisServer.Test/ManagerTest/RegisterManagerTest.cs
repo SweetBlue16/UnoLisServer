@@ -45,7 +45,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_ValidData_ShouldProcessSuccessfully()
+        public void TestRegisterValidDataShouldProcessSuccessfully()
         {
             var data = new RegistrationData
             {
@@ -78,7 +78,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_NicknameTaken_ShouldReturnError()
+        public void TestRegisterNicknameTakenShouldReturnError()
         {
             var data = new RegistrationData { Nickname = "TakenNick", Email = "a@a.com", Password = "P", FullName = "F" };
 
@@ -100,7 +100,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_EmailRegistered_ShouldReturnError()
+        public void TestRegisterEmailRegisteredShouldReturnError()
         {
             var data = new RegistrationData { Nickname = "FreeNick", Email = "taken@test.com", Password = "P", FullName = "F" };
 
@@ -121,7 +121,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_RateLimitExceeded_ShouldReturnError()
+        public void TestRegisterRateLimitExceededShouldReturnError()
         {
             var data = new RegistrationData { Nickname = "Spammer", Email = "spam@test.com", Password = "P", FullName = "F" };
 
@@ -144,7 +144,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_InvalidFormat_ShouldReturnValidationError()
+        public void TestRegisterInvalidFormatShouldReturnValidationError()
         {
             var data = new RegistrationData { Nickname = "User", Email = "", Password = "P", FullName = "F" };
 
@@ -164,7 +164,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_DatabaseError_ShouldReturnInternalError()
+        public void TestRegisterDatabaseErrorShouldReturnInternalError()
         {
             var data = new RegistrationData { Nickname = "User", Email = "a@a.com", Password = "P", FullName = "F" };
 
@@ -185,7 +185,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_NullData_ShouldReturnValidationError()
+        public void TestRegisterNullDataShouldReturnValidationError()
         {
             _mockCallback.Setup(cb => cb.RegisterResponse(It.IsAny<ServiceResponse<object>>()))
                          .Callback(() => _waitHandle.Set());
@@ -200,7 +200,7 @@ namespace UnoLisServer.Test.ManagerTest
             ), Times.Once);
         }
         [Fact]
-        public void Register_EmailSendingFails_ShouldReturnInternalError()
+        public void TestRegisterEmailSendingFailsShouldReturnInternalError()
         {
             var data = new RegistrationData { Nickname = "User", Email = "a@a.com", Password = "P", FullName = "F" };
 
@@ -226,7 +226,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_PendingStorageFails_ShouldReturnInternalError()
+        public void TestRegisterPendingStorageFailsShouldReturnInternalError()
         {
             var data = new RegistrationData { Nickname = "User", Email = "a@a.com", Password = "P", FullName = "F" };
 
@@ -251,7 +251,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void Register_CodeGenerationFails_ShouldReturnInternalError()
+        public void TestRegisterCodeGenerationFailsShouldReturnInternalError()
         {
             var data = new RegistrationData { Nickname = "User", Email = "a@a.com", Password = "P", FullName = "F" };
 
