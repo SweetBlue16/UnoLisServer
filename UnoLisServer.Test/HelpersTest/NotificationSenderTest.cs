@@ -17,7 +17,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public async Task SendAccountVerificationEmail_ShouldContainCodeAndCorrectSubject()
+        public async Task TestSendAccountVerificationEmailShouldContainCodeAndCorrectSubject()
         {
             string email = "user@test.com";
             string code = "123456";
@@ -32,7 +32,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public async Task SendMatchInvitationAsync_ShouldContainLobbyCode()
+        public async Task TestSendMatchInvitationAsyncShouldContainLobbyCode()
         {
             string email = "friend@test.com";
             string inviter = "TikiMaster";

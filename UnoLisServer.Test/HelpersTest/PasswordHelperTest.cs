@@ -7,7 +7,7 @@ namespace UnoLisServer.Test.HelpersTest
     public class PasswordHelperTest
     {
         [Fact]
-        public void HashPassword_SameInput_ReturnsSameHash()
+        public void TestHashPasswordSameInputReturnsSameHash()
         {
             string input = "MySecretPass123";
             string hash1 = PasswordHelper.HashPassword(input);
@@ -17,7 +17,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void HashPassword_DifferentInput_ReturnsDifferentHash()
+        public void TestHashPasswordDifferentInputReturnsDifferentHash()
         {
             string hash1 = PasswordHelper.HashPassword("PasswordA");
             string hash2 = PasswordHelper.HashPassword("PasswordB");
@@ -26,7 +26,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void HashPassword_ReturnsCorrectFormat()
+        public void TestHashPasswordReturnsCorrectFormat()
         {
             string hash = PasswordHelper.HashPassword("Test");
 
@@ -37,7 +37,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void VerifyPassword_CorrectPassword_ReturnsTrue()
+        public void TestVerifyPasswordCorrectPasswordReturnsTrue()
         {
             string password = "SecurePassword!";
             string hash = PasswordHelper.HashPassword(password);
@@ -48,7 +48,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void VerifyPassword_WrongPassword_ReturnsFalse()
+        public void TestVerifyPasswordWrongPasswordReturnsFalse()
         {
             string password = "SecurePassword!";
             string hash = PasswordHelper.HashPassword(password);
@@ -59,7 +59,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void VerifyPassword_CaseSensitive_ReturnsFalse()
+        public void TestVerifyPasswordCaseSensitiveReturnsFalse()
         {
             string password = "Password";
             string hash = PasswordHelper.HashPassword(password);
@@ -70,7 +70,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void HashPassword_NullInput_ThrowsArgumentNullException()
+        public void TestHashPasswordNullInputThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => PasswordHelper.HashPassword(null));
         }

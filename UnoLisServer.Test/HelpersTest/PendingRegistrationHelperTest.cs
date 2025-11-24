@@ -15,7 +15,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void StoreAndRetrieve_ValidData_ShouldReturnData()
+        public void TestStoreAndRetrieveValidDataShouldReturnData()
         {
             string email = "store@test.com";
             var data = new PendingRegistration
@@ -34,7 +34,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void GetAndRemove_Twice_ShouldReturnNullSecondTime()
+        public void TestGetAndRemoveTwiceShouldReturnNullSecondTime()
         {
             string email = "once@test.com";
             var data = new PendingRegistration { Nickname = "Once" };
@@ -48,14 +48,14 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void GetAndRemove_NonExistent_ShouldReturnNull()
+        public void TestGetAndRemoveNonExistentShouldReturnNull()
         {
             var result = _helper.GetAndRemovePendingRegistration("ghost@test.com");
             Assert.Null(result);
         }
 
         [Fact]
-        public void Store_OverwriteExisting_ShouldUpdateData()
+        public void TestStoreOverwriteExistingShouldUpdateData()
         {
             string email = "update@test.com";
             var data1 = new PendingRegistration { Nickname = "OldNick" };

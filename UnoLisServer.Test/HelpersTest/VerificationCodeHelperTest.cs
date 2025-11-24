@@ -16,7 +16,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void GenerateAndStoreCode_ReturnsSixDigitCode()
+        public void TestGenerateAndStoreCodeReturnsSixDigitCode()
         {
             string email = "gen@test.com";
             string code = _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -27,7 +27,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void ValidateCode_CorrectCode_ReturnsTrue()
+        public void TestValidateCodeCorrectCodeReturnsTrue()
         {
             string email = "valid@test.com";
             string code = _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -46,7 +46,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void ValidateCode_WrongCode_ReturnsFalse()
+        public void TestValidateCodeWrongCodeReturnsFalse()
         {
             string email = "wrong@test.com";
             _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -63,7 +63,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void ValidateCode_WrongType_ReturnsFalse()
+        public void TestValidateCodeWrongTypeReturnsFalse()
         {
             string email = "type@test.com";
             string code = _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -80,7 +80,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void ValidateCode_ConsumeTrue_RemovesCode()
+        public void TestValidateCodeConsumeTrueRemovesCode()
         {
             string email = "consume@test.com";
             string code = _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -101,7 +101,7 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void ValidateCode_NonExistentIdentifier_ReturnsFalse()
+        public void TestValidateCodeNonExistentIdentifierReturnsFalse()
         {
             var request = new CodeValidationRequest
             {
@@ -114,13 +114,13 @@ namespace UnoLisServer.Test.HelpersTest
         }
 
         [Fact]
-        public void CanRequestCode_FirstTime_ReturnsTrue()
+        public void TestCanRequestCodeFirstTimeReturnsTrue()
         {
             Assert.True(_helper.CanRequestCode("fresh@limit.com", CodeType.EmailVerification));
         }
 
         [Fact]
-        public void CanRequestCode_ImmediatelyAfterGeneration_ReturnsFalse()
+        public void TestCanRequestCodeImmediatelyAfterGenerationReturnsFalse()
         {
             string email = "spam@limit.com";
             _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
