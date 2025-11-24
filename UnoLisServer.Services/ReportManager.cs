@@ -203,24 +203,26 @@ namespace UnoLisServer.Services
             {
                 return;
             }
-
             var callback = SessionManager.GetSession(player.nickname);
             if (callback == null)
             {
                 return;
             }
 
-            var responseInfo = new ResponseInfo<object>(
-                MessageCode.PlayerKicked,
-                false,
-                $"[INFO] '{player.nickname}' ha sido baneado durante {hours} horas por demasiados reportes. Desconectando..."
-            );
-
             try
             {
-                if (callback is IReportCallback reportCallback)
+                var channel = callback as ICommunicationObject;
+                if (channel != null && channel.State == CommunicationState.Opened)
                 {
-                    ResponseHelper.SendResponse(reportCallback.OnPlayerKicked, responseInfo);
+                    var responseInfo = new ResponseInfo<object>(
+                        MessageCode.PlayerKicked,
+                        false,
+                        $"[INFO] '{player.nickname}' ha sido baneado durante {hours} horas por demasiados reportes. Desconectando..."
+                    );
+                }
+                else
+                {
+                    Logger.Log($"[WARNING] No se pudo notificar a '{player.nickname}' sobre la sanción: canal no abierto.");
                 }
             }
             catch (CommunicationException communicationEx)
@@ -251,6 +253,7 @@ namespace UnoLisServer.Services
             {
                 SessionManager.RemoveSession(player.nickname);
             }
+            ResponseHelper.SendResponse(_callback.OnPlayerKicked, _responseInfo);
         }
     }
 }
