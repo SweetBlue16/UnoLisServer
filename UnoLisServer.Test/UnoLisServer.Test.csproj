@@ -107,6 +107,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\UnoLisTestBase.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RepositoriesTest\PlayerRepositoryTest.cs" />
