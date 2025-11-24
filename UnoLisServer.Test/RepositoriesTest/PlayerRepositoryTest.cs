@@ -193,7 +193,6 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task UpdatePlayerProfileAsync_BasicInfo_UpdatesDatabase()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
             {
@@ -203,10 +202,8 @@ namespace UnoLisServer.Test
                 Password = null
             };
 
-            // ACT
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            // ASSERT
             using (var context = new UNOContext(_entityConnectionString))
             {
                 var updatedPlayer = context.Player.Include("Account").FirstOrDefault(p => p.nickname == "TikiTest");
@@ -218,7 +215,6 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task UpdatePlayerProfileAsync_NewPassword_UpdatesHash()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
             string oldHash;
@@ -233,22 +229,18 @@ namespace UnoLisServer.Test
                 Password = "NewStrongPassword1!"
             };
 
-            // ACT
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            // ASSERT
             using (var context = new UNOContext(_entityConnectionString))
             {
                 var updatedAccount = context.Account.First(a => a.Player.nickname == "TikiTest");
                 Assert.NotEqual(oldHash, updatedAccount.password);
-                // Opcional: Verificar con PasswordHelper si coincide
             }
         }
 
         [Fact]
         public async Task UpdatePlayerProfileAsync_UpdateExistingSocialNetwork_ChangesLink()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
             {
@@ -258,10 +250,8 @@ namespace UnoLisServer.Test
                 FacebookUrl = "facebook.com/newlink"
             };
 
-            // ACT
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            // ASSERT
             using (var context = new UNOContext(_entityConnectionString))
             {
                 var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook");
@@ -272,7 +262,6 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task UpdatePlayerProfileAsync_AddNewSocialNetwork_InsertsRecord()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
             {
@@ -282,10 +271,8 @@ namespace UnoLisServer.Test
                 InstagramUrl = "instagram.com/tiki_insta"
             };
 
-            // ACT
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            // ASSERT
             using (var context = new UNOContext(_entityConnectionString))
             {
                 var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Instagram");
@@ -297,7 +284,6 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task UpdatePlayerProfileAsync_EmptySocialUrl_DoesNotDeleteOrError()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
             {
@@ -307,10 +293,8 @@ namespace UnoLisServer.Test
                 FacebookUrl = ""
             };
 
-            // ACT
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            // ASSERT
             using (var context = new UNOContext(_entityConnectionString))
             {
                 var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook");
@@ -322,18 +306,15 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task UpdatePlayerProfileAsync_NonExistentUser_ThrowsException()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData { Nickname = "GhostUser" };
 
-            // ACT & ASSERT
             await Assert.ThrowsAsync<Exception>(() => repository.UpdatePlayerProfileAsync(updateData));
         }
 
         [Fact]
         public async Task UpdatePlayerProfileAsync_DuplicateEmail_ThrowsDbUpdateException()
         {
-            // ARRANGE
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
             var updateData = new Contracts.DTOs.ProfileData
@@ -343,10 +324,61 @@ namespace UnoLisServer.Test
                 Email = "newbie@test.com"
             };
 
-            // ACT & ASSERT
             await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
                 () => repository.UpdatePlayerProfileAsync(updateData)
             );
+        }
+
+        [Fact]
+        public async Task UpdatePlayerProfileAsync_FullNameTooLong_ThrowsWrappedValidationException()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            string longName = new string('A', 300);
+
+            var updateData = new Contracts.DTOs.ProfileData
+            {
+                Nickname = "TikiTest",
+                FullName = longName,
+                Email = "tiki@test.com"
+            };
+
+            var exception = await Assert.ThrowsAsync<Exception>(
+                () => repository.UpdatePlayerProfileAsync(updateData)
+            );
+
+            Assert.Contains("Error de validación en base de datos", exception.Message);
+            Assert.IsType<System.Data.Entity.Validation.DbEntityValidationException>(exception.InnerException);
+        }
+
+        [Fact]
+        public async Task UpdatePlayerProfileAsync_SqlConstraintViolation_RollsBackAllChanges()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+
+            var updateData = new Contracts.DTOs.ProfileData
+            {
+                Nickname = "TikiTest",
+                FullName = "NAME SHOULD NOT CHANGE",
+                Email = "newbie@test.com"
+            };
+
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
+                () => repository.UpdatePlayerProfileAsync(updateData)
+            );
+
+            using (var context = new UNOContext(_entityConnectionString))
+            {
+                var tiki = context.Player.FirstOrDefault(p => p.nickname == "TikiTest");
+
+                if (tiki != null)
+                {
+                    Assert.Equal("Tiki Tester", tiki.fullName);
+                }
+                else
+                {
+                    Assert.Null(tiki);
+                }
+            }
         }
     }
 }

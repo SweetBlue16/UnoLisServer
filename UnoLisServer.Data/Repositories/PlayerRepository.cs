@@ -8,6 +8,8 @@ using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Data;
 using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Common.Helpers;
+using System.Data.Entity.Validation;
+using System.Data.Entity.Infrastructure;
 
 namespace UnoLisServer.Data.Repositories
 {
@@ -48,48 +50,51 @@ namespace UnoLisServer.Data.Repositories
             {
                 try
                 {
-                    // 1. Obtener Entidades (Con Tracking activado para poder editar)
                     var player = await context.Player
                         .Include(p => p.Account)
                         .Include(p => p.SocialNetwork)
                         .FirstOrDefaultAsync(p => p.nickname == data.Nickname);
 
-                    if (player == null) throw new Exception("PlayerNotFound"); // Manejaremos esto en el Manager
+                    if (player == null) throw new Exception("PlayerNotFound");
 
                     var account = player.Account.FirstOrDefault();
                     if (account == null) throw new Exception("AccountNotFound");
 
-                    // 2. Actualizar Datos Básicos
                     player.fullName = data.FullName;
                     account.email = data.Email;
 
-                    // 3. Actualizar Password (si aplica)
                     if (!string.IsNullOrWhiteSpace(data.Password))
                     {
                         account.password = PasswordHelper.HashPassword(data.Password);
                     }
 
-                    // 4. Actualizar Redes Sociales (Lógica encapsulada)
                     UpdateOrAddNetwork(context, player, "Facebook", data.FacebookUrl);
                     UpdateOrAddNetwork(context, player, "Instagram", data.InstagramUrl);
                     UpdateOrAddNetwork(context, player, "TikTok", data.TikTokUrl);
 
-                    // 5. Guardar y Commit
                     await context.SaveChangesAsync();
                     transaction.Commit();
                 }
-                catch
+                catch (DbEntityValidationException entityEx)
                 {
                     transaction.Rollback();
-                    throw; // Re-lanzamos para que el Manager decida qué error mostrar
+                    throw new Exception($"Error de validación en base de datos: {entityEx.Message}", entityEx);
+                }
+                catch (DbUpdateException)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
         }
 
-        // Helper privado para redes sociales (ahora vive en el Repo, donde pertenece)
         private void UpdateOrAddNetwork(UNOContext context, Player player, string type, string url)
         {
-            // Si la URL viene vacía, no hacemos nada (o podríamos borrarla si fuera la regla)
             if (string.IsNullOrWhiteSpace(url)) return;
 
             var existing = player.SocialNetwork.FirstOrDefault(sn => sn.tipoRedSocial == type);
@@ -97,7 +102,6 @@ namespace UnoLisServer.Data.Repositories
             if (existing != null)
             {
                 existing.linkRedSocial = url;
-                // Al estar conectado al contexto, EF detecta el cambio automáticamente
             }
             else
             {
@@ -106,7 +110,6 @@ namespace UnoLisServer.Data.Repositories
                     tipoRedSocial = type,
                     linkRedSocial = url,
                     Player_idPlayer = player.idPlayer
-                    // No necesitamos asignar 'Player' objeto, con el ID basta o añadiéndolo a la lista
                 };
                 context.SocialNetwork.Add(newNetwork);
             }

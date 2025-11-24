@@ -9,12 +9,9 @@ namespace UnoLisServer.Test.ValidatorsTest
 {
     public class ProfileEditValidatorTest
     {
-        // --- PRUEBAS DE DATOS VÁLIDOS (HAPPY PATH) ---
-
         [Fact]
         public void ValidateFormats_AllValidData_ShouldNotThrowException()
         {
-            // ARRANGE
             var data = new ProfileData
             {
                 Nickname = "ValidUser",
@@ -25,12 +22,8 @@ namespace UnoLisServer.Test.ValidatorsTest
                 TikTokUrl = "http://tiktok.com/@user"
             };
 
-            // ACT & ASSERT
-            // Si no lanza excepción, la prueba pasa
             ProfileEditValidator.ValidateProfileFormats(data);
         }
-
-        // --- PRUEBAS DE EMAIL (Usando Theory para múltiples casos) ---
 
         [Theory]
         [InlineData(null)]
@@ -57,14 +50,12 @@ namespace UnoLisServer.Test.ValidatorsTest
             Assert.Equal(MessageCode.InvalidEmailFormat, ex.ErrorCode);
         }
 
-        // --- PRUEBAS DE CONTRASEÑA (Mina de pruebas) ---
-
         [Theory]
-        [InlineData("short")]           // Muy corta
-        [InlineData("onlylowercase1!")] // Falta mayúscula
-        [InlineData("ONLYUPPERCASE1!")] // Falta minúscula
-        [InlineData("NoSpecialChar1")]  // Falta caracter especial
-        [InlineData("NoNumbers!")]      // Falta número
+        [InlineData("short")]           
+        [InlineData("onlylowercase1!")] 
+        [InlineData("ONLYUPPERCASE1!")] 
+        [InlineData("NoSpecialChar1")]  
+        [InlineData("NoNumbers!")] 
         public void ValidateFormats_WeakPassword_ShouldThrowWeakPassword(string password)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", Password = password };
@@ -73,11 +64,9 @@ namespace UnoLisServer.Test.ValidatorsTest
             Assert.Equal(MessageCode.WeakPassword, ex.ErrorCode);
         }
 
-        // --- PRUEBAS DE REDES SOCIALES ---
-
         [Theory]
-        [InlineData("ftp://facebook.com")] // Protocolo incorrecto
-        [InlineData("www.facebook.com")]   // Falta http/https
+        [InlineData("ftp://facebook.com")] 
+        [InlineData("www.facebook.com")]
         public void ValidateFormats_InvalidProtocolUrl_ShouldThrowInvalidUrl(string url)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", FacebookUrl = url };
@@ -87,8 +76,8 @@ namespace UnoLisServer.Test.ValidatorsTest
         }
 
         [Theory]
-        [InlineData("https://google.com")]  // Dominio incorrecto para Facebook
-        [InlineData("https://twitter.com")] // Dominio incorrecto
+        [InlineData("https://google.com")] 
+        [InlineData("https://twitter.com")] 
         public void ValidateFormats_WrongDomainFacebook_ShouldThrowInvalidUrl(string url)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", FacebookUrl = url };
