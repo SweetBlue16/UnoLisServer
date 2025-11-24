@@ -15,5 +15,8 @@ namespace UnoLisServer.Contracts.Interfaces
     {
         [OperationContract(IsOneWay = true)]
         void ReportPlayerResponse(ServiceResponse<object> response);
+
+        [OperationContract(IsOneWay = true)]
+        void OnPlayerKicked(ServiceResponse<object> response);
     }
 }

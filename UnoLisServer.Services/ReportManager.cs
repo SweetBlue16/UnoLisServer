@@ -188,11 +188,69 @@ namespace UnoLisServer.Services
             _context.Sanction.Add(sanction);
             _context.SaveChanges();
 
+            NotifyAndKickPlayer(player, hours);
+
             return new ResponseInfo<object>(
                 MessageCode.SanctionApplied,
                 true,
                 $"[INFO] Sanción aplicada a {player.nickname}. Fin: {endDate}"
             );
+        }
+
+        private void NotifyAndKickPlayer(Player player, int hours)
+        {
+            if (!SessionManager.IsOnline(player.nickname))
+            {
+                return;
+            }
+
+            var callback = SessionManager.GetSession(player.nickname);
+            if (callback == null)
+            {
+                return;
+            }
+
+            var responseInfo = new ResponseInfo<object>(
+                MessageCode.PlayerKicked,
+                false,
+                $"[INFO] '{player.nickname}' ha sido baneado durante {hours} horas por demasiados reportes. Desconectando..."
+            );
+
+            try
+            {
+                if (callback is IReportCallback reportCallback)
+                {
+                    ResponseHelper.SendResponse(reportCallback.OnPlayerKicked, responseInfo);
+                }
+            }
+            catch (CommunicationException communicationEx)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.ConnectionFailed,
+                    false,
+                    $"[ERROR] Comunicación al desconectar al jugador. Error: {communicationEx.Message}"
+                );
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    $"[ERROR] Tiempo de espera agotado al desconectar al jugador. Error: {timeoutEx.Message}"
+                );
+            }
+            catch (Exception ex)
+            {
+                _responseInfo = new ResponseInfo<object>(
+                    MessageCode.RegistrationInternalError,
+                    false,
+                    $"[ERROR] Error general al desconectar al jugador: {ex.Message}"
+                );
+            }
+            finally
+            {
+                SessionManager.RemoveSession(player.nickname);
+            }
         }
     }
 }
