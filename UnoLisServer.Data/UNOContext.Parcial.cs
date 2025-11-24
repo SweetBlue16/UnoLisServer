@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Data.Entity;
 
 namespace UnoLisServer.Data
@@ -12,6 +7,11 @@ namespace UnoLisServer.Data
     {
         public UNOContext(string nameOrConnectionString)
             : base(nameOrConnectionString)
+        {
+        }
+
+        public UNOContext(DbConnection existingConnection, bool contextOwnsConnection)
+            : base(existingConnection, contextOwnsConnection)
         {
         }
     }

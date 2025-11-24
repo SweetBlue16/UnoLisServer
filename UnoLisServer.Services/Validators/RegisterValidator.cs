@@ -16,8 +16,6 @@ namespace UnoLisServer.Services.Validators
             {
                 throw new ValidationException(MessageCode.EmptyFields, "Todos los campos son obligatorios.");
             }
-
-            // Aquí podrías agregar ValidateEmail(data.Email) si quieres reusar la lógica de ProfileEdit
         }
     }
 }

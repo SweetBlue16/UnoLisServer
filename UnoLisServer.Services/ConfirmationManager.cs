@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Data.SqlClient;
-using System.Linq;
 using System.ServiceModel;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.Interfaces;
-using UnoLisServer.Data;
+using UnoLisServer.Data.Repositories;
+using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
@@ -15,178 +16,121 @@ namespace UnoLisServer.Services
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ConfirmationManager : IConfirmationManager
     {
-        private readonly UNOContext _context;
         private readonly IConfirmationCallback _callback;
-        private ResponseInfo<object> _responseInfo;
+        private readonly IPlayerRepository _playerRepository;
 
         private readonly INotificationSender _notificationSender;
         private readonly IVerificationCodeHelper _verificationCodeHelper;
+        private readonly IPendingRegistrationHelper _pendingRegistrationHelper;
 
-        public ConfirmationManager()
+        public ConfirmationManager() : this(new PlayerRepository())
         {
-            _context = new UNOContext();
-            _callback = OperationContext.Current.GetCallbackChannel<IConfirmationCallback>();
-
-            _notificationSender = NotificationSender.Instance;
-            _verificationCodeHelper = VerificationCodeHelper.Instance;
         }
 
-        public void ConfirmCode(string email, string code)
+        public ConfirmationManager(IPlayerRepository repository,
+                                   IConfirmationCallback callback = null,
+                                   INotificationSender notificationSender = null,
+                                   IVerificationCodeHelper verificationHelper = null,
+                                   IPendingRegistrationHelper pendingHelper = null)
         {
-            Logger.Log($"[INFO] Intentando confirmar código para '{email}'...");
+            _playerRepository = repository;
+            _callback = callback ?? OperationContext.Current?.GetCallbackChannel<IConfirmationCallback>();
+
+            _notificationSender = notificationSender ?? NotificationSender.Instance;
+            _verificationCodeHelper = verificationHelper ?? VerificationCodeHelper.Instance;
+            _pendingRegistrationHelper = pendingHelper ?? PendingRegistrationHelper.Instance;
+        }
+
+        public async void ConfirmCode(string email, string code)
+        {
+            Logger.Log($"[INFO] Confirmando código para '{email}'...");
+            ResponseInfo<object> responseInfo;
+
             try
             {
-                var pendingData = ConfirmationValidator.ValidateConfirmation(email, code);
-                CreateAccountFromPending(email, pendingData);
+                ConfirmationValidator.ValidateInput(email, code);
 
-                _responseInfo = new ResponseInfo<object>(
+                var request = new CodeValidationRequest
+                {
+                    Identifier = email,
+                    Code = code,
+                    CodeType = (int)CodeType.EmailVerification,
+                    Consume = true
+                };
+
+                if (!_verificationCodeHelper.ValidateCode(request))
+                {
+                    throw new ValidationException(MessageCode.VerificationCodeInvalid, "Código inválido o expirado.");
+                }
+
+                var pendingData = _pendingRegistrationHelper.GetAndRemovePendingRegistration(email);
+                if (pendingData == null)
+                {
+                    throw new ValidationException(MessageCode.RegistrationDataLost, "Datos de registro no encontrados. Regístrese de nuevo.");
+                }
+
+                await _playerRepository.CreatePlayerFromPendingAsync(email, pendingData);
+
+                responseInfo = new ResponseInfo<object>(
                     MessageCode.RegistrationSuccessful,
                     true,
-                    $"[INFO] Cuenta creada exitosamente para '{email}'."
+                    $"[INFO] Cuenta creada para '{email}'."
                 );
             }
-            catch (ValidationException validationEx)
+            catch (ValidationException valEx)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    validationEx.ErrorCode,
-                    false,
-                    $"[WARNING] Validación fallida para '{email}'. Error: {validationEx.Message}"
-                );
-            }
-            catch (SqlException dbEx)
-            {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.DatabaseError,
-                    false,
-                    $"[FATAL] Error de base de datos al confirmar código para '{email}'. Error: {dbEx.Message}"
-                );
-            }
-            catch (CommunicationException communicationEx)
-            {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación al confirmar código para '{email}'. Error: {communicationEx.Message}"
-                );
-            }
-            catch (TimeoutException timeoutEx)
-            {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.Timeout,
-                    false,
-                    $"[ERROR] Tiempo de espera al confirmar código para '{email}'. Error: {timeoutEx.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(valEx.ErrorCode, false, valEx.Message);
+                Logger.Warn($"[CONFIRM] Error validación: {valEx.Message}");
             }
             catch (Exception ex)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConfirmationInternalError,
-                    false,
-                    $"[FATAL] Error inesperado al confirmar código para '{email}'. Error: {ex.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(MessageCode.ConfirmationInternalError, false, "Error al confirmar cuenta.");
+                Logger.Error($"[ERROR] Confirmación fallida para {email}", ex);
             }
-            ResponseHelper.SendResponse(_callback.ConfirmationResponse, _responseInfo);
+
+            if (_callback != null)
+            {
+                ResponseHelper.SendResponse(_callback.ConfirmationResponse, responseInfo);
+            }
         }
 
-        public void ResendConfirmationCode(string email)
+        public async void ResendConfirmationCode(string email)
         {
-            Logger.Log($"[INFO] Solicitud de reenvío de código para {email}...");
+            Logger.Log($"[INFO] Reenviando código a '{email}'...");
+            ResponseInfo<object> responseInfo;
+
             try
             {
-                ConfirmationValidator.ValidateResend(email);
+                ConfirmationValidator.ValidateResendInput(email);
+
+                if (!_verificationCodeHelper.CanRequestCode(email, CodeType.EmailVerification))
+                {
+                    throw new ValidationException(MessageCode.RateLimitExceeded, "Espere antes de pedir otro código.");
+                }
 
                 var newCode = _verificationCodeHelper.GenerateAndStoreCode(email, CodeType.EmailVerification);
-                _ = _notificationSender.SendAccountVerificationEmailAsync(email, newCode);
 
-                _responseInfo = new ResponseInfo<object>(
+                await _notificationSender.SendAccountVerificationEmailAsync(email, newCode);
+
+                responseInfo = new ResponseInfo<object>(
                     MessageCode.VerificationCodeResent,
                     true,
-                    $"[INFO] Código de verificación reenviado a '{email}'."
+                    "Código reenviado."
                 );
             }
-            catch (ValidationException validationEx)
+            catch (ValidationException valEx)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    validationEx.ErrorCode,
-                    false,
-                    $"[WARNING] Validación fallida para reenvío de código a '{email}'. Error: {validationEx.Message}"
-                );
-            }
-            catch (CommunicationException communicationEx)
-            {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación al reenviar código a '{email}'. Error: {communicationEx.Message}"
-                );
-            }
-            catch (TimeoutException timeoutEx)
-            {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.Timeout,
-                    false,
-                    $"[ERROR] Tiempo de espera al reenviar código a '{email}'. Error: {timeoutEx.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(valEx.ErrorCode, false, valEx.Message);
             }
             catch (Exception ex)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConfirmationInternalError,
-                    false,
-                    $"[FATAL] Error inesperado al reenviar código a '{email}'. Error: {ex.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(MessageCode.ConfirmationInternalError, false, "Error al reenviar código.");
+                Logger.Error($"[ERROR] Reenvío fallido para {email}", ex);
             }
-            ResponseHelper.SendResponse(_callback.ResendCodeResponse, _responseInfo);
-        }
 
-        public void CreateAccountFromPending(string email, PendingRegistration pendingData)
-        {
-            using (var transaction = _context.Database.BeginTransaction())
+            if (_callback != null)
             {
-                try
-                {
-                    var newPlayer = new Player
-                    {
-                        nickname = pendingData.Nickname,
-                        fullName = pendingData.FullName
-                    };
-                    _context.Player.Add(newPlayer);
-                    _context.SaveChanges();
-
-                    var newAccount = new Account
-                    {
-                        email = email,
-                        password = pendingData.HashedPassword,
-                        Player = newPlayer
-                    };
-                    _context.Account.Add(newAccount);
-
-                    var commonAvatarsIds = new int[] { 1, 10, 11 };
-                    var now = DateTime.UtcNow;
-
-                    foreach (var avatarId in commonAvatarsIds)
-                    {
-                        var unlockedAvatar = new AvatarsUnlocked
-                        {
-                            Player = newPlayer,
-                            Avatar_idAvatar = avatarId,
-                            unlockedDate = now
-                        };
-                        _context.AvatarsUnlocked.Add(unlockedAvatar);
-                    }
-                    _context.SaveChanges();
-
-                    newPlayer.SelectedAvatar_Player_idPlayer = newPlayer.idPlayer;
-                    newPlayer.SelectedAvatar_Avatar_idAvatar = 1;
-
-                    _context.SaveChanges();
-                    transaction.Commit();
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
+                ResponseHelper.SendResponse(_callback.ResendCodeResponse, responseInfo);
             }
         }
     }

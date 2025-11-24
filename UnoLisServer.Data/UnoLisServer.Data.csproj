@@ -67,6 +67,7 @@
     <Compile Include="AvatarsUnlocked.cs">
       <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="Factories\PlayerFactory.cs" />
     <Compile Include="FriendList.cs">
       <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>

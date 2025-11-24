@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
-using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
@@ -10,7 +7,8 @@ using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
-using UnoLisServer.Data;
+using UnoLisServer.Data.Repositories;
+using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
@@ -19,154 +17,75 @@ namespace UnoLisServer.Services
     public class AvatarManager : IAvatarManager
     {
         private readonly IAvatarCallback _callback;
+        private readonly IPlayerRepository _playerRepository;
 
-        public AvatarManager()
+        public AvatarManager() : this(new PlayerRepository())
         {
-            _callback = OperationContext.Current.GetCallbackChannel<IAvatarCallback>();
         }
 
-        public void GetPlayerAvatars(string nickname)
+        public AvatarManager(IPlayerRepository repository, IAvatarCallback callback = null)
+        {
+            _playerRepository = repository;
+            _callback = callback ?? OperationContext.Current?.GetCallbackChannel<IAvatarCallback>();
+        }
+
+        public async void GetPlayerAvatars(string nickname)
         {
             ResponseInfo<List<PlayerAvatar>> responseInfo;
             try
             {
-                using (var context = new UNOContext())
+                var avatars = await _playerRepository.GetPlayerAvatarsAsync(nickname);
+
+                if (avatars == null)
                 {
-                    var player = AvatarValidator.ValidatePlayerExists(context, nickname);
-                    var unlockedIds = player.AvatarsUnlocked.Select(au => au.Avatar_idAvatar).ToHashSet();
-                    int? selectedAvatarId = player.SelectedAvatar_Avatar_idAvatar;
-
-                    var allAvatars = context.Avatar.Select(avatar => new PlayerAvatar
-                    {
-                        AvatarId = avatar.idAvatar,
-                        AvatarName = avatar.avatarName,
-                        Description = avatar.avatarDescription,
-                        Rarity = avatar.avatarRarity,
-                        IsUnlocked = unlockedIds.Contains(avatar.idAvatar),
-                        IsSelected = (avatar.idAvatar == selectedAvatarId)
-                    }).ToList();
-
-                    responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                        MessageCode.Success,
-                        true,
-                        $"[INFO] Avatares obtenidos para el jugador '{nickname}'.",
-                        allAvatars
-                    );
+                    throw new ValidationException(MessageCode.PlayerNotFound, "Jugador no encontrado.");
                 }
-            }
-            catch (ValidationException validationEx)
-            {
+
                 responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                    validationEx.ErrorCode,
-                    false,
-                    $"[WARNING] Validación durante la obtención de avatares para '{nickname}': {validationEx.Message}"
-                );
+                    MessageCode.Success, true, "Avatares obtenidos.", avatars);
             }
-            catch (CommunicationException communicationEx)
+            catch (ValidationException valEx)
             {
-                responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación con '{nickname}'. Error: {communicationEx.Message}"
-                );
-            }
-            catch (TimeoutException timeoutEx)
-            {
-                responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                    MessageCode.Timeout,
-                    false,
-                    $"[ERROR] Tiempo de espera agotado para '{nickname}'. Error: {timeoutEx.Message}"
-                );
-            }
-            catch (SqlException dbEx)
-            {
-                responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                    MessageCode.DatabaseError,
-                    false,
-                    $"[ERROR] Base de datos durante la obtención de avatares para '{nickname}': {dbEx.Message}"
-                );
+                responseInfo = new ResponseInfo<List<PlayerAvatar>>(valEx.ErrorCode, false, valEx.Message);
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<List<PlayerAvatar>>(
-                    MessageCode.LoginInternalError,
-                    false,
-                    $"[ERROR] Excepción no controlada durante la obtención de avatares para '{nickname}': {ex.Message}"
-                );
+                responseInfo = new ResponseInfo<List<PlayerAvatar>>(MessageCode.DatabaseError, false, "Error interno.");
+                Logger.Error($"[AVATAR] Error Get: {nickname}", ex);
             }
-            ResponseHelper.SendResponse(_callback.AvatarsDataReceived, responseInfo);
+
+            if (_callback != null)
+                ResponseHelper.SendResponse(_callback.AvatarsDataReceived, responseInfo);
         }
 
-        public void SetPlayerAvatar(string nickname, int newAvatarId)
+        public async void SetPlayerAvatar(string nickname, int newAvatarId)
         {
             ResponseInfo<object> responseInfo;
             try
             {
-                using (var context = new UNOContext())
-                {
-                    var player = AvatarValidator.ValidatePlayerExists(context, nickname);
-                    AvatarValidator.ValidateAvatarIsUnlocked(player, newAvatarId);
+                var unlockedAvatars = await _playerRepository.GetPlayerAvatarsAsync(nickname);
 
-                    player.SelectedAvatar_Player_idPlayer = player.idPlayer;
-                    player.SelectedAvatar_Avatar_idAvatar = newAvatarId;
-                    context.SaveChanges();
+                if (unlockedAvatars == null)
+                    throw new ValidationException(MessageCode.PlayerNotFound, "Jugador no encontrado.");
 
-                    responseInfo = new ResponseInfo<object>(
-                        MessageCode.AvatarChanged,
-                        true,
-                        $"[INFO] Avatar actualizado para el jugador '{nickname}'."
-                    );
-                }
+                AvatarValidator.ValidateSelection(newAvatarId, unlockedAvatars);
+
+                await _playerRepository.UpdateSelectedAvatarAsync(nickname, newAvatarId);
+
+                responseInfo = new ResponseInfo<object>(MessageCode.AvatarChanged, true, "Avatar actualizado.");
             }
-            catch (ValidationException validationEx)
+            catch (ValidationException valEx)
             {
-                responseInfo = new ResponseInfo<object>(
-                    validationEx.ErrorCode,
-                    false,
-                    $"[WARNING] Validación fallida para actualización del avatar de '{nickname}'. Error: {validationEx.Message}"
-                );
-            }
-            catch (DbUpdateException dbUpdateEx)
-            {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.DatabaseError,
-                    false,
-                    $"[FATAL] Error de base de datos al actualizar el avatar de '{nickname}'. Error: {dbUpdateEx.Message}"
-                );
-            }
-            catch (SqlException sqlEx)
-            {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.DatabaseError,
-                    false,
-                    $"[FATAL] Error SQL al actualizar el avatar de '{nickname}'. Error: {sqlEx.Message}"
-                );
-            }
-            catch (CommunicationException communicationEx)
-            {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación al actualizar el avatar de '{nickname}'. Error: {communicationEx.Message}"
-                );
-            }
-            catch (TimeoutException timeoutEx)
-            {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.Timeout,
-                    false,
-                    $"[ERROR] Tiempo de espera al actualizar el avatar de '{nickname}'. Error: {timeoutEx.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(valEx.ErrorCode, false, valEx.Message);
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.ProfileUpdateFailed,
-                    false,
-                    $"[FATAL] Error inesperado al actualizar el avatar de '{nickname}'. Error: {ex.Message}"
-                );
+                responseInfo = new ResponseInfo<object>(MessageCode.ProfileUpdateFailed, false, "Error al cambiar avatar.");
+                Logger.Error($"[AVATAR] Error Set: {nickname} -> {newAvatarId}", ex);
             }
-            ResponseHelper.SendResponse(_callback.AvatarUpdateResponse, responseInfo);
+
+            if (_callback != null)
+                ResponseHelper.SendResponse(_callback.AvatarUpdateResponse, responseInfo);
         }
     }
 }

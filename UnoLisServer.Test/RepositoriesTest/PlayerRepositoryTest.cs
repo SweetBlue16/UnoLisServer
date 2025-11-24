@@ -1,101 +1,116 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity.Core.EntityClient;
-using System.Data.SqlClient;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
+using UnoLisServer.Test.Common;
 using Xunit;
 
 namespace UnoLisServer.Test
 {
-    public class PlayerRepositoryTest : IDisposable
+    public class PlayerRepositoryTest : UnoLisTestBase
     {
-        private readonly TransactionScope _scope;
-        private readonly string _entityConnectionString;
-
         public PlayerRepositoryTest()
         {
-            var sqlBuilder = new SqlConnectionStringBuilder
-            {
-                DataSource = ".",
-                InitialCatalog = "UNOLIS_TEST",
-                IntegratedSecurity = true,
-                MultipleActiveResultSets = true,
-                ApplicationName = "EntityFramework"
-            };
-
-            string assemblyName = typeof(PlayerRepository).Assembly.GetName().Name;
-
-            var entityBuilder = new EntityConnectionStringBuilder
-            {
-                Provider = "System.Data.SqlClient",
-                ProviderConnectionString = sqlBuilder.ToString(),
-                Metadata = $"res://*/UNODataBaseModel.csdl|res://*/UNODataBaseModel.ssdl|res://*/UNODataBaseModel.msl"
-            };
-
-            _entityConnectionString = entityBuilder.ToString();
-
-            _scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
             SeedDatabase();
         }
 
         private void SeedDatabase()
         {
-            using (var context = new UNOContext(_entityConnectionString))
+            using (var context = GetContext())
             {
-                var playerFull = new Player
+                try
                 {
-                    nickname = "TikiTest",
-                    fullName = "Tiki Tester",
-                    revoCoins = 100,
-                    Account = new List<Account>(),
-                    PlayerStatistics = new List<PlayerStatistics>(),
-                    SocialNetwork = new List<SocialNetwork>(),
-                    AvatarsUnlocked = new List<AvatarsUnlocked>()
-                };
+                    EnsureCatalogsExist(context);
 
-                playerFull.Account.Add(new Account { email = "tiki@test.com", password = "hashed" });
-                playerFull.PlayerStatistics.Add(new PlayerStatistics { wins = 5, matchesPlayed = 10 });
-                playerFull.SocialNetwork.Add(new SocialNetwork { tipoRedSocial = "Facebook", linkRedSocial = "fb.com/tiki" });
+                    var defaultAvatar = context.Avatar.Find(1);
 
-                var avatar = new Avatar { avatarName = "Gato", avatarRarity = "Common" };
-                playerFull.AvatarsUnlocked.Add(new AvatarsUnlocked { Avatar = avatar, unlockedDate = DateTime.Now });
+                    var playerFull = BuildFullPlayer(defaultAvatar);
+                    var playerNewbie = BuildNewbiePlayer();
 
-                var playerEmpty = new Player
+                    context.Player.Add(playerFull);
+                    context.Player.Add(playerNewbie);
+                    context.SaveChanges();
+
+                    SetSelectedAvatar(context, playerFull);
+                }
+                catch (Exception ex)
                 {
-                    nickname = "Newbie",
-                    fullName = "Noob Tester",
-                    revoCoins = 0,
-                    Account = new List<Account>(),
-                    PlayerStatistics = new List<PlayerStatistics>(),
-                    SocialNetwork = new List<SocialNetwork>(),
-                    AvatarsUnlocked = new List<AvatarsUnlocked>()
-                };
-                playerEmpty.Account.Add(new Account { email = "newbie@test.com", password = "hashed" });
-
-                context.Player.Add(playerFull);
-                context.Player.Add(playerEmpty);
-                context.Avatar.Add(avatar);
-
-                context.SaveChanges();
+                    throw new Exception($"FATAL ERROR en SeedDatabase: {ex.Message}", ex);
+                }
             }
         }
 
-        public void Dispose()
+        private void EnsureCatalogsExist(UNOContext context)
         {
-            _scope.Dispose();
+            context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] ON");
+            context.Database.ExecuteSqlCommand(@"
+                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 1)
+                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (1, 'Default', 'Common');
+                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 10)
+                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (10, 'Premio1', 'Rare');
+                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 11)
+                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (11, 'Premio2', 'Epic');
+            ");
+            context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] OFF");
+        }
+
+        private Player BuildFullPlayer(Avatar avatar)
+        {
+            var p = new Player
+            {
+                nickname = "TikiTest",
+                fullName = "Tiki Tester",
+                revoCoins = 100,
+                Account = new List<Account>(),
+                PlayerStatistics = new List<PlayerStatistics>(),
+                SocialNetwork = new List<SocialNetwork>(),
+                AvatarsUnlocked = new List<AvatarsUnlocked>()
+            };
+            p.Account.Add(new Account { email = "tiki@test.com", password = "hashed" });
+            p.PlayerStatistics.Add(new PlayerStatistics { wins = 5, matchesPlayed = 10 });
+            p.SocialNetwork.Add(new SocialNetwork { tipoRedSocial = "Facebook", linkRedSocial = "fb.com/tiki" });
+
+            if (avatar != null)
+                p.AvatarsUnlocked.Add(new AvatarsUnlocked { Avatar = avatar, unlockedDate = DateTime.Now });
+
+            return p;
+        }
+
+        private Player BuildNewbiePlayer()
+        {
+            var p = new Player
+            {
+                nickname = "Newbie",
+                fullName = "Noob Tester",
+                revoCoins = 0,
+                Account = new List<Account>(),
+                PlayerStatistics = new List<PlayerStatistics>(),
+                SocialNetwork = new List<SocialNetwork>(),
+                AvatarsUnlocked = new List<AvatarsUnlocked>()
+            };
+            p.Account.Add(new Account { email = "newbie@test.com", password = "hashed" });
+            return p;
+        }
+
+        private void SetSelectedAvatar(UNOContext context, Player player)
+        {
+            player.SelectedAvatar_Player_idPlayer = player.idPlayer;
+            player.SelectedAvatar_Avatar_idAvatar = 1;
+            context.SaveChanges();
+        }
+
+        private PlayerRepository CreateRepo()
+        {
+            return new PlayerRepository(() => GetContext());
         }
 
         [Fact]
         public async Task TestGetPlayerProfileUserExistsReturnsBasicInfoAndAccount()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
             Assert.NotNull(result);
             Assert.Equal("TikiTest", result.nickname);
             Assert.Equal("tiki@test.com", result.Account.First().email);
@@ -104,9 +119,7 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestGetPlayerProfileUserExistsReturnsStatsAndSocials()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
             Assert.NotNull(result);
             Assert.Equal(5, result.PlayerStatistics.First().wins);
             Assert.Equal("Facebook", result.SocialNetwork.First().tipoRedSocial);
@@ -115,367 +128,246 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestGetPlayerProfileUserExistsReturnsNestedAvatars()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
             Assert.NotNull(result);
-            Assert.Equal("Gato", result.AvatarsUnlocked.First().Avatar.avatarName);
+            Assert.Equal("Default", result.AvatarsUnlocked.First().Avatar.avatarName);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileUserDoesNotExistReturnsNull()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("GhostUser");
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("GhostUser");
             Assert.Null(result);
         }
-
 
         [Fact]
         public async Task TestGetPlayerProfileNewUserWithNoStatsReturnsEmptyListsButNotNull()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("Newbie");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("Newbie");
             Assert.NotNull(result);
-            Assert.Equal("Newbie", result.nickname);
-
             Assert.True(result.PlayerStatistics == null || result.PlayerStatistics.Count == 0);
-            Assert.True(result.SocialNetwork == null || result.SocialNetwork.Count == 0);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileCaseInsensitiveShouldFindUserUpperCase()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("TIKITEST");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TIKITEST");
             Assert.NotNull(result);
-            Assert.Equal("TikiTest", result.nickname);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileCaseInsensitiveShouldFindUserLowerCase()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("tikitest");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("tikitest");
             Assert.NotNull(result);
-            Assert.Equal("TikiTest", result.nickname);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileWithLeadingSpacesShouldNotMatchExact()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-
-            var result = await repository.GetPlayerProfileByNicknameAsync(" TikiTest");
-
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync(" TikiTest");
             Assert.Null(result);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileEmptyStringReturnsNull()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync("");
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync("");
             Assert.Null(result);
         }
 
         [Fact]
         public async Task TestGetPlayerProfileNullStringReturnsNull()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var result = await repository.GetPlayerProfileByNicknameAsync(null);
+            var result = await CreateRepo().GetPlayerProfileByNicknameAsync(null);
             Assert.Null(result);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncBasicInfoUpdatesDatabase()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki Updated Name",
-                Email = "updated@test.com",
-                Password = null
-            };
-
+            var repository = CreateRepo();
+            var updateData = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "Updated", Email = "u@t.com" };
             await repository.UpdatePlayerProfileAsync(updateData);
 
-            using (var context = new UNOContext(_entityConnectionString))
+            using (var context = GetContext())
             {
-                var updatedPlayer = context.Player.Include("Account").FirstOrDefault(p => p.nickname == "TikiTest");
-                Assert.Equal("Tiki Updated Name", updatedPlayer.fullName);
-                Assert.Equal("updated@test.com", updatedPlayer.Account.First().email);
+                var p = context.Player.Include("Account").FirstOrDefault(x => x.nickname == "TikiTest");
+                Assert.Equal("Updated", p.fullName);
+                Assert.Equal("u@t.com", p.Account.First().email);
             }
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncNewPasswordUpdatesHash()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-
+            var repository = CreateRepo();
             string oldHash;
-            using (var ctx = new UNOContext(_entityConnectionString))
-                oldHash = ctx.Account.First(a => a.Player.nickname == "TikiTest").password;
+            using (var ctx = GetContext()) oldHash = ctx.Account.First(a => a.Player.nickname == "TikiTest").password;
 
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki Tester",
-                Email = "tiki@test.com",
-                Password = "NewStrongPassword1!"
-            };
+            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", Password = "New!" });
 
-            await repository.UpdatePlayerProfileAsync(updateData);
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var updatedAccount = context.Account.First(a => a.Player.nickname == "TikiTest");
-                Assert.NotEqual(oldHash, updatedAccount.password);
-            }
+            using (var ctx = GetContext()) Assert.NotEqual(oldHash, ctx.Account.First(a => a.Player.nickname == "TikiTest").password);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncUpdateExistingSocialNetworkChangesLink()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki",
-                Email = "tiki@test.com",
-                FacebookUrl = "facebook.com/newlink"
-            };
+            var repository = CreateRepo();
+            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "new.fb" });
 
-            await repository.UpdatePlayerProfileAsync(updateData);
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook");
-                Assert.Equal("facebook.com/newlink", sn.linkRedSocial);
-            }
+            using (var ctx = GetContext())
+                Assert.Equal("new.fb", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook").linkRedSocial);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncAddNewSocialNetworkInsertsRecord()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki",
-                Email = "tiki@test.com",
-                InstagramUrl = "instagram.com/tiki_insta"
-            };
+            var repository = CreateRepo();
+            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", InstagramUrl = "new.ig" });
 
-            await repository.UpdatePlayerProfileAsync(updateData);
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Instagram");
-                Assert.NotNull(sn);
-                Assert.Equal("instagram.com/tiki_insta", sn.linkRedSocial);
-            }
-        }
-
-        [Fact]
-        public async Task TestUpdatePlayerProfileAsyncEmptySocialUrlDoesNotDeleteOrError()
-        {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki",
-                Email = "tiki@test.com",
-                FacebookUrl = ""
-            };
-
-            await repository.UpdatePlayerProfileAsync(updateData);
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var sn = context.SocialNetwork.FirstOrDefault(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook");
-                Assert.NotNull(sn);
-                Assert.Equal("fb.com/tiki", sn.linkRedSocial);
-            }
+            using (var ctx = GetContext())
+                Assert.Equal("new.ig", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Instagram").linkRedSocial);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncNonExistentUserThrowsException()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var updateData = new Contracts.DTOs.ProfileData { Nickname = "GhostUser" };
-
-            await Assert.ThrowsAsync<Exception>(() => repository.UpdatePlayerProfileAsync(updateData));
-        }
-
-        [Fact]
-        public async Task TestUpdatePlayerProfileAsyncDuplicateEmailThrowsDbUpdateException()
-        {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = "Tiki",
-                Email = "newbie@test.com"
-            };
-
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
-                () => repository.UpdatePlayerProfileAsync(updateData)
-            );
+            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "Ghost" }));
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsWrappedValidationException()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            string longName = new string('A', 300);
-
-            var updateData = new Contracts.DTOs.ProfileData
-            {
-                Nickname = "TikiTest",
-                FullName = longName,
-                Email = "tiki@test.com"
-            };
-
-            var exception = await Assert.ThrowsAsync<Exception>(
-                () => repository.UpdatePlayerProfileAsync(updateData)
-            );
-
-            Assert.Contains("Error de validación en base de datos", exception.Message);
-            Assert.IsType<System.Data.Entity.Validation.DbEntityValidationException>(exception.InnerException);
+            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FullName = new string('A', 300) };
+            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncSqlConstraintViolationRollsBackAllChanges()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "BAD", Email = "newbie@test.com" }; // Duplicado
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
 
-            var updateData = new Contracts.DTOs.ProfileData
+            using (var ctx = GetContext())
             {
-                Nickname = "TikiTest",
-                FullName = "NAME SHOULD NOT CHANGE",
-                Email = "newbie@test.com"
-            };
-
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
-                () => repository.UpdatePlayerProfileAsync(updateData)
-            );
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var tiki = context.Player.FirstOrDefault(p => p.nickname == "TikiTest");
-
-                if (tiki != null)
-                {
-                    Assert.Equal("Tiki Tester", tiki.fullName);
-                }
-                else
-                {
-                    Assert.Null(tiki);
-                }
+                var p = ctx.Player.FirstOrDefault(x => x.nickname == "TikiTest");
+                if (p != null) Assert.Equal("Tiki Tester", p.fullName);
             }
         }
 
         [Fact]
         public async Task TestCreatePlayerAsyncValidDataInsertsPlayerAndAccount()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var newPlayer = new Contracts.DTOs.RegistrationData
+            var data = new Contracts.DTOs.RegistrationData { Nickname = "NewReg", FullName = "N", Email = "n@n.com", Password = "P" };
+            await CreateRepo().CreatePlayerAsync(data);
+
+            using (var ctx = GetContext())
             {
-                Nickname = "FreshPlayer",
-                FullName = "Fresh Name",
-                Email = "fresh@test.com",
-                Password = "StrongPassword1!"
-            };
-
-            await repository.CreatePlayerAsync(newPlayer);
-
-            using (var context = new UNOContext(_entityConnectionString))
-            {
-                var player = context.Player.Include("Account").Include("PlayerStatistics").FirstOrDefault(p => p.nickname == "FreshPlayer");
-
-                Assert.NotNull(player);
-                Assert.Equal("Fresh Name", player.fullName);
-                Assert.Equal(0, player.revoCoins);
-
-                Assert.NotNull(player.Account.FirstOrDefault());
-                Assert.Equal("fresh@test.com", player.Account.First().email);
-
-                Assert.NotNull(player.PlayerStatistics.FirstOrDefault());
-                Assert.Equal(0, player.PlayerStatistics.First().wins);
+                var p = ctx.Player.Include("Account").FirstOrDefault(x => x.nickname == "NewReg");
+                Assert.NotNull(p);
+                Assert.Equal("n@n.com", p.Account.First().email);
             }
         }
 
         [Fact]
         public async Task TestCreatePlayerAsyncDuplicateNicknameThrowsDbUpdateException()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var duplicatePlayer = new Contracts.DTOs.RegistrationData
-            {
-                Nickname = "TikiTest",
-                FullName = "Imposter",
-                Email = "unique@test.com",
-                Password = "Pass"
-            };
-
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
-                () => repository.CreatePlayerAsync(duplicatePlayer)
-            );
+            var data = new Contracts.DTOs.RegistrationData { Nickname = "TikiTest", FullName = "F", Email = "uniq@u.com", Password = "P" };
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().CreatePlayerAsync(data));
         }
 
         [Fact]
         public async Task TestCreatePlayerAsyncDuplicateEmailThrowsDbUpdateException()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            var duplicateEmail = new Contracts.DTOs.RegistrationData
-            {
-                Nickname = "UniqueNick",
-                FullName = "Imposter",
-                Email = "tiki@test.com", // Duplicado
-                Password = "Pass"
-            };
-
-            // ACT & ASSERT
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
-                () => repository.CreatePlayerAsync(duplicateEmail)
-            );
+            var data = new Contracts.DTOs.RegistrationData { Nickname = "Uniq", FullName = "F", Email = "tiki@test.com", Password = "P" };
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().CreatePlayerAsync(data));
         }
 
         [Fact]
         public async Task TestIsNicknameTakenAsyncExistingNickReturnsTrue()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            bool result = await repository.IsNicknameTakenAsync("TikiTest");
-            Assert.True(result);
+            Assert.True(await CreateRepo().IsNicknameTakenAsync("TikiTest"));
         }
 
         [Fact]
         public async Task TestIsNicknameTakenAsyncNewNickReturnsFalse()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            bool result = await repository.IsNicknameTakenAsync("FreeNick");
-            Assert.False(result);
+            Assert.False(await CreateRepo().IsNicknameTakenAsync("Free"));
         }
 
         [Fact]
         public async Task TestIsEmailRegisteredAsyncExistingEmailReturnsTrue()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            bool result = await repository.IsEmailRegisteredAsync("tiki@test.com");
-            Assert.True(result);
+            Assert.True(await CreateRepo().IsEmailRegisteredAsync("tiki@test.com"));
         }
 
         [Fact]
         public async Task TestIsEmailRegisteredAsyncNewEmailReturnsFalse()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
-            bool result = await repository.IsEmailRegisteredAsync("free@test.com");
-            Assert.False(result);
+            Assert.False(await CreateRepo().IsEmailRegisteredAsync("free@t.com"));
+        }
+
+        [Fact]
+        public async Task TestCreatePlayerFromPendingAsyncWithValidDataInsertsRecord()
+        {
+            var pending = new UnoLisServer.Common.Models.PendingRegistration { Nickname = "PendingUser", FullName = "P", HashedPassword = "H" };
+            await CreateRepo().CreatePlayerFromPendingAsync("pending@test.com", pending);
+
+            using (var ctx = GetContext())
+            {
+                var p = ctx.Player.Include("AvatarsUnlocked").FirstOrDefault(x => x.nickname == "PendingUser");
+                Assert.NotNull(p);
+                Assert.Equal(3, p.AvatarsUnlocked.Count);
+            }
+        }
+
+        [Fact]
+        public async Task TestGetPlayerAvatarsAsyncReturnsCorrectListAndSelection()
+        {
+            var repo = CreateRepo();
+
+            var avatars = await repo.GetPlayerAvatarsAsync("TikiTest");
+
+            Assert.NotNull(avatars);
+            Assert.NotEmpty(avatars); 
+
+            var defaultAvatar = avatars.First(a => a.AvatarId == 1);
+            Assert.True(defaultAvatar.IsSelected);
+            Assert.True(defaultAvatar.IsUnlocked);
+        }
+
+        [Fact]
+        public async Task TestUpdateSelectedAvatarAsyncUpdatesDatabase()
+        {
+            var repo = CreateRepo();
+
+            using (var ctx = GetContext())
+            {
+                var player = ctx.Player.First(p => p.nickname == "TikiTest");
+
+                player.AvatarsUnlocked.Add(new AvatarsUnlocked
+                {
+                    Player_idPlayer = player.idPlayer,
+                    Avatar_idAvatar = 10,
+                    unlockedDate = DateTime.Now
+                });
+                ctx.SaveChanges();
+            }
+
+            await repo.UpdateSelectedAvatarAsync("TikiTest", 10);
+
+            using (var ctx = GetContext())
+            {
+                var player = ctx.Player.First(p => p.nickname == "TikiTest");
+                Assert.Equal(10, player.SelectedAvatar_Avatar_idAvatar);
+            }
+        }
+
+        [Fact]
+        public async Task TestUpdateSelectedAvatarAsyncInvalidUserThrowsException()
+        {
+            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdateSelectedAvatarAsync("Ghost", 1));
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Data.RepositoryInterfaces
@@ -17,5 +18,8 @@ namespace UnoLisServer.Data.RepositoryInterfaces
         Task<bool> IsNicknameTakenAsync(string nickname);
         Task<bool> IsEmailRegisteredAsync(string email);
         Task CreatePlayerAsync(RegistrationData data);
+        Task CreatePlayerFromPendingAsync(string email, PendingRegistration pendingData);
+        Task<List<PlayerAvatar>> GetPlayerAvatarsAsync(string nickname);
+        Task UpdateSelectedAvatarAsync(string nickname, int newAvatarId);
     }
 }
