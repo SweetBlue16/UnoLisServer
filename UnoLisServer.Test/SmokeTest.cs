@@ -5,7 +5,7 @@ namespace UnoLisServer.Test
     public class SmokeTest
     {
         [Fact]
-        public void TrueIsTrue()
+        public void TestTrueIsTrue()
         {
             Assert.True(true);
         }

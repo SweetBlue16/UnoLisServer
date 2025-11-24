@@ -91,7 +91,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_UserExists_ReturnsBasicInfoAndAccount()
+        public async Task TestGetPlayerProfileUserExistsReturnsBasicInfoAndAccount()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
@@ -102,7 +102,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_UserExists_ReturnsStatsAndSocials()
+        public async Task TestGetPlayerProfileUserExistsReturnsStatsAndSocials()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
@@ -113,7 +113,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_UserExists_ReturnsNestedAvatars()
+        public async Task TestGetPlayerProfileUserExistsReturnsNestedAvatars()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
@@ -123,7 +123,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_UserDoesNotExist_ReturnsNull()
+        public async Task TestGetPlayerProfileUserDoesNotExistReturnsNull()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("GhostUser");
@@ -132,7 +132,7 @@ namespace UnoLisServer.Test
 
 
         [Fact]
-        public async Task GetPlayerProfile_NewUserWithNoStats_ReturnsEmptyListsButNotNull()
+        public async Task TestGetPlayerProfileNewUserWithNoStatsReturnsEmptyListsButNotNull()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("Newbie");
@@ -145,7 +145,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_CaseInsensitive_ShouldFindUserUpperCase()
+        public async Task TestGetPlayerProfileCaseInsensitiveShouldFindUserUpperCase()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TIKITEST");
@@ -155,7 +155,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_CaseInsensitive_ShouldFindUserLowerCase()
+        public async Task TestGetPlayerProfileCaseInsensitiveShouldFindUserLowerCase()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("tikitest");
@@ -165,7 +165,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_WithLeadingSpaces_ShouldNotMatchExact()
+        public async Task TestGetPlayerProfileWithLeadingSpacesShouldNotMatchExact()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
@@ -175,7 +175,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_EmptyString_ReturnsNull()
+        public async Task TestGetPlayerProfileEmptyStringReturnsNull()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("");
@@ -183,7 +183,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPlayerProfile_NullString_ReturnsNull()
+        public async Task TestGetPlayerProfileNullStringReturnsNull()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync(null);
@@ -191,7 +191,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_BasicInfo_UpdatesDatabase()
+        public async Task TestUpdatePlayerProfileAsyncBasicInfoUpdatesDatabase()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
@@ -213,7 +213,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_NewPassword_UpdatesHash()
+        public async Task TestUpdatePlayerProfileAsyncNewPasswordUpdatesHash()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
@@ -239,7 +239,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_UpdateExistingSocialNetwork_ChangesLink()
+        public async Task TestUpdatePlayerProfileAsyncUpdateExistingSocialNetworkChangesLink()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
@@ -260,7 +260,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_AddNewSocialNetwork_InsertsRecord()
+        public async Task TestUpdatePlayerProfileAsyncAddNewSocialNetworkInsertsRecord()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
@@ -282,7 +282,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_EmptySocialUrl_DoesNotDeleteOrError()
+        public async Task TestUpdatePlayerProfileAsyncEmptySocialUrlDoesNotDeleteOrError()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData
@@ -304,7 +304,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_NonExistentUser_ThrowsException()
+        public async Task TestUpdatePlayerProfileAsyncNonExistentUserThrowsException()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var updateData = new Contracts.DTOs.ProfileData { Nickname = "GhostUser" };
@@ -313,7 +313,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_DuplicateEmail_ThrowsDbUpdateException()
+        public async Task TestUpdatePlayerProfileAsyncDuplicateEmailThrowsDbUpdateException()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
@@ -330,7 +330,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_FullNameTooLong_ThrowsWrappedValidationException()
+        public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsWrappedValidationException()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             string longName = new string('A', 300);
@@ -351,7 +351,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task UpdatePlayerProfileAsync_SqlConstraintViolation_RollsBackAllChanges()
+        public async Task TestUpdatePlayerProfileAsyncSqlConstraintViolationRollsBackAllChanges()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
 
@@ -382,7 +382,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreatePlayerAsync_ValidData_InsertsPlayerAndAccount()
+        public async Task TestCreatePlayerAsyncValidDataInsertsPlayerAndAccount()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var newPlayer = new Contracts.DTOs.RegistrationData
@@ -412,7 +412,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreatePlayerAsync_DuplicateNickname_ThrowsDbUpdateException()
+        public async Task TestCreatePlayerAsyncDuplicateNicknameThrowsDbUpdateException()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var duplicatePlayer = new Contracts.DTOs.RegistrationData
@@ -429,7 +429,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreatePlayerAsync_DuplicateEmail_ThrowsDbUpdateException()
+        public async Task TestCreatePlayerAsyncDuplicateEmailThrowsDbUpdateException()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var duplicateEmail = new Contracts.DTOs.RegistrationData
@@ -447,7 +447,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task IsNicknameTakenAsync_ExistingNick_ReturnsTrue()
+        public async Task TestIsNicknameTakenAsyncExistingNickReturnsTrue()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             bool result = await repository.IsNicknameTakenAsync("TikiTest");
@@ -455,7 +455,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task IsNicknameTakenAsync_NewNick_ReturnsFalse()
+        public async Task TestIsNicknameTakenAsyncNewNickReturnsFalse()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             bool result = await repository.IsNicknameTakenAsync("FreeNick");
@@ -463,7 +463,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task IsEmailRegisteredAsync_ExistingEmail_ReturnsTrue()
+        public async Task TestIsEmailRegisteredAsyncExistingEmailReturnsTrue()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             bool result = await repository.IsEmailRegisteredAsync("tiki@test.com");
@@ -471,7 +471,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task IsEmailRegisteredAsync_NewEmail_ReturnsFalse()
+        public async Task TestIsEmailRegisteredAsyncNewEmailReturnsFalse()
         {
             var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             bool result = await repository.IsEmailRegisteredAsync("free@test.com");
