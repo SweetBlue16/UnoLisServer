@@ -16,13 +16,13 @@ namespace UnoLisServer.Common.Helpers
     {
         private readonly IEmailSender _sender;
         private static readonly Lazy<NotificationSender> _instance =
-            new Lazy<NotificationSender>(() => new NotificationSender());
+            new Lazy<NotificationSender>(() => new NotificationSender(new EmailSender()));
 
         public static INotificationSender Instance => _instance.Value;
 
-        private NotificationSender()
+        public NotificationSender(IEmailSender sender)
         {
-            _sender = new EmailSender();
+            _sender = sender;
         }
 
         public Task SendAccountVerificationEmailAsync(string email, string code)

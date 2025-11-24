@@ -13,7 +13,9 @@ namespace UnoLisServer.Data.RepositoryInterfaces
     public interface IPlayerRepository
     {
         Task<Player> GetPlayerProfileByNicknameAsync(string nickname);
-
         Task UpdatePlayerProfileAsync(ProfileData data);
+        Task<bool> IsNicknameTakenAsync(string nickname);
+        Task<bool> IsEmailRegisteredAsync(string email);
+        Task CreatePlayerAsync(RegistrationData data);
     }
 }

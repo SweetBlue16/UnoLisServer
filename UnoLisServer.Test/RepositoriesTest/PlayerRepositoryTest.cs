@@ -380,5 +380,102 @@ namespace UnoLisServer.Test
                 }
             }
         }
+
+        [Fact]
+        public async Task CreatePlayerAsync_ValidData_InsertsPlayerAndAccount()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var newPlayer = new Contracts.DTOs.RegistrationData
+            {
+                Nickname = "FreshPlayer",
+                FullName = "Fresh Name",
+                Email = "fresh@test.com",
+                Password = "StrongPassword1!"
+            };
+
+            await repository.CreatePlayerAsync(newPlayer);
+
+            using (var context = new UNOContext(_entityConnectionString))
+            {
+                var player = context.Player.Include("Account").Include("PlayerStatistics").FirstOrDefault(p => p.nickname == "FreshPlayer");
+
+                Assert.NotNull(player);
+                Assert.Equal("Fresh Name", player.fullName);
+                Assert.Equal(0, player.revoCoins);
+
+                Assert.NotNull(player.Account.FirstOrDefault());
+                Assert.Equal("fresh@test.com", player.Account.First().email);
+
+                Assert.NotNull(player.PlayerStatistics.FirstOrDefault());
+                Assert.Equal(0, player.PlayerStatistics.First().wins);
+            }
+        }
+
+        [Fact]
+        public async Task CreatePlayerAsync_DuplicateNickname_ThrowsDbUpdateException()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var duplicatePlayer = new Contracts.DTOs.RegistrationData
+            {
+                Nickname = "TikiTest",
+                FullName = "Imposter",
+                Email = "unique@test.com",
+                Password = "Pass"
+            };
+
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
+                () => repository.CreatePlayerAsync(duplicatePlayer)
+            );
+        }
+
+        [Fact]
+        public async Task CreatePlayerAsync_DuplicateEmail_ThrowsDbUpdateException()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var duplicateEmail = new Contracts.DTOs.RegistrationData
+            {
+                Nickname = "UniqueNick",
+                FullName = "Imposter",
+                Email = "tiki@test.com", // Duplicado
+                Password = "Pass"
+            };
+
+            // ACT & ASSERT
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(
+                () => repository.CreatePlayerAsync(duplicateEmail)
+            );
+        }
+
+        [Fact]
+        public async Task IsNicknameTakenAsync_ExistingNick_ReturnsTrue()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            bool result = await repository.IsNicknameTakenAsync("TikiTest");
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task IsNicknameTakenAsync_NewNick_ReturnsFalse()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            bool result = await repository.IsNicknameTakenAsync("FreeNick");
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task IsEmailRegisteredAsync_ExistingEmail_ReturnsTrue()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            bool result = await repository.IsEmailRegisteredAsync("tiki@test.com");
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task IsEmailRegisteredAsync_NewEmail_ReturnsFalse()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            bool result = await repository.IsEmailRegisteredAsync("free@test.com");
+            Assert.False(result);
+        }
     }
 }

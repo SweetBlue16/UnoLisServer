@@ -114,5 +114,70 @@ namespace UnoLisServer.Data.Repositories
                 context.SocialNetwork.Add(newNetwork);
             }
         }
+
+        public async Task<bool> IsNicknameTakenAsync(string nickname)
+        {
+            using (var context = _contextFactory())
+            {
+                return await context.Player.AnyAsync(p => p.nickname == nickname);
+            }
+        }
+
+        public async Task<bool> IsEmailRegisteredAsync(string email)
+        {
+            using (var context = _contextFactory())
+            {
+                return await context.Account.AnyAsync(a => a.email == email);
+            }
+        }
+
+        public async Task CreatePlayerAsync(RegistrationData data)
+        {
+            using (var context = _contextFactory())
+            using (var transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    var player = new Player
+                    {
+                        nickname = data.Nickname,
+                        fullName = data.FullName,
+                        revoCoins = 0
+                    };
+
+                    var account = new Account
+                    {
+                        email = data.Email,
+                        password = PasswordHelper.HashPassword(data.Password),
+                        Player = player
+                    };
+
+                    var stats = new PlayerStatistics
+                    {
+                        Player = player,
+                        wins = 0,
+                        matchesPlayed = 0,
+                        globalPoints = 0
+                    };
+
+                    context.Player.Add(player);
+                    context.Account.Add(account);
+                    context.PlayerStatistics.Add(stats);
+
+                    await context.SaveChangesAsync();
+                    transaction.Commit();
+                }
+                catch (DbUpdateException)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+        }
     }
 }
