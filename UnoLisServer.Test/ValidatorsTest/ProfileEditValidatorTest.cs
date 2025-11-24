@@ -10,7 +10,7 @@ namespace UnoLisServer.Test.ValidatorsTest
     public class ProfileEditValidatorTest
     {
         [Fact]
-        public void ValidateFormats_AllValidData_ShouldNotThrowException()
+        public void TestValidateFormatsAllValidDataShouldNotThrowException()
         {
             var data = new ProfileData
             {
@@ -29,7 +29,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateFormats_EmptyEmail_ShouldThrowInvalidEmail(string email)
+        public void TestValidateFormatsEmptyEmailShouldThrowInvalidEmail(string email)
         {
             var data = new ProfileData { Nickname = "User", Email = email };
 
@@ -42,7 +42,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData("correo@sinpunto")]
         [InlineData("@dominio.com")]
         [InlineData("correo.com")]
-        public void ValidateFormats_BadFormatEmail_ShouldThrowInvalidEmail(string email)
+        public void TestValidateFormatsBadFormatEmailShouldThrowInvalidEmail(string email)
         {
             var data = new ProfileData { Nickname = "User", Email = email };
 
@@ -56,7 +56,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData("ONLYUPPERCASE1!")] 
         [InlineData("NoSpecialChar1")]  
         [InlineData("NoNumbers!")] 
-        public void ValidateFormats_WeakPassword_ShouldThrowWeakPassword(string password)
+        public void TestValidateFormatsWeakPasswordShouldThrowWeakPassword(string password)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", Password = password };
 
@@ -67,7 +67,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [Theory]
         [InlineData("ftp://facebook.com")] 
         [InlineData("www.facebook.com")]
-        public void ValidateFormats_InvalidProtocolUrl_ShouldThrowInvalidUrl(string url)
+        public void TestValidateFormatsInvalidProtocolUrlShouldThrowInvalidUrl(string url)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", FacebookUrl = url };
 
@@ -78,7 +78,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [Theory]
         [InlineData("https://google.com")] 
         [InlineData("https://twitter.com")] 
-        public void ValidateFormats_WrongDomainFacebook_ShouldThrowInvalidUrl(string url)
+        public void TestValidateFormatsWrongDomainFacebookShouldThrowInvalidUrl(string url)
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", FacebookUrl = url };
 
@@ -87,7 +87,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         }
 
         [Fact]
-        public void ValidateFormats_WrongDomainInstagram_ShouldThrowInvalidUrl()
+        public void TestValidateFormatsWrongDomainInstagramShouldThrowInvalidUrl()
         {
             var data = new ProfileData { Nickname = "User", Email = "a@a.com", InstagramUrl = "https://facebook.com" };
 

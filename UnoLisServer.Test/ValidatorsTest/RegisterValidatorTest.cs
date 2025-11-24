@@ -9,7 +9,7 @@ namespace UnoLisServer.Test.ValidatorsTest
     public class RegisterValidatorTest
     {
         [Fact]
-        public void ValidateFormats_AllFieldsValid_ShouldPass()
+        public void TestValidateFormatsAllFieldsValidShouldPass()
         {
             var data = new RegistrationData
             {
@@ -23,7 +23,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         }
 
         [Fact]
-        public void ValidateFormats_NullObject_ShouldThrowEmptyFields()
+        public void TestValidateFormatsNullObjectShouldThrowEmptyFields()
         {
             var ex = Assert.Throws<ValidationException>(() => RegisterValidator.ValidateFormats(null));
             Assert.Equal(MessageCode.EmptyFields, ex.ErrorCode);
@@ -33,7 +33,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateFormats_InvalidEmail_ShouldThrow(string email)
+        public void TestValidateFormatsInvalidEmailShouldThrow(string email)
         {
             var data = new RegistrationData
             {
@@ -51,7 +51,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateFormats_InvalidPassword_ShouldThrow(string password)
+        public void TestValidateFormatsInvalidPasswordShouldThrow(string password)
         {
             var data = new RegistrationData
             {
@@ -69,7 +69,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateFormats_InvalidNickname_ShouldThrow(string nickname)
+        public void TestValidateFormatsInvalidNicknameShouldThrow(string nickname)
         {
             var data = new RegistrationData
             {
@@ -87,7 +87,7 @@ namespace UnoLisServer.Test.ValidatorsTest
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateFormats_InvalidFullName_ShouldThrow(string fullName)
+        public void TestValidateFormatsInvalidFullNameShouldThrow(string fullName)
         {
             var data = new RegistrationData
             {
