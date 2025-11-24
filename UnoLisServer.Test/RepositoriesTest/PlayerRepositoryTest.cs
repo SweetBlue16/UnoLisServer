@@ -1,175 +1,192 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Data.Entity.Core.EntityClient;
+using System.Data.SqlClient;
 using System.Linq;
-using System.Reflection; // Necesario para Reflection
 using System.Threading.Tasks;
-using Effort;
+using System.Transactions;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using Xunit;
 
 namespace UnoLisServer.Test
 {
-    public class PlayerRepositoryTest
+    public class PlayerRepositoryTest : IDisposable
     {
-        private readonly DbConnection _connection;
+        private readonly TransactionScope _scope;
+        private readonly string _entityConnectionString;
 
         public PlayerRepositoryTest()
         {
-            // -----------------------------------------------------------------------
-            // 1. AUTO-DETECCIÓN DE RECURSOS (La solución al error de Metadata)
-            // -----------------------------------------------------------------------
-            var assembly = typeof(PlayerRepository).Assembly;
-            string assemblyName = assembly.GetName().Name;
-
-            // Buscamos el nombre real del recurso incrustado en la DLL
-            string resourceName = assembly.GetManifestResourceNames()
-                                          .FirstOrDefault(x => x.EndsWith(".csdl"));
-
-            if (resourceName == null)
+            var sqlBuilder = new SqlConnectionStringBuilder
             {
-                throw new InvalidOperationException($"[ERROR CRÍTICO] No se encontró ningún archivo .csdl incrustado en {assemblyName}. Verifica que tu archivo .edmx tenga la propiedad 'Build Action' en 'Embedded Resource'.");
-            }
+                DataSource = ".",
+                InitialCatalog = "UNOLIS_TEST",
+                IntegratedSecurity = true,
+                MultipleActiveResultSets = true,
+                ApplicationName = "EntityFramework"
+            };
 
-            // El recurso viene como "Namespace.Carpeta.Nombre.csdl".
-            // Para la cadena de metadatos, necesitamos el nombre base sin la extensión.
-            string baseName = resourceName.Replace(".csdl", "");
+            string assemblyName = typeof(PlayerRepository).Assembly.GetName().Name;
 
-            var entityBuilder = new EntityConnectionStringBuilder();
-
-            // Usamos la sintaxis precisa: res://<Assembly>/<FullResourceName>
-            entityBuilder.Metadata = $"res://{assemblyName}/{baseName}.csdl|res://{assemblyName}/{baseName}.ssdl|res://{assemblyName}/{baseName}.msl";
-
-            entityBuilder.Provider = "System.Data.SqlClient";
-            entityBuilder.ProviderConnectionString = "data source=.;initial catalog=TestDb;integrated security=True";
-
-            // Creamos la conexión en memoria
-            _connection = EntityConnectionFactory.CreateTransient(entityBuilder.ToString());
-
-            // -----------------------------------------------------------------------
-            // 2. SEMBRADO DE DATOS (SEED DATA)
-            // -----------------------------------------------------------------------
-            // IMPORTANTE: Usamos la conexión _connection que acabamos de crear
-            using (var context = new UNOContext(_connection))
+            var entityBuilder = new EntityConnectionStringBuilder
             {
-                var player = new Player
+                Provider = "System.Data.SqlClient",
+                ProviderConnectionString = sqlBuilder.ToString(),
+                Metadata = $"res://*/UNODataBaseModel.csdl|res://*/UNODataBaseModel.ssdl|res://*/UNODataBaseModel.msl"
+            };
+
+            _entityConnectionString = entityBuilder.ToString();
+
+            _scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+            SeedDatabase();
+        }
+
+        private void SeedDatabase()
+        {
+            using (var context = new UNOContext(_entityConnectionString))
+            {
+                var playerFull = new Player
                 {
                     nickname = "TikiTest",
                     fullName = "Tiki Tester",
-                    idPlayer = 1,
+                    revoCoins = 100,
                     Account = new List<Account>(),
                     PlayerStatistics = new List<PlayerStatistics>(),
                     SocialNetwork = new List<SocialNetwork>(),
                     AvatarsUnlocked = new List<AvatarsUnlocked>()
                 };
 
-                var account = new Account
+                playerFull.Account.Add(new Account { email = "tiki@test.com", password = "hashed" });
+                playerFull.PlayerStatistics.Add(new PlayerStatistics { wins = 5, matchesPlayed = 10 });
+                playerFull.SocialNetwork.Add(new SocialNetwork { tipoRedSocial = "Facebook", linkRedSocial = "fb.com/tiki" });
+
+                var avatar = new Avatar { avatarName = "Gato", avatarRarity = "Common" };
+                playerFull.AvatarsUnlocked.Add(new AvatarsUnlocked { Avatar = avatar, unlockedDate = DateTime.Now });
+
+                var playerEmpty = new Player
                 {
-                    email = "tiki@test.com",
-                    password = "hashed_password",
-                    Player = player,
-                    idAccount = 1,
-                    Player_idPlayer = 1
+                    nickname = "Newbie",
+                    fullName = "Noob Tester",
+                    revoCoins = 0,
+                    Account = new List<Account>(),
+                    PlayerStatistics = new List<PlayerStatistics>(),
+                    SocialNetwork = new List<SocialNetwork>(),
+                    AvatarsUnlocked = new List<AvatarsUnlocked>()
                 };
+                playerEmpty.Account.Add(new Account { email = "newbie@test.com", password = "hashed" });
 
-                var stats = new PlayerStatistics
-                {
-                    wins = 5,
-                    matchesPlayed = 10,
-                    Player = player,
-                    idPlayerStatistics = 1,
-                    Player_idPlayer = 1
-                };
-
-                var social = new SocialNetwork
-                {
-                    idRedSocial = 1,
-                    tipoRedSocial = "Facebook",
-                    linkRedSocial = "fb.com/tiki",
-                    Player = player,
-                    Player_idPlayer = 1
-                };
-
-                var avatar = new Avatar
-                {
-                    idAvatar = 1,
-                    avatarName = "Gato",
-                    avatarDescription = "Un gato genial",
-                    avatarRarity = "Common"
-                };
-
-                var unlocked = new AvatarsUnlocked
-                {
-                    Player_idPlayer = 1,
-                    Avatar_idAvatar = 1,
-                    Player = player,
-                    Avatar = avatar,
-                    unlockedDate = DateTime.Now
-                };
-
-                player.Account.Add(account);
-                player.PlayerStatistics.Add(stats);
-                player.SocialNetwork.Add(social);
-                player.AvatarsUnlocked.Add(unlocked);
-
-                context.Player.Add(player);
-                context.Account.Add(account);
-                context.PlayerStatistics.Add(stats);
-                context.SocialNetwork.Add(social);
-                context.Avatar.Add(avatar);
-                context.AvatarsUnlocked.Add(unlocked);
+                context.Player.Add(playerFull);
+                context.Player.Add(playerEmpty);
+                context.Avatar.Add(avatar); 
 
                 context.SaveChanges();
             }
         }
 
+        public void Dispose()
+        {
+            _scope.Dispose();
+        }
+
         [Fact]
         public async Task GetPlayerProfile_UserExists_ReturnsBasicInfoAndAccount()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_connection));
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
 
             Assert.NotNull(result);
             Assert.Equal("TikiTest", result.nickname);
-            Assert.NotNull(result.Account);
-            Assert.NotEmpty(result.Account);
             Assert.Equal("tiki@test.com", result.Account.First().email);
         }
 
         [Fact]
         public async Task GetPlayerProfile_UserExists_ReturnsStatsAndSocials()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_connection));
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
 
             Assert.NotNull(result);
-            Assert.NotNull(result.PlayerStatistics);
             Assert.Equal(5, result.PlayerStatistics.First().wins);
-            Assert.NotNull(result.SocialNetwork);
             Assert.Equal("Facebook", result.SocialNetwork.First().tipoRedSocial);
         }
 
         [Fact]
         public async Task GetPlayerProfile_UserExists_ReturnsNestedAvatars()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_connection));
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("TikiTest");
 
             Assert.NotNull(result);
-            Assert.NotNull(result.AvatarsUnlocked);
-            var unlockedAvatar = result.AvatarsUnlocked.First();
-            Assert.NotNull(unlockedAvatar.Avatar);
-            Assert.Equal("Gato", unlockedAvatar.Avatar.avatarName);
+            Assert.Equal("Gato", result.AvatarsUnlocked.First().Avatar.avatarName);
         }
 
         [Fact]
         public async Task GetPlayerProfile_UserDoesNotExist_ReturnsNull()
         {
-            var repository = new PlayerRepository(() => new UNOContext(_connection));
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
             var result = await repository.GetPlayerProfileByNicknameAsync("GhostUser");
+            Assert.Null(result);
+        }
 
+
+        [Fact]
+        public async Task GetPlayerProfile_NewUserWithNoStats_ReturnsEmptyListsButNotNull()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var result = await repository.GetPlayerProfileByNicknameAsync("Newbie");
+
+            Assert.NotNull(result);
+            Assert.Equal("Newbie", result.nickname);
+
+            Assert.True(result.PlayerStatistics == null || result.PlayerStatistics.Count == 0);
+            Assert.True(result.SocialNetwork == null || result.SocialNetwork.Count == 0);
+        }
+
+        [Fact]
+        public async Task GetPlayerProfile_CaseInsensitive_ShouldFindUserUpperCase()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var result = await repository.GetPlayerProfileByNicknameAsync("TIKITEST");
+
+            Assert.NotNull(result);
+            Assert.Equal("TikiTest", result.nickname);
+        }
+
+        [Fact]
+        public async Task GetPlayerProfile_CaseInsensitive_ShouldFindUserLowerCase()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var result = await repository.GetPlayerProfileByNicknameAsync("tikitest");
+
+            Assert.NotNull(result);
+            Assert.Equal("TikiTest", result.nickname);
+        }
+
+        [Fact]
+        public async Task GetPlayerProfile_WithLeadingSpaces_ShouldNotMatchExact()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+
+            var result = await repository.GetPlayerProfileByNicknameAsync(" TikiTest");
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetPlayerProfile_EmptyString_ReturnsNull()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var result = await repository.GetPlayerProfileByNicknameAsync("");
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetPlayerProfile_NullString_ReturnsNull()
+        {
+            var repository = new PlayerRepository(() => new UNOContext(_entityConnectionString));
+            var result = await repository.GetPlayerProfileByNicknameAsync(null);
             Assert.Null(result);
         }
     }

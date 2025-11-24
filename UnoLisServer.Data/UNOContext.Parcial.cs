@@ -10,7 +10,8 @@ namespace UnoLisServer.Data
 {
     public partial class UNOContext : DbContext
     {
-        public UNOContext(DbConnection connection) : base(connection, true)
+        public UNOContext(string nameOrConnectionString)
+            : base(nameOrConnectionString)
         {
         }
     }
