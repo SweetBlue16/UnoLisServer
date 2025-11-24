@@ -108,10 +108,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\UnoLisTestBase.cs" />
+    <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RepositoriesTest\PlayerRepositoryTest.cs" />
     <Compile Include="SmokeTest.cs" />
+    <Compile Include="ValidatorsTest\ProfileEditValidatorTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -57,7 +57,7 @@
     <Compile Include="Helpers\EmailSender.cs" />
     <Compile Include="Helpers\Logger.cs" />
     <Compile Include="Helpers\NotificationSender.cs" />
-    <Compile Include="Helpers\PasswordHelpers.cs" />
+    <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Helpers\PendingRegistrationHelper.cs" />
     <Compile Include="Helpers\ResponseHelper.cs" />
     <Compile Include="Helpers\VerificationCodeHelper.cs" />

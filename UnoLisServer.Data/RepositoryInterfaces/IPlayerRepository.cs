@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Data.RepositoryInterfaces
 {
@@ -12,5 +13,7 @@ namespace UnoLisServer.Data.RepositoryInterfaces
     public interface IPlayerRepository
     {
         Task<Player> GetPlayerProfileByNicknameAsync(string nickname);
+
+        Task UpdatePlayerProfileAsync(ProfileData data);
     }
 }

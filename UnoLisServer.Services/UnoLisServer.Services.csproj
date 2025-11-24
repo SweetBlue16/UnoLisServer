@@ -83,7 +83,6 @@
     <Compile Include="ShopManager.cs" />
     <Compile Include="Validators\LogoutValidator.cs" />
     <Compile Include="Validators\ProfileEditValidator.cs" />
-    <Compile Include="Validators\ProfileViewValidator.cs" />
     <Compile Include="Validators\RegisterValidator.cs" />
   </ItemGroup>
   <ItemGroup>
