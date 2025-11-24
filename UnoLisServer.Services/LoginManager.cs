@@ -29,7 +29,14 @@ namespace UnoLisServer.Services
             {
                 LoginValidator.ValidateCredentials(credentials);
                 Logger.Log($"[INFO] Intentando inicio de sesión para '{nickname}'...");
-                LoginValidator.AuthenticatePlayer(credentials);
+                var banInfo = LoginValidator.AuthenticatePlayer(credentials);
+
+                if (banInfo != null)
+                {
+                    var banResponse = CreateBanResponse(banInfo);
+                    ResponseHelper.SendResponse(_callback.LoginResponse, banResponse);
+                    return;
+                }
 
                 var session = OperationContext.Current.GetCallbackChannel<ILoginCallback>();
                 SessionManager.AddSession(nickname, session);
@@ -81,6 +88,21 @@ namespace UnoLisServer.Services
                 );
             }
             ResponseHelper.SendResponse(_callback.LoginResponse, _responseInfo);
+        }
+
+        private ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
+        {
+            ResponseInfo<object> responseInfo = null;
+            if (banInfo != null)
+            {
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.PlayerBanned,
+                    false,
+                    $"[WARNING] Intento de inicio de sesión de usuario baneado. Tiempo restante: {banInfo.FormattedTimeRemaining}",
+                    banInfo
+                );
+            }
+            return responseInfo;
         }
     }
 }

@@ -10,6 +10,7 @@ using UnoLisServer.Common.Models;
 namespace UnoLisServer.Contracts.Interfaces
 {
     [ServiceContract(CallbackContract = typeof(ILoginCallback), SessionMode = SessionMode.Required)]
+    [ServiceKnownType(typeof(BanInfo))]
     public interface ILoginManager
     {
         [OperationContract(IsOneWay = true)]
@@ -17,6 +18,7 @@ namespace UnoLisServer.Contracts.Interfaces
     }
 
     [ServiceContract]
+    [ServiceKnownType(typeof(BanInfo))]
     public interface ILoginCallback : ISessionCallback
     {
         [OperationContract(IsOneWay = true)]

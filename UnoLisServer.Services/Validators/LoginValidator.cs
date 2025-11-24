@@ -21,7 +21,7 @@ namespace UnoLisServer.Services.Validators
             }
         }
 
-        public static void AuthenticatePlayer(AuthCredentials credentials)
+        public static BanInfo AuthenticatePlayer(AuthCredentials credentials)
         {
             using (var context = new UNOContext())
             {
@@ -48,11 +48,11 @@ namespace UnoLisServer.Services.Validators
                     throw new ValidationException(MessageCode.DuplicateSession,
                         $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
                 }
-                CheckActiveSanction(context, account.Player);
+                return CheckActiveSanction(context, account.Player);
             }
         }
 
-        private static void CheckActiveSanction(UNOContext context, Player player)
+        private static BanInfo CheckActiveSanction(UNOContext context, Player player)
         {
             context.Entry(player).Collection(p => p.Sanction).Load();
 
@@ -61,6 +61,7 @@ namespace UnoLisServer.Services.Validators
                 .OrderByDescending(s => s.sanctionEndDate)
                 .FirstOrDefault();
 
+            BanInfo banInfo = null;
             if (activeSanction != null)
             {
                 var remainingTime = activeSanction.sanctionEndDate.Value - DateTime.UtcNow;
@@ -69,8 +70,15 @@ namespace UnoLisServer.Services.Validators
                     : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
                 string message = $"{timeString}";
 
-                throw new ValidationException(MessageCode.PlayerBanned, message);
+                banInfo = new BanInfo
+                {
+                    Reason = activeSanction.sanctionType,
+                    EndDate = activeSanction.sanctionEndDate.Value,
+                    RemainingHours = remainingTime.TotalHours,
+                    FormattedTimeRemaining = message
+                };
             }
+            return banInfo;
         }
     }
 }
