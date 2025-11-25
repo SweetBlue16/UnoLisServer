@@ -31,7 +31,7 @@ namespace UnoLisServer.Services.Helpers
         private readonly Dictionary<string, List<ChatMessageData>> _chatHistory = new Dictionary<string, List<ChatMessageData>>();
 
         private readonly object _syncLock = new object();
-        private const int MAX_HISTORY_MESSAGES = 50; // Guardamos los últimos 50 mensajes
+        private const int MAX_HISTORY_MESSAGES = 50;
 
         private ChatSessionHelper() { }
 
@@ -41,7 +41,7 @@ namespace UnoLisServer.Services.Helpers
             {
                 if (_connectedClients.ContainsKey(nickname))
                 {
-                    _connectedClients[nickname] = callback; // Reconexión
+                    _connectedClients[nickname] = callback;
                     Logger.Log($"[CHAT-SESSION] Usuario {nickname} reconectado/actualizado.");
                 }
                 else
@@ -86,7 +86,7 @@ namespace UnoLisServer.Services.Helpers
 
                 if (history.Count > MAX_HISTORY_MESSAGES)
                 {
-                    history.RemoveAt(0); // Eliminar el más viejo
+                    history.RemoveAt(0);
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace UnoLisServer.Services.Helpers
             {
                 if (_chatHistory.ContainsKey(channelId))
                 {
-                    return new List<ChatMessageData>(_chatHistory[channelId]); // Copia para evitar problemas de concurrencia
+                    return new List<ChatMessageData>(_chatHistory[channelId]);
                 }
                 return new List<ChatMessageData>();
             }
