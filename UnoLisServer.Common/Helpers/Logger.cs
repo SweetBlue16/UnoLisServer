@@ -38,19 +38,19 @@ namespace UnoLisServer.Common.Helpers
         public static void Log(string message)
         {
             _log?.Info(message);
-            Console.WriteLine($"📘 {message}");
+            Console.WriteLine($" {message}");
         }
 
         public static void Warn(string message)
         {
             _log?.Warn(message);
-            Console.WriteLine($"⚠️ {message}");
+            Console.WriteLine($" {message}");
         }
 
         public static void Error(string message, Exception ex = null)
         {
             _log?.Error(message, ex);
-            Console.WriteLine($"❌ {message} {(ex != null ? ex.Message : "")}");
+            Console.WriteLine($" {message} {(ex != null ? ex.Message : "")}");
         }
 
         public static void Debug(string message)

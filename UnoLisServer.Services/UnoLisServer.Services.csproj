@@ -61,6 +61,7 @@
     <Compile Include="FriendsLogicManager.cs" />
     <Compile Include="FriendsManager.cs" />
     <Compile Include="GameplayManager.cs" />
+    <Compile Include="Helpers\ChatSessionHelper.cs" />
     <Compile Include="LeaderboardsManager.cs" />
     <Compile Include="LobbyDuplexManager.cs" />
     <Compile Include="LobbyManager.cs" />
@@ -72,9 +73,11 @@
     <Compile Include="ProfileEditManager.cs" />
     <Compile Include="ProfileViewManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Providers\WCFChatCallbackProvider.cs" />
     <Compile Include="RegisterManager.cs" />
     <Compile Include="ReportManager.cs" />
     <Compile Include="Validators\AvatarValidator.cs" />
+    <Compile Include="Validators\ChatValidator.cs" />
     <Compile Include="Validators\ConfirmationValidator.cs" />
     <Compile Include="Validators\LoginValidator.cs" />
     <Compile Include="SessionManager.cs" />
