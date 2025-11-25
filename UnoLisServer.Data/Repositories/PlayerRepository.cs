@@ -216,5 +216,18 @@ namespace UnoLisServer.Data.Repositories
                 await context.SaveChangesAsync();
             }
         }
+
+        public List<PlayerStatistics> GetTopPlayersByGlobalScoreAsync(int topCount)
+        {
+            using (var context = _contextFactory())
+            {
+                var topPlayers = context.PlayerStatistics
+                    .Include(ps => ps.Player)
+                    .OrderByDescending(s => s.globalPoints)
+                    .Take(topCount)
+                    .ToList();
+                return topPlayers;
+            }
+        }
     }
 }
