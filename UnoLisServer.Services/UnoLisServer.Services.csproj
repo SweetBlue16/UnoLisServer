@@ -69,8 +69,6 @@
     <Compile Include="ManagerInterfaces\ILobbyManager.cs" />
     <Compile Include="MatchmakingManager.cs" />
     <Compile Include="NotificationsManager.cs" />
-    <Compile Include="PartyClientManager.cs" />
-    <Compile Include="PartyHostManager.cs" />
     <Compile Include="ProfileEditManager.cs" />
     <Compile Include="ProfileViewManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -34,8 +34,6 @@ namespace UnoLisServer.Host
                 new ServiceHost(typeof(ProfileEditManager)),
                 new ServiceHost(typeof(ProfileViewManager)),
                 new ServiceHost(typeof(FriendsManager)),
-                new ServiceHost(typeof(PartyHostManager)),
-                new ServiceHost(typeof(PartyClientManager)),
                 new ServiceHost(typeof(GameplayManager)),
                 new ServiceHost(typeof(NotificationsManager)),
                 new ServiceHost(typeof(ChatManager)),
