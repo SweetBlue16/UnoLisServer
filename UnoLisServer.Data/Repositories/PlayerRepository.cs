@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Data.Entity.Validation;
+using System.Data.Entity.Core;
+using System.Data.Entity.Infrastructure; 
+using System.Data.Entity.Validation; 
+using System.Data.SqlClient; 
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums; 
+using UnoLisServer.Common.Exceptions; 
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Data;
-using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Data.Factories;
+using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Data.Repositories
 {
@@ -32,17 +35,41 @@ namespace UnoLisServer.Data.Repositories
             _contextFactory = contextFactory;
             _playerFactory = playerFactory ?? new PlayerFactory();
         }
+
         public async Task<Player> GetPlayerProfileByNicknameAsync(string nickname)
         {
             using (var context = _contextFactory())
             {
-                return await context.Player
-                    .AsNoTracking()
-                    .Include(p => p.Account)
-                    .Include(p => p.PlayerStatistics)
-                    .Include(p => p.SocialNetwork)
-                    .Include(p => p.AvatarsUnlocked.Select(au => au.Avatar))
-                    .FirstOrDefaultAsync(p => p.nickname == nickname);
+                try
+                {
+                    return await context.Player
+                        .AsNoTracking()
+                        .Include(p => p.Account)
+                        .Include(p => p.PlayerStatistics)
+                        .Include(p => p.SocialNetwork)
+                        .Include(p => p.AvatarsUnlocked.Select(au => au.Avatar))
+                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                }
+                catch (SqlException sqlEx)
+                {
+                    Logger.Error($"[DB] Error SQL al obtener perfil de {nickname}", sqlEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Error de ejecución de comando EF para {nickname}", entityCmdEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout al obtener perfil para {nickname}", timeoutEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error general al obtener perfil de {nickname}", ex);
+                    throw;
+                }
             }
         }
 
@@ -58,10 +85,13 @@ namespace UnoLisServer.Data.Repositories
                         .Include(p => p.SocialNetwork)
                         .FirstOrDefaultAsync(p => p.nickname == data.Nickname);
 
-                    if (player == null) throw new Exception("PlayerNotFound");
+                    if (player == null)
+                        throw new ValidationException(MessageCode.PlayerNotFound, $"Jugador '{data.Nickname}' no " +
+                            $"encontrado.");
 
                     var account = player.Account.FirstOrDefault();
-                    if (account == null) throw new Exception("AccountNotFound");
+                    if (account == null)
+                        throw new ValidationException(MessageCode.AccountNotVerified, "Cuenta asociada no encontrada.");
 
                     player.fullName = data.FullName;
                     account.email = data.Email;
@@ -81,16 +111,25 @@ namespace UnoLisServer.Data.Repositories
                 catch (DbEntityValidationException entityEx)
                 {
                     transaction.Rollback();
-                    throw new Exception($"Error de validación en base de datos: {entityEx.Message}", entityEx);
+                    var errorMessages = entityEx.EntityValidationErrors
+                        .SelectMany(x => x.ValidationErrors)
+                        .Select(x => x.ErrorMessage);
+                    string fullError = string.Join("; ", errorMessages);
+
+                    Logger.Error($"[DB] Error de validación de entidad al actualizar {data.Nickname}: {fullError}", 
+                        entityEx);
+                    throw new EntityException($"Error de validación en base de datos: {fullError}", entityEx);
                 }
-                catch (DbUpdateException)
+                catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
+                    Logger.Error($"[DB] Error de actualización (SQL/FK) al actualizar {data.Nickname}", dbEx);
                     throw;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     transaction.Rollback();
+                    Logger.Error($"[DB] Error inesperado al actualizar {data.Nickname}", ex);
                     throw;
                 }
             }
@@ -122,7 +161,30 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
-                return await context.Player.AnyAsync(p => p.nickname == nickname);
+                try
+                {
+                    return await context.Player.AnyAsync(p => p.nickname == nickname);
+                }
+                catch (SqlException sqlEx)
+                {
+                    Logger.Error($"[DB] Error de conexión/SQL al verificar nickname '{nickname}'", sqlEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout agotado al verificar nickname '{nickname}'", timeoutEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Error interno de EF al verificar nickname '{nickname}'", entityCmdEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error general inesperado al verificar nickname '{nickname}'", ex);
+                    throw;
+                }
             }
         }
 
@@ -130,7 +192,30 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
-                return await context.Account.AnyAsync(a => a.email == email);
+                try
+                {
+                    return await context.Account.AnyAsync(a => a.email == email);
+                }
+                catch (SqlException sqlEx)
+                {
+                    Logger.Error($"[DB] Error de conexión/SQL al verificar email '{email}'", sqlEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout agotado al verificar email '{email}'", timeoutEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Error interno de EF al verificar email '{email}'", entityCmdEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error general inesperado al verificar email '{email}'", ex);
+                    throw;
+                }
             }
         }
 
@@ -144,7 +229,8 @@ namespace UnoLisServer.Data.Repositories
 
         public async Task CreatePlayerFromPendingAsync(string email, PendingRegistration pendingData)
         {
-            var newPlayer = _playerFactory.CreateNewPlayer(pendingData.Nickname, pendingData.FullName, email, pendingData.HashedPassword);
+            var newPlayer = _playerFactory.CreateNewPlayer(pendingData.Nickname, pendingData.FullName, email, 
+                pendingData.HashedPassword);
 
             await SavePlayerGraphAsync(newPlayer);
         }
@@ -167,9 +253,22 @@ namespace UnoLisServer.Data.Repositories
 
                     transaction.Commit();
                 }
-                catch (Exception)
+                catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
+                    Logger.Error($"[DB] Error SQL al crear jugador {playerEntity.nickname}", dbEx);
+                    throw;
+                }
+                catch (DbEntityValidationException valEx)
+                {
+                    transaction.Rollback();
+                    Logger.Error($"[DB] Error validación entidad al crear jugador {playerEntity.nickname}", valEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error($"[DB] Error general al crear jugador {playerEntity.nickname}", ex);
                     throw;
                 }
             }
@@ -179,29 +278,64 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
-                var player = await context.Player
-                    .Include(p => p.AvatarsUnlocked.Select(au => au.Avatar))
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.nickname == nickname);
-
-                if (player == null) return null;
-
-                var avatarList = new List<PlayerAvatar>();
-
-                foreach (var unlocked in player.AvatarsUnlocked)
+                try
                 {
-                    avatarList.Add(new PlayerAvatar
-                    {
-                        AvatarId = unlocked.Avatar.idAvatar,
-                        AvatarName = unlocked.Avatar.avatarName,
-                        Description = unlocked.Avatar.avatarDescription,
-                        Rarity = unlocked.Avatar.avatarRarity,
-                        IsUnlocked = true,
-                        IsSelected = (player.SelectedAvatar_Avatar_idAvatar == unlocked.Avatar.idAvatar)
-                    });
-                }
+                    var player = await context.Player
+                        .AsNoTracking()
+                        .Select(p => new { p.idPlayer, p.nickname, p.SelectedAvatar_Avatar_idAvatar })
+                        .FirstOrDefaultAsync(p => p.nickname == nickname);
 
-                return avatarList;
+                    if (player == null) return null;
+
+                    var unlockedAvatarIds = new HashSet<int>(await context.AvatarsUnlocked
+                        .AsNoTracking()
+                        .Where(au => au.Player_idPlayer == player.idPlayer)
+                        .Select(au => au.Avatar_idAvatar)
+                        .ToListAsync());
+
+                    var allAvatars = await context.Avatar
+                        .AsNoTracking()
+                        .ToListAsync();
+
+                    var resultList = new List<PlayerAvatar>();
+
+                    foreach (var avatar in allAvatars)
+                    {
+                        bool isUnlocked = unlockedAvatarIds.Contains(avatar.idAvatar);
+
+                        resultList.Add(new PlayerAvatar
+                        {
+                            AvatarId = avatar.idAvatar,
+                            AvatarName = avatar.avatarName,
+                            Description = avatar.avatarDescription,
+                            Rarity = avatar.avatarRarity,
+                            IsUnlocked = isUnlocked,
+                            IsSelected = (player.SelectedAvatar_Avatar_idAvatar == avatar.idAvatar)
+                        });
+                    }
+
+                    return resultList;
+                }
+                catch (SqlException sqlEx)
+                {
+                    Logger.Error($"[DB] Error crítico de SQL al obtener avatares para {nickname}", sqlEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Error de ejecución de comando EF para {nickname}", entityCmdEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout al obtener avatares para {nickname}", timeoutEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error general inesperado al obtener avatares para {nickname}", ex);
+                    throw;
+                }
             }
         }
 
@@ -209,11 +343,27 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
-                var player = await context.Player.FirstOrDefaultAsync(p => p.nickname == nickname);
-                if (player == null) throw new Exception("PlayerNotFound");
+                try
+                {
+                    var player = await context.Player.FirstOrDefaultAsync(p => p.nickname == nickname);
 
-                player.SelectedAvatar_Avatar_idAvatar = newAvatarId;
-                await context.SaveChangesAsync();
+                    if (player == null)
+                        throw new ValidationException(MessageCode.PlayerNotFound, $"Jugador '{nickname}' no " +
+                            $"encontrado para actualizar avatar.");
+
+                    player.SelectedAvatar_Avatar_idAvatar = newAvatarId;
+                    await context.SaveChangesAsync();
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    Logger.Error($"[DB] Error FK/SQL al cambiar avatar de {nickname} a {newAvatarId}", dbEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error inesperado al cambiar avatar de {nickname}", ex);
+                    throw;
+                }
             }
         }
 

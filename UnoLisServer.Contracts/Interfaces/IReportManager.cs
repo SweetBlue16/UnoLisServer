@@ -11,6 +11,7 @@ namespace UnoLisServer.Contracts.Interfaces
         void ReportPlayer(ReportData reportData);
     }
 
+    [ServiceContract]
     public interface IReportCallback : ISessionCallback
     {
         [OperationContract(IsOneWay = true)]

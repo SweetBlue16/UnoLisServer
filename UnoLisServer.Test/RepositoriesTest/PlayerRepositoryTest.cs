@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using System.Data.Entity; // Para Include
 using System.Linq;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Exceptions; // ¡Importante! Para ValidationException
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Test.Common;
@@ -23,10 +24,30 @@ namespace UnoLisServer.Test
             {
                 try
                 {
-                    EnsureCatalogsExist(context);
+                    // 1. Abrir conexión manual para SQL Directo
+                    if (context.Database.Connection.State != System.Data.ConnectionState.Open)
+                        context.Database.Connection.Open();
 
+                    // 2. Insertar Avatares (IDs fijos 1, 10, 11)
+                    context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] ON");
+
+                    context.Database.ExecuteSqlCommand(@"
+                        IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 1)
+                            INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (1, 'Default', 'Common');
+                        
+                        IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 10)
+                            INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (10, 'Premio1', 'Rare');
+
+                        IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 11)
+                            INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (11, 'Premio2', 'Epic');
+                    ");
+
+                    context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] OFF");
+
+                    // 3. Cargar referencia en memoria
                     var defaultAvatar = context.Avatar.Find(1);
 
+                    // 4. Crear Jugadores
                     var playerFull = BuildFullPlayer(defaultAvatar);
                     var playerNewbie = BuildNewbiePlayer();
 
@@ -34,7 +55,10 @@ namespace UnoLisServer.Test
                     context.Player.Add(playerNewbie);
                     context.SaveChanges();
 
-                    SetSelectedAvatar(context, playerFull);
+                    // 5. Referencia Circular
+                    playerFull.SelectedAvatar_Player_idPlayer = playerFull.idPlayer;
+                    playerFull.SelectedAvatar_Avatar_idAvatar = 1;
+                    context.SaveChanges();
                 }
                 catch (Exception ex)
                 {
@@ -43,20 +67,14 @@ namespace UnoLisServer.Test
             }
         }
 
-        private void EnsureCatalogsExist(UNOContext context)
+        // --- HELPER ---
+        private PlayerRepository CreateRepo()
         {
-            context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] ON");
-            context.Database.ExecuteSqlCommand(@"
-                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 1)
-                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (1, 'Default', 'Common');
-                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 10)
-                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (10, 'Premio1', 'Rare');
-                IF NOT EXISTS (SELECT 1 FROM [dbo].[Avatar] WHERE idAvatar = 11)
-                    INSERT INTO [dbo].[Avatar] (idAvatar, avatarName, avatarRarity) VALUES (11, 'Premio2', 'Epic');
-            ");
-            context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [dbo].[Avatar] OFF");
+            // Usamos la conexión compartida de la clase base
+            return new PlayerRepository(() => GetContext());
         }
 
+        // --- MÉTODOS DE CONSTRUCCIÓN ---
         private Player BuildFullPlayer(Avatar avatar)
         {
             var p = new Player
@@ -95,17 +113,9 @@ namespace UnoLisServer.Test
             return p;
         }
 
-        private void SetSelectedAvatar(UNOContext context, Player player)
-        {
-            player.SelectedAvatar_Player_idPlayer = player.idPlayer;
-            player.SelectedAvatar_Avatar_idAvatar = 1;
-            context.SaveChanges();
-        }
-
-        private PlayerRepository CreateRepo()
-        {
-            return new PlayerRepository(() => GetContext());
-        }
+        // -------------------------------------------------------
+        // PRUEBAS DE LECTURA
+        // -------------------------------------------------------
 
         [Fact]
         public async Task TestGetPlayerProfileUserExistsReturnsBasicInfoAndAccount()
@@ -183,12 +193,15 @@ namespace UnoLisServer.Test
             Assert.Null(result);
         }
 
+        // -------------------------------------------------------
+        // PRUEBAS DE ACTUALIZACIÓN (PROFILE EDIT)
+        // -------------------------------------------------------
+
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncBasicInfoUpdatesDatabase()
         {
-            var repository = CreateRepo();
             var updateData = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "Updated", Email = "u@t.com" };
-            await repository.UpdatePlayerProfileAsync(updateData);
+            await CreateRepo().UpdatePlayerProfileAsync(updateData);
 
             using (var context = GetContext())
             {
@@ -201,11 +214,10 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncNewPasswordUpdatesHash()
         {
-            var repository = CreateRepo();
             string oldHash;
             using (var ctx = GetContext()) oldHash = ctx.Account.First(a => a.Player.nickname == "TikiTest").password;
 
-            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", Password = "New!" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", Password = "New!" });
 
             using (var ctx = GetContext()) Assert.NotEqual(oldHash, ctx.Account.First(a => a.Player.nickname == "TikiTest").password);
         }
@@ -213,8 +225,7 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncUpdateExistingSocialNetworkChangesLink()
         {
-            var repository = CreateRepo();
-            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "new.fb" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "new.fb" });
 
             using (var ctx = GetContext())
                 Assert.Equal("new.fb", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook").linkRedSocial);
@@ -223,24 +234,37 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncAddNewSocialNetworkInsertsRecord()
         {
-            var repository = CreateRepo();
-            await repository.UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", InstagramUrl = "new.ig" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", InstagramUrl = "new.ig" });
 
             using (var ctx = GetContext())
                 Assert.Equal("new.ig", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Instagram").linkRedSocial);
         }
 
         [Fact]
+        public async Task TestUpdatePlayerProfileAsyncEmptySocialUrlDoesNotDeleteOrError()
+        {
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "" });
+
+            using (var ctx = GetContext())
+                Assert.Equal("fb.com/tiki", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook").linkRedSocial);
+        }
+
+        // [ACTUALIZADO] Espera ValidationException
+        [Fact]
         public async Task TestUpdatePlayerProfileAsyncNonExistentUserThrowsException()
         {
-            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "Ghost" }));
+            await Assert.ThrowsAsync<ValidationException>(() => CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "Ghost" }));
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsWrappedValidationException()
         {
             var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FullName = new string('A', 300) };
-            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+
+            // Este sigue lanzando Exception porque el repo hace "throw new Exception(..., inner)"
+            // Pero verificamos el mensaje interno
+            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+            Assert.Contains("Error de validación", ex.Message);
         }
 
         [Fact]
@@ -255,6 +279,17 @@ namespace UnoLisServer.Test
                 if (p != null) Assert.Equal("Tiki Tester", p.fullName);
             }
         }
+
+        [Fact]
+        public async Task TestUpdatePlayerProfileAsyncDuplicateEmailThrowsDbUpdateException()
+        {
+            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "newbie@test.com" };
+            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+        }
+
+        // -------------------------------------------------------
+        // PRUEBAS DE REGISTRO (CREATE)
+        // -------------------------------------------------------
 
         [Fact]
         public async Task TestCreatePlayerAsyncValidDataInsertsPlayerAndAccount()
@@ -322,19 +357,28 @@ namespace UnoLisServer.Test
             }
         }
 
+        // -------------------------------------------------------
+        // PRUEBAS DE AVATAR
+        // -------------------------------------------------------
+
         [Fact]
         public async Task TestGetPlayerAvatarsAsyncReturnsCorrectListAndSelection()
         {
-            var repo = CreateRepo();
-
-            var avatars = await repo.GetPlayerAvatarsAsync("TikiTest");
+            // Este método ahora debe devolver la lista COMPLETA (todos los avatares del sistema)
+            // pero marcando IsUnlocked=true solo en los que tiene el usuario.
+            var avatars = await CreateRepo().GetPlayerAvatarsAsync("TikiTest");
 
             Assert.NotNull(avatars);
-            Assert.NotEmpty(avatars); 
+            // Esperamos al menos 3 avatares en el catálogo (1, 10, 11 que insertamos)
+            Assert.True(avatars.Count >= 3);
 
+            // TikiTest solo tiene el 1 desbloqueado (ver SeedDatabase)
             var defaultAvatar = avatars.First(a => a.AvatarId == 1);
             Assert.True(defaultAvatar.IsSelected);
             Assert.True(defaultAvatar.IsUnlocked);
+
+            var lockedAvatar = avatars.First(a => a.AvatarId == 10);
+            Assert.False(lockedAvatar.IsUnlocked); // Tiki no tiene el 10
         }
 
         [Fact]
@@ -342,10 +386,10 @@ namespace UnoLisServer.Test
         {
             var repo = CreateRepo();
 
+            // Pre-requisito: Desbloquear el avatar 10 para poder seleccionarlo
             using (var ctx = GetContext())
             {
                 var player = ctx.Player.First(p => p.nickname == "TikiTest");
-
                 player.AvatarsUnlocked.Add(new AvatarsUnlocked
                 {
                     Player_idPlayer = player.idPlayer,
@@ -364,10 +408,11 @@ namespace UnoLisServer.Test
             }
         }
 
+        // [ACTUALIZADO] Espera ValidationException
         [Fact]
         public async Task TestUpdateSelectedAvatarAsyncInvalidUserThrowsException()
         {
-            await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdateSelectedAvatarAsync("Ghost", 1));
+            await Assert.ThrowsAsync<ValidationException>(() => CreateRepo().UpdateSelectedAvatarAsync("Ghost", 1));
         }
     }
 }
