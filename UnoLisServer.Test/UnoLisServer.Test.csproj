@@ -83,6 +83,7 @@
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
@@ -109,11 +110,13 @@
   <ItemGroup>
     <Compile Include="Common\UnoLisTestBase.cs" />
     <Compile Include="FactoriesTest\PlayerFactoryTest.cs" />
+    <Compile Include="HelpersTest\ChatSessionHelperTest.cs" />
     <Compile Include="HelpersTest\NotificationSenderTest.cs" />
     <Compile Include="HelpersTest\PasswordHelperTest.cs" />
     <Compile Include="HelpersTest\PendingRegistrationHelperTest.cs" />
     <Compile Include="HelpersTest\VerificationCodeHelperTest.cs" />
     <Compile Include="ManagerTest\AvatarManagerTest.cs" />
+    <Compile Include="ManagerTest\ChatManagerTest.cs" />
     <Compile Include="ManagerTest\ConfirmationManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
@@ -122,6 +125,7 @@
     <Compile Include="RepositoriesTest\PlayerRepositoryTest.cs" />
     <Compile Include="SmokeTest.cs" />
     <Compile Include="ValidatorsTest\AvatarValidatorTest.cs" />
+    <Compile Include="ValidatorsTest\ChatValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ConfirmationValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ProfileEditValidatorTest.cs" />
     <Compile Include="ValidatorsTest\RegisterValidatorTest.cs" />

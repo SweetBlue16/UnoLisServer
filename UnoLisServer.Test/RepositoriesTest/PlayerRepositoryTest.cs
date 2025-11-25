@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Exceptions; 
 using UnoLisServer.Data;
+using System.Data.Entity.Core;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Test.Common;
 using Xunit;
@@ -243,8 +244,8 @@ namespace UnoLisServer.Test
         public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsWrappedValidationException()
         {
             var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FullName = new string('A', 300) };
+            var ex = await Assert.ThrowsAsync<EntityException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
 
-            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
             Assert.Contains("Error de validación", ex.Message);
         }
 
