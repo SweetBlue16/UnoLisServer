@@ -6,9 +6,9 @@ using UnoLisServer.Common.Helpers;
 
 namespace UnoLisServer.Host
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.Title = "UNO LIS - WCF Server";
 

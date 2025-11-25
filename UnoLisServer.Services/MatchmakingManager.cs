@@ -248,7 +248,7 @@ namespace UnoLisServer.Services
             });
         }
 
-        private List<string> GetEmailsForNicknames(List<string> invitedNicknames)
+        private static List<string> GetEmailsForNicknames(List<string> invitedNicknames)
         {
             var emails = new List<string>();
             using (var context = new UNOContext())
@@ -270,7 +270,7 @@ namespace UnoLisServer.Services
             return emails;
         }
 
-        private async Task ExecuteEmailSendingAsync(string lobbyCode, string senderNickname, List<string> emailsToSend)
+        private static async Task ExecuteEmailSendingAsync(string lobbyCode, string senderNickname, List<string> emailsToSend)
         {
             var tasks = emailsToSend.Select(email =>
                 NotificationSender.Instance.SendMatchInvitationAsync(email, senderNickname, lobbyCode));

@@ -118,7 +118,7 @@ namespace UnoLisServer.Data.Repositories
 
                     Logger.Error($"[DB] Error de validación de entidad al actualizar {data.Nickname}: {fullError}", 
                         entityEx);
-                    throw new Exception($"Error de validación en base de datos: {fullError}", entityEx);
+                    throw new EntityException($"Error de validación en base de datos: {fullError}", entityEx);
                 }
                 catch (DbUpdateException dbEx)
                 {

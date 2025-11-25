@@ -183,7 +183,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private string GetPlayerAvatarFromDb(string nickname)
+        private static string GetPlayerAvatarFromDb(string nickname)
         {
             try
             {
