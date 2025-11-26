@@ -108,6 +108,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\DatabaseCollection.cs" />
     <Compile Include="Common\UnoLisTestBase.cs" />
     <Compile Include="FactoriesTest\PlayerFactoryTest.cs" />
     <Compile Include="HelpersTest\ChatSessionHelperTest.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
     <Compile Include="ManagerTest\RegisterManagerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RepositoriesTest\FriendRepositoryTest.cs" />
     <Compile Include="RepositoriesTest\PlayerRepositoryTest.cs" />
     <Compile Include="SmokeTest.cs" />
     <Compile Include="ValidatorsTest\AvatarValidatorTest.cs" />

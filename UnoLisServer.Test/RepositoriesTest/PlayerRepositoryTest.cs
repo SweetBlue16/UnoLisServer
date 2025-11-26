@@ -12,6 +12,7 @@ using Xunit;
 
 namespace UnoLisServer.Test
 {
+    [CollectionDefinition("DatabaseTests")]
     public class PlayerRepositoryTest : UnoLisTestBase
     {
         public PlayerRepositoryTest()

@@ -30,19 +30,29 @@ namespace UnoLisServer.Services
 
         public void RegisterPlayer(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(nickname)) return;
-
                 var callback = _callbackProvider.GetCallback();
-
                 _sessionHelper.AddClient(nickname, callback);
 
                 Logger.Log($"[CHAT] Jugador registrado: {nickname}");
             }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[CHAT] Error de comunicación al registrar a {nickname}: {commEx.Message}");
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Warn($"[CHAT] Timeout al registrar a {nickname}: {timeoutEx.Message}");
+            }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error al registrar jugador {nickname}", ex);
+                Logger.Error($"[CHAT] Error crítico al registrar jugador {nickname}", ex);
             }
         }
 
@@ -51,30 +61,12 @@ namespace UnoLisServer.Services
             try
             {
                 ChatValidator.ValidateMessage(message);
-
                 string channel = message.ChannelId ?? "General";
                 _sessionHelper.AddToHistory(channel, message);
 
                 Logger.Log($"[CHAT] Mensaje de {message.Nickname} en {channel}");
 
-                var activeClients = _sessionHelper.GetActiveClients();
-                var disconnectedClients = new List<IChatCallback>();
-
-                foreach (var client in activeClients)
-                {
-                    try
-                    {
-                        client.MessageReceived(message);
-                    }
-                    catch (CommunicationException)
-                    {
-                        disconnectedClients.Add(client);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn($"[CHAT] Error enviando a un cliente: {ex.Message}");
-                    }
-                }
+                BroadcastToClients(message);
             }
             catch (ValidationException valEx)
             {
@@ -82,7 +74,39 @@ namespace UnoLisServer.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error crítico en SendMessage", ex);
+                Logger.Error($"[CHAT] Error crítico en orquestación de SendMessage", ex);
+            }
+        }
+
+        /// <summary>
+        /// Auxiliar method to notify active clients in that a message has been sent
+        /// </summary>
+        private void BroadcastToClients(ChatMessageData message)
+        {
+            var activeClients = _sessionHelper.GetActiveClients();
+
+            foreach (var client in activeClients)
+            {
+                try
+                {
+                    client.MessageReceived(message);
+                }
+                catch (CommunicationException)
+                {
+                    Logger.Warn($"[CHAT] No se pudo entregar mensaje: Cliente desconectado.");
+                }
+                catch (TimeoutException)
+                {
+                    Logger.Warn($"[CHAT] Timeout al entregar mensaje a un cliente.");
+                }
+                catch (ObjectDisposedException)
+                {
+                    Logger.Warn($"[CHAT] Intento de envío a un canal cerrado (ObjectDisposed).");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"[CHAT] Error inesperado enviando a cliente: {ex.Message}");
+                }
             }
         }
 
@@ -91,15 +115,23 @@ namespace UnoLisServer.Services
             try
             {
                 var history = _sessionHelper.GetHistory(channelId ?? "General");
-
                 var callback = _callbackProvider.GetCallback();
+
                 callback.ChatHistoryReceived(history.ToArray());
 
                 Logger.Log($"[CHAT] Historial enviado a solicitante (Canal: {channelId})");
             }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[CHAT] Error de comunicación al enviar historial (Cliente desconectado): {commEx.Message}");
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Warn($"[CHAT] Timeout al enviar historial al cliente: {timeoutEx.Message}");
+            }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error al recuperar historial", ex);
+                Logger.Error($"[CHAT] Error crítico al recuperar historial", ex);
             }
         }
     }

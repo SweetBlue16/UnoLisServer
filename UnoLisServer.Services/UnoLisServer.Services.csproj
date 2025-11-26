@@ -79,6 +79,7 @@
     <Compile Include="Validators\AvatarValidator.cs" />
     <Compile Include="Validators\ChatValidator.cs" />
     <Compile Include="Validators\ConfirmationValidator.cs" />
+    <Compile Include="Validators\FriendsValidator.cs" />
     <Compile Include="Validators\LoginValidator.cs" />
     <Compile Include="SessionManager.cs" />
     <Compile Include="ShopManager.cs" />

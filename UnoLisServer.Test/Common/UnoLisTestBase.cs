@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.SqlClient;
@@ -17,19 +15,33 @@ namespace UnoLisServer.Test.Common
 
         protected UnoLisTestBase()
         {
+            // CONFIGURACIÓN CRÍTICA PARA EVITAR DEADLOCKS:
+            // Usamos IsolationLevel.ReadCommitted. 
+            // El default (Serializable) es demasiado agresivo bloqueando tablas enteras.
+            var transactionOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted,
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+
+            // 1. PRIMERO: Creamos el Scope con las opciones relajadas
+            _scope = new TransactionScope(
+                TransactionScopeOption.Required,
+                transactionOptions,
+                TransactionScopeAsyncFlowOption.Enabled);
+
+            // 2. SEGUNDO: Configuramos y Abrimos la conexión
             var sqlBuilder = new SqlConnectionStringBuilder
             {
                 DataSource = ".",
                 InitialCatalog = "UNOLIS_TEST",
                 IntegratedSecurity = true,
-                MultipleActiveResultSets = true,
-                ApplicationName = "EntityFramework"
+                MultipleActiveResultSets = true, // Necesario para EF
+                ApplicationName = "EntityFramework_Test"
             };
 
             SharedSqlConnection = new SqlConnection(sqlBuilder.ToString());
             SharedSqlConnection.Open();
-
-            _scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
         }
 
         protected UNOContext GetContext()
@@ -42,9 +54,7 @@ namespace UnoLisServer.Test.Common
             };
 
             Assembly dataAssembly = typeof(UNOContext).Assembly;
-
             MetadataWorkspace workspace = new MetadataWorkspace(metadataPaths, new[] { dataAssembly });
-
             EntityConnection entityConnection = new EntityConnection(workspace, SharedSqlConnection);
 
             return new UNOContext(entityConnection, false);
@@ -52,8 +62,8 @@ namespace UnoLisServer.Test.Common
 
         public void Dispose()
         {
-            _scope.Dispose();          
-            SharedSqlConnection.Dispose();
+            SharedSqlConnection?.Dispose();
+            _scope?.Dispose(); // Rollback automático
         }
     }
 }
