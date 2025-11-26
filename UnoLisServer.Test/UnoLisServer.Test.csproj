@@ -119,6 +119,7 @@
     <Compile Include="ManagerTest\AvatarManagerTest.cs" />
     <Compile Include="ManagerTest\ChatManagerTest.cs" />
     <Compile Include="ManagerTest\ConfirmationManagerTest.cs" />
+    <Compile Include="ManagerTest\FriendsManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
     <Compile Include="ManagerTest\RegisterManagerTest.cs" />
@@ -129,6 +130,7 @@
     <Compile Include="ValidatorsTest\AvatarValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ChatValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ConfirmationValidatorTest.cs" />
+    <Compile Include="ValidatorsTest\FriendsValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ProfileEditValidatorTest.cs" />
     <Compile Include="ValidatorsTest\RegisterValidatorTest.cs" />
   </ItemGroup>
