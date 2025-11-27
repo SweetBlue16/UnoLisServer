@@ -31,7 +31,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestRegisterPlayer_ValidNickname_AddsClientToSession()
+        public void TestRegisterPlayerValidNicknameAddsClientToSession()
         {
             string nickname = "TikiTest";
 
@@ -40,7 +40,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestRegisterPlayer_NullNickname_DoesNotAddClient()
+        public void TestRegisterPlayerNullNicknameDoesNotAddClient()
         {
             string nickname = null;
 
@@ -49,7 +49,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestSendMessage_ValidMessage_ValidatesSavesAndBroadcasts()
+        public void TestSendMessageValidMessageValidatesSavesAndBroadcasts()
         {
             var msg = new ChatMessageData { Nickname = "User", Message = "Hello World", ChannelId = "Lobby1" };
 
@@ -67,7 +67,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestSendMessage_EmptyMessage_StopsAtValidation()
+        public void TestSendMessageEmptyMessageStopsAtValidation()
         {
             var msg = new ChatMessageData { Nickname = "User", Message = "" }; 
 
@@ -78,7 +78,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestSendMessage_WhenOneClientFails_OtherClientsStillReceiveMessage()
+        public void TestSendMessageWhenOneClientFailsOtherClientsStillReceiveMessage()
         {
             var msg = new ChatMessageData { Nickname = "User", Message = "Hi" };
 
@@ -97,7 +97,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestGetChatHistory_RetrievesAndSendsToRequester()
+        public void TestGetChatHistoryRetrievesAndSendsToRequester()
         {
             string channel = "LobbyA";
             var fakeHistory = new List<ChatMessageData>

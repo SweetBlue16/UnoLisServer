@@ -353,6 +353,43 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
+        public async Task TestGetTopPlayersByGlobalScoreAsyncReturnsOrderedListRespectedLimit()
+        {
+            using (var context = GetContext())
+            {
+                var p1 = new Player { nickname = "LowScore", fullName = "A", revoCoins = 0 };
+                var p2 = new Player { nickname = "HighScore", fullName = "B", revoCoins = 0 };
+                var p3 = new Player { nickname = "MidScore", fullName = "C", revoCoins = 0 };
+                var p4 = new Player { nickname = "ZeroScore", fullName = "D", revoCoins = 0 };
+
+                p1.Account.Add(new Account { email = "1@t.com", password = "p" });
+                p2.Account.Add(new Account { email = "2@t.com", password = "p" });
+                p3.Account.Add(new Account { email = "3@t.com", password = "p" });
+                p4.Account.Add(new Account { email = "4@t.com", password = "p" });
+
+                context.Player.AddRange(new[] { p1, p2, p3, p4 });
+                await context.SaveChangesAsync();
+
+                context.PlayerStatistics.Add(new PlayerStatistics { Player = p1, globalPoints = 100 });
+                context.PlayerStatistics.Add(new PlayerStatistics { Player = p2, globalPoints = 5000 }); 
+                context.PlayerStatistics.Add(new PlayerStatistics { Player = p3, globalPoints = 2500 });
+                context.PlayerStatistics.Add(new PlayerStatistics { Player = p4, globalPoints = 0 });
+
+                await context.SaveChangesAsync();
+            }
+
+            var repo = CreateRepo();
+
+            var result = await repo.GetTopPlayersByGlobalScoreAsync(2);
+
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count);
+
+            Assert.Equal("HighScore", result[0].Player.nickname);
+            Assert.Equal("MidScore", result[1].Player.nickname); 
+        }
+
+        [Fact]
         public async Task TestUpdateSelectedAvatarAsyncUpdatesDatabase()
         {
             var repo = CreateRepo();

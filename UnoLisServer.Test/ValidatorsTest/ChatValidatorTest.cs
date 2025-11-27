@@ -8,14 +8,14 @@ namespace UnoLisServer.Test
     public class ChatValidatorTest
     {
         [Fact]
-        public void ValidateMessage_ValidData_DoesNotThrow()
+        public void TestValidateMessageValidDataDoesNotThrow()
         {
             var msg = new ChatMessageData { Nickname = "A", Message = "Hola" };
             ChatValidator.ValidateMessage(msg); 
         }
 
         [Fact]
-        public void ValidateMessage_NullObject_ThrowsValidationException()
+        public void TestValidateMessageNullObjectThrowsValidationException()
         {
             ChatMessageData msg = null;
             Assert.Throws<ValidationException>(() => ChatValidator.ValidateMessage(msg));
@@ -25,7 +25,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateMessage_InvalidNickname_ThrowsValidationException(string badNick)
+        public void ValidateMessageInvalidNicknameThrowsValidationException(string badNick)
         {
             var msg = new ChatMessageData { Nickname = badNick, Message = "Hola" };
             Assert.Throws<ValidationException>(() => ChatValidator.ValidateMessage(msg));
@@ -35,14 +35,14 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateMessage_InvalidMessageContent_ThrowsValidationException(string badMsg)
+        public void TestValidateMessageInvalidMessageContentThrowsValidationException(string badMsg)
         {
             var msg = new ChatMessageData { Nickname = "User", Message = badMsg };
             Assert.Throws<ValidationException>(() => ChatValidator.ValidateMessage(msg));
         }
 
         [Fact]
-        public void ValidateMessage_MessageTooLong_ThrowsValidationException()
+        public void TestValidateMessageMessageTooLongThrowsValidationException()
         {
             string longMsg = new string('A', 256);
             var msg = new ChatMessageData { Nickname = "User", Message = longMsg };

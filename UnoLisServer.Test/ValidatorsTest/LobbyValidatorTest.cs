@@ -8,7 +8,7 @@ namespace UnoLisServer.Test
     public class LobbyValidatorTest
     {
         [Fact]
-        public void ValidateSettings_NullSettings_ThrowsArgumentNullException()
+        public void TestValidateSettingsNullSettingsThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => LobbyValidator.ValidateSettings(null));
         }
@@ -17,7 +17,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateSettings_InvalidHostNickname_ThrowsArgumentException(string invalidNick)
+        public void TestValidateSettingsInvalidHostNicknameThrowsArgumentException(string invalidNick)
         {
             var settings = new MatchSettings { HostNickname = invalidNick, MaxPlayers = 4 };
 
@@ -30,7 +30,7 @@ namespace UnoLisServer.Test
         [InlineData(1)]  
         [InlineData(5)] 
         [InlineData(-10)]
-        public void ValidateSettings_InvalidPlayerCount_ThrowsArgumentException(int invalidCount)
+        public void TestValidateSettingsInvalidPlayerCountThrowsArgumentException(int invalidCount)
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = invalidCount };
 
@@ -42,7 +42,7 @@ namespace UnoLisServer.Test
         [InlineData(2)] 
         [InlineData(3)] 
         [InlineData(4)] 
-        public void ValidateSettings_ValidBoundaries_DoesNotThrow(int validCount)
+        public void TestValidateSettingsValidBoundariesDoesNotThrow(int validCount)
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = validCount };
             LobbyValidator.ValidateSettings(settings);
@@ -52,7 +52,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateJoinRequest_InvalidLobbyCode_ThrowsArgumentException(string invalidCode)
+        public void TestValidateJoinRequestInvalidLobbyCodeThrowsArgumentException(string invalidCode)
         {
             var ex = Assert.Throws<ArgumentException>(() =>
                 LobbyValidator.ValidateJoinRequest(invalidCode, "ValidNick"));
@@ -64,7 +64,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateJoinRequest_InvalidNickname_ThrowsArgumentException(string invalidNick)
+        public void TestValidateJoinRequestInvalidNicknameThrowsArgumentException(string invalidNick)
         {
             var ex = Assert.Throws<ArgumentException>(() =>
                 LobbyValidator.ValidateJoinRequest("VALIDCODE", invalidNick));
@@ -73,7 +73,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void ValidateJoinRequest_ValidInputs_DoesNotThrow()
+        public void TestValidateJoinRequestValidInputsDoesNotThrow()
         {
             LobbyValidator.ValidateJoinRequest("ABCDE", "PlayerOne");
         }

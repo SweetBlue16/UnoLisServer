@@ -7,7 +7,7 @@ namespace UnoLisServer.Test
     public class FriendsValidatorTest
     {
         [Fact]
-        public void ValidateNicknames_BothValid_DoesNotThrow()
+        public void TestValidateNicknamesBothValidDoesNotThrow()
         {
             string nick1 = "AlphaUser";
             string nick2 = "BetaUser";
@@ -19,7 +19,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateNicknames_InvalidRequester_ThrowsArgumentException(string invalidNick)
+        public void TestValidateNicknamesInvalidRequesterThrowsArgumentException(string invalidNick)
         {
             string validTarget = "ValidUser";
 
@@ -33,7 +33,7 @@ namespace UnoLisServer.Test
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ValidateNicknames_InvalidTarget_ThrowsArgumentException(string invalidNick)
+        public void TestValidateNicknamesInvalidTargetThrowsArgumentException(string invalidNick)
         {
             string validRequester = "ValidUser";
 
@@ -44,7 +44,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void ValidateNicknames_BothInvalid_ThrowsArgumentException()
+        public void TestValidateNicknamesBothInvalidThrowsArgumentException()
         {
             Assert.Throws<ArgumentException>(() =>
                 FriendsValidator.ValidateNicknames("", null));

@@ -20,7 +20,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateMatchAsync_DelegatesToLobbyManager()
+        public async Task TestCreateMatchAsyncDelegatesToLobbyManager()
         {
             var settings = new MatchSettings();
             var expectedResponse = new CreateMatchResponse { Success = true };
@@ -35,7 +35,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestJoinMatchAsync_DelegatesToLobbyManager()
+        public async Task TestJoinMatchAsyncDelegatesToLobbyManager()
         {
             var expectedResponse = new JoinMatchResponse { Success = true };
             _mockLobbyManager.Setup(x => x.JoinLobbyAsync("CODE", "User"))
@@ -48,7 +48,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestSetLobbyBackgroundAsync_DelegatesToLobbyManager()
+        public async Task TestSetLobbyBackgroundAsyncDelegatesToLobbyManager()
         {
             _mockLobbyManager.Setup(x => x.SetLobbyBackgroundAsync("CODE", "Video"))
                              .ReturnsAsync(true);
@@ -60,7 +60,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestSendInvitationsAsync_DelegatesToLobbyManager()
+        public async Task TestSendInvitationsAsyncDelegatesToLobbyManager()
         {
             var list = new List<string> { "A", "B" };
             _mockLobbyManager.Setup(x => x.SendInvitationsAsync("CODE", "Host", list))
@@ -73,7 +73,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestGetLobbySettingsAsync_ReturnsSettingsIfFound()
+        public async Task TestGetLobbySettingsAsyncReturnsSettingsIfFound()
         {
             var expectedSettings = new LobbySettings { BackgroundVideoName = "Test" };
 
@@ -85,7 +85,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestGetLobbySettingsAsync_ReturnsEmptyObjectIfNull()
+        public async Task TestGetLobbySettingsAsyncReturnsEmptyObjectIfNull()
         {
             _mockLobbyManager.Setup(x => x.GetLobbySettings("CODE"))
                              .Returns((LobbySettings)null);

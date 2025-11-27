@@ -36,7 +36,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateLobby_ValidSettings_ReturnsSuccess()
+        public async Task TestCreateLobbyValidSettingsReturnsSuccess()
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = 4 };
             SetupMockAvatar("Host", "Avatar1");
@@ -49,7 +49,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateLobby_NullSettings_ReturnsFailureWithMessage()
+        public async Task TestCreateLobbyNullSettingsReturnsFailureWithMessage()
         {
             var response = await _manager.CreateLobbyAsync(null);
 
@@ -58,7 +58,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateLobby_InvalidMaxPlayers_ReturnsFailure()
+        public async Task TestCreateLobbyInvalidMaxPlayersReturnsFailure()
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = 10 }; 
 
@@ -69,7 +69,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateLobby_DbFailureOnAvatar_ReturnsServiceUnavailable()
+        public async Task TestCreateLobbyDbFailureOnAvatarReturnsServiceUnavailable()
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = 2 };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync(It.IsAny<string>()))
@@ -82,7 +82,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreateLobby_GeneralException_ReturnsInternalError()
+        public async Task TestCreateLobbyGeneralExceptionReturnsInternalError()
         {
             var settings = new MatchSettings { HostNickname = "Host", MaxPlayers = 2 };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync(It.IsAny<string>()))
@@ -95,7 +95,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestJoinLobby_ValidCodeAndSpace_ReturnsSuccess()
+        public async Task TestJoinLobbyValidCodeAndSpaceReturnsSuccess()
         {
             string code = await CreateLobbyHelper("Host", 4);
             SetupMockAvatar("Joiner", "Avatar2");
@@ -107,7 +107,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestJoinLobby_LobbyNotFound_ReturnsFailure()
+        public async Task TestJoinLobbyLobbyNotFoundReturnsFailure()
         {
             var response = await _manager.JoinLobbyAsync("NONEXISTENT", "User");
 
@@ -116,7 +116,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestJoinLobby_LobbyFull_ReturnsFailure()
+        public async Task TestJoinLobbyLobbyFullReturnsFailure()
         {
             string code = await CreateLobbyHelper("Host", 2);
             SetupMockAvatar("P2", "A2");
@@ -131,14 +131,14 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestJoinLobby_InvalidInput_ReturnsFailure()
+        public async Task TestJoinLobbyInvalidInputReturnsFailure()
         {
             var response = await _manager.JoinLobbyAsync("", "User");
             Assert.False(response.Success);
         }
 
         [Fact]
-        public async Task TestJoinLobby_DbFailure_ReturnsServiceUnavailable()
+        public async Task TestJoinLobbyDbFailureReturnsServiceUnavailable()
         {
             string code = await CreateLobbyHelper("Host", 4);
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync("Joiner"))
@@ -151,7 +151,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestSetLobbyBackground_ExistingLobby_ReturnsTrue()
+        public async Task TestSetLobbyBackgroundExistingLobbyReturnsTrue()
         {
             string code = await CreateLobbyHelper("Host", 2);
 
@@ -162,14 +162,14 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestSetLobbyBackground_NonExistent_ReturnsFalse()
+        public async Task TestSetLobbyBackgroundNonExistentReturnsFalse()
         {
             bool result = await _manager.SetLobbyBackgroundAsync("FAKE", "Space");
             Assert.False(result);
         }
 
         [Fact]
-        public async Task TestSetLobbyBackground_EmptyName_ReturnsFalse()
+        public async Task TestSetLobbyBackgroundEmptyNameReturnsFalse()
         {
             string code = await CreateLobbyHelper("Host", 2);
             bool result = await _manager.SetLobbyBackgroundAsync(code, "");
@@ -177,7 +177,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestGetLobbySettings_ValidCode_ReturnsSettings()
+        public async Task TestGetLobbySettingsValidCodeReturnsSettings()
         {
             string code = await CreateLobbyHelper("Host", 2);
             await _manager.SetLobbyBackgroundAsync(code, "Volcano");
@@ -189,14 +189,14 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestGetLobbySettings_InvalidCode_ReturnsNull()
+        public void TestGetLobbySettingsInvalidCodeReturnsNull()
         {
             var result = _manager.GetLobbySettings("FAKE");
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task TestSendInvitations_DelegatesToHelper_ReturnsHelperResult()
+        public async Task TestSendInvitationsDelegatesToHelperReturnsHelperResult()
         {
             string code = "CODE1";
             var list = new List<string> { "Friend" };
@@ -209,7 +209,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestHandleReadyStatus_UpdatesPlayerState()
+        public async Task TestHandleReadyStatusUpdatesPlayerState()
         {
             string code = await CreateLobbyHelper("Host", 2);
             SetupMockAvatar("P2", "A");
@@ -223,13 +223,13 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestHandleReadyStatus_NonExistentLobby_DoesNotThrow()
+        public async Task TestHandleReadyStatusNonExistentLobbyDoesNotThrow()
         {
             await _manager.HandleReadyStatusAsync("FAKE", "User", true);
         }
 
         [Fact]
-        public async Task TestHandleReadyStatus_WhenAllReady_TriggerGameLogic()
+        public async Task TestHandleReadyStatusWhenAllReadyTriggerGameLogic()
         {
             string code = await CreateLobbyHelper("Host", 2);
             SetupMockAvatar("P2", "A");

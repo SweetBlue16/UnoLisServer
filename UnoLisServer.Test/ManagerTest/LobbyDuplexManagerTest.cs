@@ -21,7 +21,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void ConnectToLobby_DelegatesToManager()
+        public void TestConnectToLobbyDelegatesToManager()
         {
             string code = "CODE1";
             string nick = "User1";
@@ -31,7 +31,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void DisconnectFromLobby_DelegatesToManager_AndClearsState()
+        public void TestDisconnectFromLobbyDelegatesToManagerAndClearsState()
         {
             string code = "CODE1";
             string nick = "User1";
@@ -44,7 +44,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void Dispose_AbruptDisconnection_TriggersCleanup()
+        public void TestDisposeAbruptDisconnectionTriggersCleanup()
         {
             string code = "CODE_ABRUPT";
             string nick = "UserGhost";
@@ -56,7 +56,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void Dispose_CleanDisconnection_DoesNotTriggerDoubleCleanup()
+        public void TestDisposeCleanDisconnectionDoesNotTriggerDoubleCleanup()
         {
             string code = "CODE_CLEAN";
             string nick = "GoodUser";
@@ -68,7 +68,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SetReadyStatus_FireAndForget_CallsManager()
+        public async Task TestSetReadyStatusFireAndForgetCallsManager()
         {
             string code = "C";
             string nick = "U";
@@ -81,7 +81,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void CleanUp_HandlesException_DoesNotCrash()
+        public void TestCleanUpHandlesExceptionDoesNotCrash()
         {
             string code = "ERR";
             string nick = "User";

@@ -31,7 +31,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_Success_ReturnsSuccessAndNotifies()
+        public async Task TestSendFriendRequestSuccessReturnsSuccessAndNotifies()
         {
             string p1 = "Alpha";
             string p2 = "Beta";
@@ -54,7 +54,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_SelfRequest_ReturnsCannotAddSelf()
+        public async Task TestSendFriendRequestSelfRequestReturnsCannotAddSelf()
         {
             var result = await _manager.SendFriendRequestAsync("Alpha", "Alpha");
 
@@ -63,7 +63,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_UserNotFound_ReturnsUserNotFound()
+        public async Task TestSendFriendRequestUserNotFoundReturnsUserNotFound()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync("Ghost")).ReturnsAsync((Player)null);
 
@@ -73,7 +73,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_AlreadyFriends_ReturnsAlreadyFriends()
+        public async Task TestSendFriendRequestAlreadyFriendsReturnsAlreadyFriends()
         {
             var p1 = new Player { idPlayer = 1 };
             var p2 = new Player { idPlayer = 2 };
@@ -89,7 +89,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_RequestAlreadySent_ReturnsRequestAlreadySent()
+        public async Task TestSendFriendRequestRequestAlreadySentReturnsRequestAlreadySent()
         {
             var existingRel = new FriendList { friendRequest = false, Player_idPlayer = 1 };
 
@@ -103,7 +103,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_DbExplodes_ReturnsFailedAndLogs()
+        public async Task TestSendFriendRequestDbExplodesReturnsFailedAndLogs()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>()))
                 .ThrowsAsync(SqlExceptionBuilder.Build());
@@ -114,7 +114,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task AcceptRequest_ValidRequest_ReturnsTrueAndUpdatesDb()
+        public async Task TestAcceptRequestValidRequestReturnsTrueAndUpdatesDb()
         {
             var requestDto = new FriendRequestData { RequesterNickname = "A", TargetNickname = "B" };
             var p1 = new Player { idPlayer = 1 };
@@ -132,7 +132,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task AcceptRequest_NoRelationshipFound_ReturnsFalse()
+        public async Task TestAcceptRequestNoRelationshipFoundReturnsFalse()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>())).ReturnsAsync(new Player());
             _mockRepo.Setup(r => r.GetFriendshipEntryAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((FriendList)null);
@@ -143,7 +143,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task AcceptRequest_DbError_ReturnsFalse()
+        public async Task TestAcceptRequestDbErrorReturnsFalse()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>())).ThrowsAsync(new Exception("DB Boom"));
             var result = await _manager.AcceptFriendRequestAsync(new FriendRequestData { RequesterNickname = "A", TargetNickname = "B" });
@@ -152,7 +152,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RejectRequest_Valid_RemovesEntry()
+        public async Task TestRejectRequestValidRemovesEntry()
         {
             var requestDto = new FriendRequestData { RequesterNickname = "A", TargetNickname = "B" };
             var rel = new FriendList { idFriendList = 99 };
@@ -166,7 +166,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RemoveFriend_IfFriends_RemovesEntry()
+        public async Task TestRemoveFriendIfFriendsRemovesEntry()
         {
             var requestDto = new FriendRequestData { RequesterNickname = "A", TargetNickname = "B" };
             var rel = new FriendList { idFriendList = 77, friendRequest = true };
@@ -181,7 +181,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RemoveFriend_IfNotFriends_ReturnsFalseAndDoesNotRemove()
+        public async Task TestRemoveFriendIfNotFriendsReturnsFalseAndDoesNotRemove()
         {
             var requestDto = new FriendRequestData { RequesterNickname = "A", TargetNickname = "B" };
             var rel = new FriendList { idFriendList = 77, friendRequest = false };
@@ -196,7 +196,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPendingRequests_ReturnsMappedList()
+        public async Task TestGetPendingRequestsReturnsMappedList()
         {
             var pendingList = new List<FriendList>
             {
@@ -213,7 +213,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsList_ReturnsMappedList()
+        public async Task TestGetFriendsListReturnsMappedList()
         {
             var friendsList = new List<Player>
             {
@@ -230,7 +230,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RejectRequest_DbError_ReturnsFalse()
+        public async Task TestRejectRequestDbErrorReturnsFalse()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>())).ReturnsAsync(new Player { idPlayer = 1 });
             _mockRepo.Setup(r => r.GetFriendshipEntryAsync(It.IsAny<int>(), It.IsAny<int>()))
@@ -242,7 +242,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RemoveFriend_DbError_ReturnsFalse()
+        public async Task TestRemoveFriendDbErrorReturnsFalse()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>())).ReturnsAsync(new Player { idPlayer = 1 });
             _mockRepo.Setup(r => r.GetFriendshipEntryAsync(It.IsAny<int>(), It.IsAny<int>()))
@@ -254,7 +254,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendFriendRequest_InvalidNicknames_ThrowsOrReturnsFailed()
+        public async Task TestSendFriendRequestInvalidNicknamesThrowsOrReturnsFailed()
         {
             string valid = "ValidUser";
             string invalid = null;
@@ -264,7 +264,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsList_Timeout_ReturnsEmptyList()
+        public async Task TestGetFriendsListTimeoutReturnsEmptyList()
         {
             _mockRepo.Setup(r => r.GetFriendsEntitiesAsync(It.IsAny<string>()))
                 .ThrowsAsync(new TimeoutException("Too slow"));
