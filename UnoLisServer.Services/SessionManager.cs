@@ -43,15 +43,15 @@ namespace UnoLisServer.Services
                     }
                     catch (CommunicationException commEx)
                     {
-                        Logger.Log($"[WARNING] No se pudieron desvincular eventos para '{nickname}': {commEx.Message}");
+                        Logger.Log($"[WARNING] Events could not be unlinked '{nickname}': {commEx.Message}");
                     }
                     catch (TimeoutException timeoutEx)
                     {
-                        Logger.Log($"[WARNING] Tiempo de espera agotado al desvincular eventos para '{nickname}': {timeoutEx.Message}");
+                        Logger.Log($"[WARNING] Timeout reached unlinking events for '{nickname}': {timeoutEx.Message}");
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log($"[ERROR] Error inesperado al desvincular eventos para '{nickname}': {ex.Message}");
+                        Logger.Log($"[ERROR] Unexpected errors unlinking events for '{nickname}': {ex.Message}");
                     }
                 }
             }
