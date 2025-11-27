@@ -41,7 +41,14 @@ namespace UnoLisServer.Services
 
             try
             {
-                responseInfo = await ExecuteGetProfileLogic(userNickname);
+                if (UserHelper.IsGuest(userNickname))
+                {
+                    responseInfo = CreateGuestProfileResponse(userNickname);
+                }
+                else
+                {
+                    responseInfo = await ExecuteGetProfileLogic(userNickname);
+                }
             }
             catch (TimeoutException timeoutEx)
             {
@@ -142,6 +149,37 @@ namespace UnoLisServer.Services
                 InstagramUrl = instagramUrl,
                 TikTokUrl = tikTokUrl
             };
+        }
+
+        private ResponseInfo<ProfileData> CreateGuestProfileResponse(string nickname)
+        {
+            var guestData = new ProfileData
+            {
+                Nickname = nickname,
+                FullName = "Guest Player",
+                Email = " ",
+                SelectedAvatarName = "LogoUNO",
+
+                ExperiencePoints = 0,
+                MatchesPlayed = 0,
+                Wins = 0,
+                Losses = 0,
+                Streak = 0,
+                MaxStreak = 0,
+
+                FacebookUrl = null,
+                InstagramUrl = null,
+                TikTokUrl = null
+            };
+
+            Logger.Log($"[PROFILE] Generated dummy profile for guest: {nickname}");
+
+            return new ResponseInfo<ProfileData>(
+                MessageCode.ProfileDataRetrieved,
+                true,
+                $"[INFO] Perfil de invitado generado para '{nickname}'.",
+                guestData
+            );
         }
     }
 }

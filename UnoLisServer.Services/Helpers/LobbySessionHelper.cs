@@ -83,6 +83,7 @@ namespace UnoLisServer.Services.Helpers
         public void BroadcastToLobby(string code, Action<ILobbyDuplexCallback> action)
         {
             List<ILobbyDuplexCallback> targets = null;
+            List<ILobbyDuplexCallback> deadCallbacks = new List<ILobbyDuplexCallback>();
             lock (_lock)
             {
                 if (_lobbyCallbacks.ContainsKey(code))
@@ -96,30 +97,57 @@ namespace UnoLisServer.Services.Helpers
                 return;
             }
 
-            foreach (var cb in targets)
+            foreach (var callback in targets)
             {
                 try
                 {
-                    if (cb is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
+                    if (callback is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
                     {
-                        action(cb);
+                        action(callback);
+                    }
+                    else
+                    {
+                        deadCallbacks.Add(callback);
                     }
                 }
                 catch (ObjectDisposedException)
                 {
+                    deadCallbacks.Add(callback);
                     Logger.Warn($"[LOBBY-BROADCAST] Client object disposed in {code} during broadcast.");
                 }
                 catch (TimeoutException timeoutEx)
                 {
+                    deadCallbacks.Add(callback);
                     Logger.Warn($"[LOBBY-BROADCAST] Timeout sending to a client in {code}: {timeoutEx.Message}");
                 }
                 catch (CommunicationException commEx)
                 {
+                    deadCallbacks.Add(callback);
                     Logger.Warn($"[LOBBY-BROADCAST] Communication error with client in {code}: {commEx.Message}");
                 }
                 catch (Exception ex)
                 {
+                    deadCallbacks.Add(callback);
                     Logger.Error($"[LOBBY-BROADCAST] Critical error executing broadcast action in {code}", ex);
+                }
+            }
+
+            RemoveDeadCallbacks(code, deadCallbacks);
+        }
+        private void RemoveDeadCallbacks(string code, List<ILobbyDuplexCallback> deadCallbacks)
+        {
+            if (deadCallbacks == null || !deadCallbacks.Any()) return;
+
+            lock (_lock)
+            {
+                if (_lobbyCallbacks.TryGetValue(code, out var currentList))
+                {
+                    foreach (var dead in deadCallbacks)
+                    {
+                        currentList.Remove(dead);
+                    }
+
+                    Logger.Log($"[LOBBY-CLEANUP] Removed {deadCallbacks.Count} zombie connections from lobby {code}.");
                 }
             }
         }

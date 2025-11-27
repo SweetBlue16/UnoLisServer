@@ -93,6 +93,11 @@ namespace UnoLisServer.Services
 
         public async Task<List<FriendData>> GetFriendsListAsync(string nickname)
         {
+            if (UserHelper.IsGuest(nickname))
+            {
+                return new List<FriendData>();
+            }
+
             try
             {
                 var friendsEntities = await _friendRepository.GetFriendsEntitiesAsync(nickname);
@@ -125,6 +130,11 @@ namespace UnoLisServer.Services
 
         public async Task<List<FriendRequestData>> GetPendingRequestsAsync(string nickname)
         {
+            if (UserHelper.IsGuest(nickname))
+            {
+                return new List<FriendRequestData>();
+            }
+
             try
             {
                 var requestEntities = await _friendRepository.GetPendingRequestsEntitiesAsync(nickname);
@@ -155,6 +165,12 @@ namespace UnoLisServer.Services
 
         public async Task<FriendRequestResult> SendFriendRequestAsync(string requesterNickname, string targetNickname)
         {
+            if (UserHelper.IsGuest(requesterNickname) || UserHelper.IsGuest(targetNickname))
+            {
+                Logger.Warn($"Guest attempt to friend request: {requesterNickname} -> {targetNickname}");
+                return FriendRequestResult.Failed;
+            }
+
             try
             {
                 FriendsValidator.ValidateNicknames(requesterNickname, targetNickname);

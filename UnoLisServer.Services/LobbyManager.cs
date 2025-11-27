@@ -22,7 +22,6 @@ namespace UnoLisServer.Services
         private readonly LobbySessionHelper _sessionHelper;
         private readonly IPlayerRepository _playerRepository;
         private readonly ILobbyInvitationHelper _invitationHelper;
-        private readonly Random _random = new Random();
 
         public LobbyManager(LobbySessionHelper sessionHelper, IPlayerRepository playerRepo, 
             ILobbyInvitationHelper invitationHelper)
@@ -349,24 +348,42 @@ namespace UnoLisServer.Services
 
         private async Task<string> GetAvatarAsync(string nickname)
         {
-            var player = await _playerRepository.GetPlayerWithDetailsAsync(nickname);
-            if (player?.SelectedAvatar_Avatar_idAvatar != null)
+            if (UserHelper.IsGuest(nickname))
             {
-                var unlocked = player.AvatarsUnlocked
-                    .FirstOrDefault(au => au.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar);
-                if (unlocked?.Avatar != null) return unlocked.Avatar.avatarName;
+                return "LogoUNO";
+            }
+
+            try
+            {
+                var player = await _playerRepository.GetPlayerWithDetailsAsync(nickname);
+                if (player?.SelectedAvatar_Avatar_idAvatar != null)
+                {
+                    var unlocked = player.AvatarsUnlocked
+                        .FirstOrDefault(au => au.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar);
+                    if (unlocked?.Avatar != null) return unlocked.Avatar.avatarName;
+                }
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[LOBBY] Communication error resolving callback: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[LOBBY] Timeout resolving callback: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Unexpected error resolving callback from context", ex);
             }
             return "LogoUNO";
         }
 
         private string GenerateUniqueLobbyCode()
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             string code;
             do
             {
-                code = new string(Enumerable.Repeat(chars, 5)
-                  .Select(s => s[_random.Next(s.Length)]).ToArray());
+                code = SecureRandom.GetRandomString(5);
             }
             while (_sessionHelper.LobbyExists(code));
             return code;

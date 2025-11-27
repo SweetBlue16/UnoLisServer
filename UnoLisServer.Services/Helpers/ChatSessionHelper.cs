@@ -41,12 +41,11 @@ namespace UnoLisServer.Services.Helpers
             {
                 if (_connectedClients.ContainsKey(nickname))
                 {
-                    _connectedClients[nickname] = callback;
                     Logger.Log($"[CHAT-SESSION] Usuario {nickname} reconectado/actualizado.");
                 }
                 else
                 {
-                    _connectedClients.Add(nickname, callback);
+                    _connectedClients[nickname] = callback;
                     Logger.Log($"[CHAT-SESSION] Usuario {nickname} agregado. Total: {_connectedClients.Count}");
                 }
             }
