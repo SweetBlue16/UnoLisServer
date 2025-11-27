@@ -10,6 +10,7 @@ using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services;
+using UnoLisServer.Test.Common;
 using Xunit;
 
 namespace UnoLisServer.Test
@@ -28,8 +29,6 @@ namespace UnoLisServer.Test
 
             _manager = new FriendsManager(_mockRepo.Object, _mockCallback.Object);
         }
-
-        #region SendFriendRequestAsync Tests
 
         [Fact]
         public async Task SendFriendRequest_Success_ReturnsSuccessAndNotifies()
@@ -107,16 +106,12 @@ namespace UnoLisServer.Test
         public async Task SendFriendRequest_DbExplodes_ReturnsFailedAndLogs()
         {
             _mockRepo.Setup(r => r.GetPlayerByNicknameAsync(It.IsAny<string>()))
-                .ThrowsAsync(new SqlExceptionBuilder().Build());
+                .ThrowsAsync(SqlExceptionBuilder.Build());
 
             var result = await _manager.SendFriendRequestAsync("A", "B");
 
             Assert.Equal(FriendRequestResult.Failed, result);
         }
-
-        #endregion
-
-        #region AcceptFriendRequestAsync Tests
 
         [Fact]
         public async Task AcceptRequest_ValidRequest_ReturnsTrueAndUpdatesDb()
@@ -156,10 +151,6 @@ namespace UnoLisServer.Test
             Assert.False(result);
         }
 
-        #endregion
-
-        #region RejectFriendRequestAsync Tests
-
         [Fact]
         public async Task RejectRequest_Valid_RemovesEntry()
         {
@@ -173,10 +164,6 @@ namespace UnoLisServer.Test
             Assert.True(result);
             _mockRepo.Verify(r => r.RemoveFriendshipEntryAsync(99), Times.Once);
         }
-
-        #endregion
-
-        #region RemoveFriendAsync Tests
 
         [Fact]
         public async Task RemoveFriend_IfFriends_RemovesEntry()
@@ -207,10 +194,6 @@ namespace UnoLisServer.Test
             Assert.False(result);
             _mockRepo.Verify(r => r.RemoveFriendshipEntryAsync(It.IsAny<int>()), Times.Never);
         }
-
-        #endregion
-
-        #region GetLists Tests
 
         [Fact]
         public async Task GetPendingRequests_ReturnsMappedList()
@@ -290,16 +273,6 @@ namespace UnoLisServer.Test
 
             Assert.NotNull(result);
             Assert.Empty(result); 
-        }
-
-        #endregion
-    }
-    public class SqlExceptionBuilder
-    {
-        public SqlException Build()
-        {
-            return System.Runtime.Serialization.FormatterServices
-                .GetUninitializedObject(typeof(SqlException)) as SqlException;
         }
     }
 }

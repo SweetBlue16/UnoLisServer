@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Contracts.DTOs;
+using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services.ManagerInterfaces
 {
@@ -13,12 +14,17 @@ namespace UnoLisServer.Services.ManagerInterfaces
     /// </summary>
     public interface ILobbyManager
     {
-        CreateMatchResponse CreateLobby(MatchSettings settings);
+        Task<CreateMatchResponse> CreateLobbyAsync(MatchSettings settings);
 
-        JoinMatchResponse JoinLobby(string lobbyCode, string nickname);
+        Task<JoinMatchResponse> JoinLobbyAsync(string lobbyCode, string nickname);
 
-        bool SetLobbyBackground(string lobbyCode, string backgroundName);
+        Task<bool> SetLobbyBackgroundAsync(string lobbyCode, string backgroundName);
 
-        LobbySettings GetLobbySettings(string lobbyCode);
+        LobbySettings GetLobbySettings(string lobbyCode); 
+
+        void RegisterConnection(string lobbyCode, string nickname);
+        void RemoveConnection(string lobbyCode, string nickname, ILobbyDuplexCallback cachedCallback = null);
+        Task HandleReadyStatusAsync(string lobbyCode, string nickname, bool isReady);
+        Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames);
     }
 }

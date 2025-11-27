@@ -22,5 +22,6 @@ namespace UnoLisServer.Data.RepositoryInterfaces
         Task<List<PlayerAvatar>> GetPlayerAvatarsAsync(string nickname);
         Task UpdateSelectedAvatarAsync(string nickname, int newAvatarId);
         List<PlayerStatistics> GetTopPlayersByGlobalScoreAsync(int topCount);
+        Task<Player> GetPlayerWithDetailsAsync(string nickname);
     }
 }

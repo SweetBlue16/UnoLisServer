@@ -379,5 +379,25 @@ namespace UnoLisServer.Data.Repositories
                 return topPlayers;
             }
         }
+
+        public async Task<Player> GetPlayerWithDetailsAsync(string nickname)
+        {
+            using (var context = _contextFactory())
+            {
+                try
+                {
+                    return await context.Player
+                        .AsNoTracking()
+                        .Include("Account")
+                        .Include("AvatarsUnlocked.Avatar")
+                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error obteniendo detalles completos de {nickname}", ex);
+                    throw;
+                }
+            }
+        }
     }
 }

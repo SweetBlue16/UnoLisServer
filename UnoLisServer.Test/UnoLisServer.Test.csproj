@@ -109,9 +109,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\DatabaseCollection.cs" />
+    <Compile Include="Common\SqlExceptionBuilder.cs" />
     <Compile Include="Common\UnoLisTestBase.cs" />
     <Compile Include="FactoriesTest\PlayerFactoryTest.cs" />
     <Compile Include="HelpersTest\ChatSessionHelperTest.cs" />
+    <Compile Include="HelpersTest\LobbyInvitationHelperTest.cs" />
+    <Compile Include="HelpersTest\LobbySessionHelperTest.cs" />
     <Compile Include="HelpersTest\NotificationSenderTest.cs" />
     <Compile Include="HelpersTest\PasswordHelperTest.cs" />
     <Compile Include="HelpersTest\PendingRegistrationHelperTest.cs" />
@@ -120,6 +123,7 @@
     <Compile Include="ManagerTest\ChatManagerTest.cs" />
     <Compile Include="ManagerTest\ConfirmationManagerTest.cs" />
     <Compile Include="ManagerTest\FriendsManagerTest.cs" />
+    <Compile Include="ManagerTest\LobbyManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />
     <Compile Include="ManagerTest\RegisterManagerTest.cs" />
@@ -131,6 +135,7 @@
     <Compile Include="ValidatorsTest\ChatValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ConfirmationValidatorTest.cs" />
     <Compile Include="ValidatorsTest\FriendsValidatorTest.cs" />
+    <Compile Include="ValidatorsTest\LobbyValidatorTest.cs" />
     <Compile Include="ValidatorsTest\ProfileEditValidatorTest.cs" />
     <Compile Include="ValidatorsTest\RegisterValidatorTest.cs" />
   </ItemGroup>

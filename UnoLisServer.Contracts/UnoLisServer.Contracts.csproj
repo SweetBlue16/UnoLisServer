@@ -80,7 +80,6 @@
     <Compile Include="Interfaces\IAvatarManager.cs" />
     <Compile Include="Interfaces\IChatManager.cs" />
     <Compile Include="Interfaces\IConfirmationManager.cs" />
-    <Compile Include="Interfaces\IFriendsLogicManager.cs" />
     <Compile Include="Interfaces\IFriendsManager.cs" />
     <Compile Include="Interfaces\IGameplayManager.cs" />
     <Compile Include="Interfaces\ILeaderboardsManager.cs" />

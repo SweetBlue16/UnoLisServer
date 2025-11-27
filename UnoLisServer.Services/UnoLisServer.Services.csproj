@@ -58,10 +58,12 @@
     <Compile Include="AvatarManager.cs" />
     <Compile Include="ChatManager.cs" />
     <Compile Include="ConfirmationManager.cs" />
-    <Compile Include="FriendsLogicManager.cs" />
     <Compile Include="FriendsManager.cs" />
     <Compile Include="GameplayManager.cs" />
     <Compile Include="Helpers\ChatSessionHelper.cs" />
+    <Compile Include="Helpers\ConnectionResolutionResult.cs" />
+    <Compile Include="Helpers\LobbyInvitationHelper.cs" />
+    <Compile Include="Helpers\LobbySessionHelper.cs" />
     <Compile Include="LeaderboardsManager.cs" />
     <Compile Include="LobbyDuplexManager.cs" />
     <Compile Include="LobbyManager.cs" />
@@ -80,6 +82,7 @@
     <Compile Include="Validators\ChatValidator.cs" />
     <Compile Include="Validators\ConfirmationValidator.cs" />
     <Compile Include="Validators\FriendsValidator.cs" />
+    <Compile Include="Validators\LobbyValidator.cs" />
     <Compile Include="Validators\LoginValidator.cs" />
     <Compile Include="SessionManager.cs" />
     <Compile Include="ShopManager.cs" />
