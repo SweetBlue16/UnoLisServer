@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
+using System.Threading.Tasks;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Common.Models;
 
@@ -11,6 +12,6 @@ namespace UnoLisServer.Contracts.Interfaces
     public interface ILeaderboardsManager
     {
         [OperationContract]
-        ServiceResponse<List<LeaderboardEntry>> GetGlobalLeaderboard();
+        Task<ServiceResponse<List<LeaderboardEntry>>> GetGlobalLeaderboardAsync();
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
+using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
@@ -26,14 +27,15 @@ namespace UnoLisServer.Services
             _playerRepository = playerRepository;
         }
 
-        public ServiceResponse<List<LeaderboardEntry>> GetGlobalLeaderboard()
+        public async Task<ServiceResponse<List<LeaderboardEntry>>> GetGlobalLeaderboardAsync()
         {
             try
             {
-                var topStats = _playerRepository.GetTopPlayersByGlobalScoreAsync(LeaderboardSize);
+                var topStats = await _playerRepository.GetTopPlayersByGlobalScoreAsync(LeaderboardSize);
+
                 if (topStats == null || !topStats.Any())
                 {
-                    Logger.Log("[WARNING] No se encontraron jugadores en el ranking.");
+                    Logger.Warn("[LEADERBOARD] No stats found.");
                     return new ServiceResponse<List<LeaderboardEntry>>
                     {
                         Code = MessageCode.Success,
@@ -41,23 +43,17 @@ namespace UnoLisServer.Services
                         Data = new List<LeaderboardEntry>()
                     };
                 }
-                var leaderboardList = new List<LeaderboardEntry>();
-                int rankCounter = 1;
 
-                foreach (var stat in topStats)
+                var leaderboardList = topStats.Select((stat, index) => new LeaderboardEntry
                 {
-                    leaderboardList.Add(new LeaderboardEntry
-                    {
-                        Rank = rankCounter++,
-                        Nickname = stat.Player.nickname,
-                        GlobalPoints = stat.globalPoints ?? 0,
-                        MatchesPlayed = stat.matchesPlayed ?? 0,
-                        Wins = stat.wins ?? 0,
-                        WinRate = CalculateWinRate(stat)
-                    });
-                }
+                    Rank = index + 1,
+                    Nickname = stat.Player.nickname,
+                    GlobalPoints = stat.globalPoints ?? 0,
+                    MatchesPlayed = stat.matchesPlayed ?? 0,
+                    Wins = stat.wins ?? 0,
+                    WinRate = CalculateWinRate(stat)
+                }).ToList();
 
-                Logger.Log("[INFO] Datos del ranking global recuperados con éxito.");
                 return new ServiceResponse<List<LeaderboardEntry>>
                 {
                     Code = MessageCode.LeaderboardDataRetrieved,

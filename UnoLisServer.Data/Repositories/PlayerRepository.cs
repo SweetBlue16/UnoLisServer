@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation; 
 using System.Data.SqlClient; 
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums; 
 using UnoLisServer.Common.Exceptions; 
@@ -367,16 +368,39 @@ namespace UnoLisServer.Data.Repositories
             }
         }
 
-        public List<PlayerStatistics> GetTopPlayersByGlobalScoreAsync(int topCount)
+        public async Task<List<PlayerStatistics>> GetTopPlayersByGlobalScoreAsync(int topCount)
         {
             using (var context = _contextFactory())
             {
-                var topPlayers = context.PlayerStatistics
-                    .Include(ps => ps.Player)
-                    .OrderByDescending(s => s.globalPoints)
-                    .Take(topCount)
-                    .ToList();
-                return topPlayers;
+                try
+                {
+                    return await context.PlayerStatistics
+                        .AsNoTracking()
+                        .Include(ps => ps.Player)
+                        .OrderByDescending(s => s.globalPoints)
+                        .Take(topCount)
+                        .ToListAsync();
+                }
+                catch (SqlException ex)
+                {
+                    Logger.Error("Error fetching top players", ex);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Execution error of EF command", entityCmdEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout while obtaining details", timeoutEx);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error obtaining details", ex);
+                    throw;
+                }
             }
         }
 
@@ -392,9 +416,24 @@ namespace UnoLisServer.Data.Repositories
                         .Include("AvatarsUnlocked.Avatar")
                         .FirstOrDefaultAsync(p => p.nickname == nickname);
                 }
+                catch(SqlException sqlEx)
+                {
+                    Logger.Error($"[DB] Critical errol recovering details for {nickname}", sqlEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[DB] Execution error of EF command for {nickname}", entityCmdEx);
+                    throw;
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Error($"[DB] Timeout while obtaining details for {nickname}", timeoutEx);
+                    throw;
+                }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error obteniendo detalles completos de {nickname}", ex);
+                    Logger.Error($"[DB] Error obtaining details for {nickname}", ex);
                     throw;
                 }
             }
