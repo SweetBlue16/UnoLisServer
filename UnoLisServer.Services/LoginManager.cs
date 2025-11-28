@@ -29,8 +29,9 @@ namespace UnoLisServer.Services
             {
                 LoginValidator.ValidateCredentials(credentials);
                 Logger.Log($"[INFO] Intentando inicio de sesión para '{nickname}'...");
-                var banInfo = LoginValidator.AuthenticatePlayer(credentials);
+                LoginValidator.AuthenticatePlayer(credentials);
 
+                var banInfo = LoginValidator.IsPlayerBanned(nickname);
                 if (banInfo != null)
                 {
                     var banResponse = CreateBanResponse(banInfo);

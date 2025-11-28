@@ -2,19 +2,33 @@
 using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Data.Repositories;
+using UnoLisServer.Data.RepositoryInterfaces;
+using UnoLisServer.Services.Helpers;
+using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ReportManager : IReportManager
     {
+        private readonly ReportValidator _reportValidator;
+        private readonly SanctionEnforcer _sanctionEnforcer;
+        private readonly IPlayerRepository _playerRepository;
+
+        public ReportManager()
+        {
+            _reportValidator = new ReportValidator();
+            _sanctionEnforcer = new SanctionEnforcer();
+            _playerRepository = new PlayerRepository();
+        }
+
         public void ReportPlayer(ReportData reportData)
         {
             var callback = OperationContext.Current?.GetCallbackChannel<IReportCallback>();
@@ -27,117 +41,61 @@ namespace UnoLisServer.Services
             {
                 using (var context = new UNOContext())
                 {
-                    var playersInfo = LoadPlayers(context, reportData);
+                    var reporter = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReporterNickname).Result;
+                    var reported = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReportedNickname).Result;
 
-                    if (!playersInfo.IsValid)
+                    if (!_reportValidator.ValidateRequest(reporter, reported, callback))
                     {
-                        SendReportResponse(CreateErrorResponse(MessageCode.PlayerNotFound, playersInfo.ErrorMessage), callback);
                         return;
                     }
 
-                    if (IsRecentReport(context, playersInfo.Reporter, playersInfo.Reported))
+                    if (!_reportValidator.CheckReportFrequency(context, reported.idPlayer, reporter.idPlayer, callback))
                     {
-                        SendReportResponse(CreateErrorResponse(
-                            MessageCode.AlreadyReportedRecently,
-                            $"Ya reportaste a {playersInfo.Reported.nickname} en las últimas 24 horas."
-                        ), callback);
                         return;
                     }
 
-                    SaveReport(context, playersInfo.Reporter, playersInfo.Reported, reportData.Description);
-
-                    SendReportResponse(CreateSuccessResponse(
-                        MessageCode.ReportSubmitted,
-                        $"Reporte enviado contra {playersInfo.Reported.nickname}."
-                    ), callback);
-
-                    CheckAndApplySanction(playersInfo.Reported);
+                    SaveReport(context, reporter.idPlayer, reported.idPlayer, reportData.Description);
+                    NotifySuccess(callback, reported.nickname);
+                    _sanctionEnforcer.TryApplySanction(context, reported);
                 }
             }
             catch (SqlException sqlEx)
             {
-                SendReportResponse(CreateErrorResponse(
+                NotifyError(callback,
                     MessageCode.DatabaseError,
                     $"[ERROR] Error de base de datos al procesar el reporte: {sqlEx.Message}"
-                ), callback);
+                );
             }
             catch (CommunicationException commEx)
             {
-                SendReportResponse(CreateErrorResponse(
+                NotifyError(callback,
                     MessageCode.ConnectionFailed,
                     $"[ERROR] Error de comunicación al procesar el reporte: {commEx.Message}"
-                ), callback);
+                );
             }
             catch (TimeoutException timeoutEx)
             {
-                SendReportResponse(CreateErrorResponse(
+                NotifyError(callback,
                     MessageCode.Timeout,
                     $"[ERROR] Tiempo de espera agotado al procesar el reporte: {timeoutEx.Message}"
-                ), callback);
+                );
             }
             catch (Exception ex)
             {
-                SendReportResponse(CreateErrorResponse(
+                NotifyError(callback,
                     MessageCode.ReportInternalError,
                     $"[FATAL] Error al procesar el reporte: {ex.Message}"
-                ), callback);
+                );
             }
         }
 
-        private ReportPlayersInfo LoadPlayers(UNOContext context, ReportData data)
-        {
-            var info = new ReportPlayersInfo
-            {
-                Reporter = context.Player.FirstOrDefault(p => p.nickname == data.ReporterNickname),
-                Reported = context.Player.FirstOrDefault(p => p.nickname == data.ReportedNickname)
-            };
-
-            if (info.Reporter == null || info.Reported == null)
-            {
-                info.ErrorMessage = "Uno o ambos jugadores no existen.";
-            }
-            else if (info.Reporter.idPlayer == info.Reported.idPlayer)
-            {
-                info.Reporter = null;
-                info.ErrorMessage = "No puedes reportarte a ti mismo.";
-            }
-
-            return info;
-        }
-
-        private bool IsRecentReport(UNOContext context, Player reporter, Player reported)
-        {
-            var cutoff = DateTime.UtcNow.AddDays(-1);
-
-            return context.Report.Any(r =>
-                r.ReporterPlayer_idPlayer == reporter.idPlayer &&
-                r.ReportedPlayer_idPlayer == reported.idPlayer &&
-                r.reportDate >= cutoff
-            );
-        }
-
-        private void SendReportResponse(ResponseInfo<object> info, IReportCallback callback)
-        {
-            ResponseHelper.SendResponse(callback.ReportPlayerResponse, info);
-        }
-
-        private ResponseInfo<object> CreateSuccessResponse(MessageCode code, string msg)
-        {
-            return new ResponseInfo<object>(code, true, msg);
-        }
-
-        private ResponseInfo<object> CreateErrorResponse(MessageCode code, string msg)
-        {
-            return new ResponseInfo<object>(code, false, msg);
-        }
-
-        private void SaveReport(UNOContext context, Player reporter, Player reported, string desc)
+        private void SaveReport(UNOContext context, int reporterId, int reportedId, string description)
         {
             var report = new Report
             {
-                ReporterPlayer_idPlayer = reporter.idPlayer,
-                ReportedPlayer_idPlayer = reported.idPlayer,
-                reportDescription = desc,
+                ReporterPlayer_idPlayer = reportedId,
+                ReportedPlayer_idPlayer = reportedId,
+                reportDescription = description,
                 reportDate = DateTime.UtcNow
             };
 
@@ -145,85 +103,24 @@ namespace UnoLisServer.Services
             context.SaveChanges();
         }
 
-        private int CountReports(UNOContext context, Player reported)
+        private void NotifySuccess(IReportCallback callback, string reportedNickname)
         {
-            return context.Report.Count(r => r.ReportedPlayer_idPlayer == reported.idPlayer);
-        }
-
-        private void CheckAndApplySanction(Player reported)
-        {
-            using (var context = new UNOContext())
-            {
-                int count = CountReports(context, reported);
-
-                int hours = ComputeSanctionHours(count);
-                if (hours == 0)
-                {
-                    return;
-                }
-
-                ApplySanction(context, reported, hours);
-                NotifyAndKick(reported.nickname, hours);
-            }
-        }
-
-        private int ComputeSanctionHours(int totalReports)
-        {
-            if (totalReports % 5 == 0)
-            {
-                return 24;
-            }
-            if (totalReports % 3 == 0)
-            {
-                return 1;
-            }
-            return 0;
-        }
-
-        private void ApplySanction(UNOContext context, Player p, int hours)
-        {
-            var sanction = new Sanction
-            {
-                Player_idPlayer = p.idPlayer,
-                sanctionType = $"{hours}-hour ban",
-                sanctionDescription = $"Automatic sanction applied due to reports. Duration: {hours} hours.",
-                sanctionStartDate = DateTime.UtcNow,
-                sanctionEndDate = DateTime.UtcNow.AddHours(hours)
-            };
-
-            context.Sanction.Add(sanction);
-            context.SaveChanges();
-        }
-
-        private void NotifyAndKick(string nickname, int hours)
-        {
-            if (!SessionManager.IsOnline(nickname))
-            {
-                return;
-            }
-
-            var callback = SessionManager.GetSession(nickname) as IReportCallback;
-            if (callback == null)
-            {
-                return;
-            }
-
             var response = new ResponseInfo<object>(
-                MessageCode.PlayerKicked,
-                false,
-                $"[INFO] {nickname} ha sido baneado por {hours} horas."
+                MessageCode.ReportSubmitted,
+                true,
+                $"[INFO] Reporte enviado contra {reportedNickname}."
             );
-
-            ResponseHelper.SendResponse(callback.OnPlayerKicked, response);
-            SessionManager.RemoveSession(nickname);
+            ResponseHelper.SendResponse(callback.ReportPlayerResponse, response);
         }
-    }
 
-    internal class ReportPlayersInfo
-    {
-        public Player Reporter { get; set; }
-        public Player Reported { get; set; }
-        public bool IsValid => Reporter != null && Reported != null;
-        public string ErrorMessage { get; set; }
+        private void NotifyError(IReportCallback callback, MessageCode code, string logMessage)
+        {
+            var response = new ResponseInfo<object>(
+                code,
+                false,
+                logMessage
+            );
+            ResponseHelper.SendResponse(callback.ReportPlayerResponse, response);
+        }
     }
 }

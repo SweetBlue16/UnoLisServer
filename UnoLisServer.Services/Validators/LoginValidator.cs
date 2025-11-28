@@ -4,6 +4,8 @@ using UnoLisServer.Common.Enums;
 using UnoLisServer.Data;
 using System.Linq;
 using UnoLisServer.Common.Helpers;
+using UnoLisServer.Data.RepositoryInterfaces;
+using UnoLisServer.Data.Repositories;
 using System;
 
 namespace UnoLisServer.Services.Validators
@@ -21,12 +23,10 @@ namespace UnoLisServer.Services.Validators
             }
         }
 
-        public static BanInfo AuthenticatePlayer(AuthCredentials credentials)
+        public static void AuthenticatePlayer(AuthCredentials credentials)
         {
             using (var context = new UNOContext())
             {
-                ValidateCredentials(credentials);
-
                 var account = context.Account
                     .Include("Player")
                     .FirstOrDefault(a => a.Player.nickname == credentials.Nickname);
@@ -48,37 +48,36 @@ namespace UnoLisServer.Services.Validators
                     throw new ValidationException(MessageCode.DuplicateSession,
                         $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
                 }
-                return CheckActiveSanction(context, account.Player);
             }
         }
 
-        private static BanInfo CheckActiveSanction(UNOContext context, Player player)
+        public static BanInfo IsPlayerBanned(string nickname)
         {
-            context.Entry(player).Collection(p => p.Sanction).Load();
-
-            var activeSanction = player.Sanction
-                .Where(s => s.sanctionEndDate > DateTime.UtcNow)
-                .OrderByDescending(s => s.sanctionEndDate)
-                .FirstOrDefault();
-
-            BanInfo banInfo = null;
+            ISanctionRepository sanctionRepository = new SanctionRepository();
+            IPlayerRepository playerRepository = new PlayerRepository();
+            var player = playerRepository.GetPlayerWithDetailsAsync(nickname).Result;
+            var activeSanction = sanctionRepository.GetActiveSanction(player.idPlayer);
             if (activeSanction != null)
             {
-                var remainingTime = activeSanction.sanctionEndDate.Value - DateTime.UtcNow;
-                string timeString = remainingTime.TotalHours >= 24
-                    ? $"{(int)remainingTime.TotalDays}d"
-                    : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
-                string message = $"{timeString}";
-
-                banInfo = new BanInfo
-                {
-                    Reason = activeSanction.sanctionType,
-                    EndDate = activeSanction.sanctionEndDate.Value,
-                    RemainingHours = remainingTime.TotalHours,
-                    FormattedTimeRemaining = message
-                };
+                return MapSanctionToBanInfo(activeSanction);
             }
-            return banInfo;
+            return new BanInfo();
+        }
+
+        private static BanInfo MapSanctionToBanInfo(Sanction sanction)
+        {
+            var remainingTime = sanction.sanctionEndDate.Value - DateTime.UtcNow;
+            var formattedTime = remainingTime.TotalHours >= 24
+                ? $"{(int)remainingTime.TotalDays}d {remainingTime.Hours}h"
+                : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
+
+            return new BanInfo
+            {
+                Reason = sanction.sanctionDescription,
+                EndDate = sanction.sanctionEndDate.Value,
+                RemainingHours = remainingTime.TotalHours,
+                FormattedTimeRemaining = formattedTime
+            };
         }
     }
 }

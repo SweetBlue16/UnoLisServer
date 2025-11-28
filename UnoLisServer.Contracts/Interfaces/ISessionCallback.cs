@@ -1,4 +1,5 @@
-﻿using System.ServiceModel;
+﻿using System;
+using System.ServiceModel;
 
 namespace UnoLisServer.Contracts.Interfaces
 {
@@ -14,5 +15,8 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract]
         void PlayerDisconnected(string nickname);
+
+        [OperationContract]
+        void PlayerBanned(string reason, DateTime endDate);
     }
 }

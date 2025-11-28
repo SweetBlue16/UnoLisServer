@@ -95,8 +95,10 @@
     </Compile>
     <Compile Include="Repositories\FriendRepository.cs" />
     <Compile Include="Repositories\PlayerRepository.cs" />
+    <Compile Include="Repositories\SanctionRepository.cs" />
     <Compile Include="RepositoryInterfaces\IFriendRepository.cs" />
     <Compile Include="RepositoryInterfaces\IPlayerRepository.cs" />
+    <Compile Include="RepositoryInterfaces\ISanctionRepository.cs" />
     <Compile Include="Sanction.cs">
       <DependentUpon>UNODataBaseModel.tt</DependentUpon>
     </Compile>

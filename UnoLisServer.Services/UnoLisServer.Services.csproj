@@ -64,6 +64,7 @@
     <Compile Include="Helpers\ConnectionResolutionResult.cs" />
     <Compile Include="Helpers\LobbyInvitationHelper.cs" />
     <Compile Include="Helpers\LobbySessionHelper.cs" />
+    <Compile Include="Helpers\SanctionEnforcer.cs" />
     <Compile Include="LeaderboardsManager.cs" />
     <Compile Include="LobbyDuplexManager.cs" />
     <Compile Include="LobbyManager.cs" />
@@ -89,6 +90,7 @@
     <Compile Include="Validators\LogoutValidator.cs" />
     <Compile Include="Validators\ProfileEditValidator.cs" />
     <Compile Include="Validators\RegisterValidator.cs" />
+    <Compile Include="Validators\ReportValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UnoLisServer.Common\UnoLisServer.Common.csproj">
