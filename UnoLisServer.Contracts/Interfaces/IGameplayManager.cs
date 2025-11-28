@@ -21,17 +21,20 @@ namespace UnoLisServer.Contracts.Interfaces
     [ServiceContract]
     public interface IGameplayCallback : ISessionCallback
     {
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void CardPlayed(string nickname, Card card);
 
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void CardDrawn(string nickname);
 
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void TurnChanged(string nextPlayerNickname);
 
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void MatchEnded(List<ResultData> results);
+
+        [OperationContract(IsOneWay = true)]
+        void ReceiveInitialHand(List<Card> hand);
 
     }
 }

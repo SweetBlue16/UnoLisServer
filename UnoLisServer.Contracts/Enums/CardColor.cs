@@ -12,7 +12,6 @@ namespace UnoLisServer.Contracts.Enums
         Yellow,
         Green,
         Blue,
-        Black,
-        Silver 
+        Wild, 
     }
 }

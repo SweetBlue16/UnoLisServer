@@ -23,7 +23,7 @@ namespace UnoLisServer.Contracts.Enums
         DrawTwo,
         Wild,
         WildDrawFour,
-        DrawTen,
-        WildDrawFourReverse
+        WildDrawTen,
+        WildDrawSkipReverseFour
     }
 }

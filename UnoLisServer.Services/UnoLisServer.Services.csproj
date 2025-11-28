@@ -59,9 +59,15 @@
     <Compile Include="ChatManager.cs" />
     <Compile Include="ConfirmationManager.cs" />
     <Compile Include="FriendsManager.cs" />
+    <Compile Include="GameLogic\DeckFactory.cs" />
+    <Compile Include="GameLogic\DeckManager.cs" />
+    <Compile Include="GameLogic\GameSession.cs" />
+    <Compile Include="GameLogic\Models\GamePlayerData.cs" />
+    <Compile Include="GameManager.cs" />
     <Compile Include="GameplayManager.cs" />
     <Compile Include="Helpers\ChatSessionHelper.cs" />
     <Compile Include="Helpers\ConnectionResolutionResult.cs" />
+    <Compile Include="Helpers\GameSessionHelper.cs" />
     <Compile Include="Helpers\LobbyInvitationHelper.cs" />
     <Compile Include="Helpers\LobbySessionHelper.cs" />
     <Compile Include="Helpers\SanctionEnforcer.cs" />
@@ -70,6 +76,7 @@
     <Compile Include="LobbyManager.cs" />
     <Compile Include="LoginManager.cs" />
     <Compile Include="LogoutManager.cs" />
+    <Compile Include="ManagerInterfaces\IGameManager.cs" />
     <Compile Include="ManagerInterfaces\ILobbyManager.cs" />
     <Compile Include="MatchmakingManager.cs" />
     <Compile Include="NotificationsManager.cs" />
