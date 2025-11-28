@@ -93,7 +93,7 @@ namespace UnoLisServer.Services
         {
             var report = new Report
             {
-                ReporterPlayer_idPlayer = reportedId,
+                ReporterPlayer_idPlayer = reporterId,
                 ReportedPlayer_idPlayer = reportedId,
                 reportDescription = description,
                 reportDate = DateTime.UtcNow
