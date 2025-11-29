@@ -17,8 +17,8 @@ namespace UnoLisServer.Services.Helpers
 
         private readonly Dictionary<string, GameSession> _activeGames = new Dictionary<string, GameSession>();
 
-        private readonly Dictionary<string, List<IGameplayCallback>> _gameCallbacks = new Dictionary<string, 
-            List<IGameplayCallback>>();
+        private readonly Dictionary<string, Dictionary<string, IGameplayCallback>> _gameCallbacks =
+            new Dictionary<string, Dictionary<string, IGameplayCallback>>();
 
         private readonly object _lock = new object();
 
@@ -31,7 +31,7 @@ namespace UnoLisServer.Services.Helpers
                 if (!_activeGames.ContainsKey(lobbyCode))
                 {
                     _activeGames.Add(lobbyCode, session);
-                    _gameCallbacks.Add(lobbyCode, new List<IGameplayCallback>());
+                    _gameCallbacks.Add(lobbyCode, new Dictionary<string, IGameplayCallback>());
                     Logger.Log($"[GAME-SESSION] Session created for {lobbyCode}");
                 }
             }
@@ -60,94 +60,99 @@ namespace UnoLisServer.Services.Helpers
         }
 
 
-        public void RegisterCallback(string lobbyCode, IGameplayCallback callback)
+        public void RegisterCallback(string lobbyCode, string nickname, IGameplayCallback callback)
         {
             lock (_lock)
             {
-                if (_gameCallbacks.ContainsKey(lobbyCode) && !_gameCallbacks[lobbyCode].Contains(callback))
+                if (!_gameCallbacks.ContainsKey(lobbyCode))
                 {
-                    _gameCallbacks[lobbyCode].Add(callback);
+                    return;
                 }
+
+                _gameCallbacks[lobbyCode][nickname] = callback;
             }
         }
 
-        public void UnregisterCallback(string lobbyCode, IGameplayCallback callback)
+        public void UnregisterCallback(string lobbyCode, string nickname)
         {
             lock (_lock)
             {
                 if (_gameCallbacks.ContainsKey(lobbyCode))
                 {
-                    _gameCallbacks[lobbyCode].Remove(callback);
+                    _gameCallbacks[lobbyCode].Remove(nickname);
                 }
+            }
+        }
+
+        public void SendToPlayer(string lobbyCode, string nickname, Action<IGameplayCallback> action)
+        {
+            IGameplayCallback target = null;
+            lock (_lock)
+            {
+                if (_gameCallbacks.ContainsKey(lobbyCode) && _gameCallbacks[lobbyCode].ContainsKey(nickname))
+                {
+                    target = _gameCallbacks[lobbyCode][nickname];
+                }
+            }
+
+            if (target != null)
+            {
+                ExecuteSafe(target, action, lobbyCode, nickname);
             }
         }
 
         public void BroadcastToGame(string lobbyCode, Action<IGameplayCallback> action)
         {
-            List<IGameplayCallback> targets = null;
-            var deadCallbacks = new List<IGameplayCallback>();
+            List<KeyValuePair<string, IGameplayCallback>> targets = null;
 
             lock (_lock)
             {
                 if (_gameCallbacks.ContainsKey(lobbyCode))
                 {
-                    targets = new List<IGameplayCallback>(_gameCallbacks[lobbyCode]);
+                    targets = _gameCallbacks[lobbyCode].ToList();
                 }
             }
 
             if (targets == null) return;
 
-            foreach (var cb in targets)
+            foreach (var kvp in targets)
             {
-                try
-                {
-                    if (cb is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
-                    {
-                        action(cb);
-                    }
-                    else
-                    {
-                        deadCallbacks.Add(cb);
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    deadCallbacks.Add(cb);
-                    Logger.Warn($"[GAME-BROADCAST] Client object disposed in {lobbyCode}. Marking for removal.");
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    deadCallbacks.Add(cb);
-                    Logger.Warn($"[GAME-BROADCAST] Timeout broadcasting to client in {lobbyCode}: {timeoutEx.Message}");
-                }
-                catch (CommunicationException commEx)
-                {
-                    deadCallbacks.Add(cb);
-                    Logger.Warn($"[GAME-BROADCAST] Communication error in {lobbyCode}: {commEx.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"[GAME-BROADCAST] Critical error executing action in {lobbyCode}", ex);
-                }
+                ExecuteSafe(kvp.Value, action, lobbyCode, kvp.Key);
             }
-
-            RemoveDeadCallbacks(lobbyCode, deadCallbacks);
         }
 
-        private void RemoveDeadCallbacks(string lobbyCode, List<IGameplayCallback> deadCallbacks)
+        private void ExecuteSafe(IGameplayCallback cb, Action<IGameplayCallback> action, string lobbyCode, string nickname)
         {
-            if (deadCallbacks == null || !deadCallbacks.Any()) return;
-
-            lock (_lock)
+            try
             {
-                if (_gameCallbacks.TryGetValue(lobbyCode, out var currentList))
+                if (cb is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
                 {
-                    foreach (var dead in deadCallbacks)
-                    {
-                        currentList.Remove(dead);
-                    }
-                    Logger.Log($"[GAME-CLEANUP] Automatically removed {deadCallbacks.Count} zombie connections " +
-                        $"from game {lobbyCode}.");
+                    action(cb);
+                }
+                else
+                {
+                    UnregisterCallback(lobbyCode, nickname);
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                Logger.Warn($"[GAME-BROADCAST] Client object disposed in {lobbyCode}. Marking for removal.");
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                Logger.Warn($"[GAME-BROADCAST] Timeout broadcasting to client in {lobbyCode}: {timeoutEx.Message}");
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME-BROADCAST] Communication error in {lobbyCode}: {commEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME-BROADCAST] Critical error executing action in {lobbyCode}", ex);
+                Logger.Warn($"[GAME-SEND] Error sending to {nickname}: {ex.Message}");
+                if (ex is CommunicationException || ex is TimeoutException || ex is ObjectDisposedException)
+                {
+                    UnregisterCallback(lobbyCode, nickname);
                 }
             }
         }

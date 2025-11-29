@@ -15,7 +15,7 @@ namespace UnoLisServer.Contracts.Interfaces
         void PlayCard(PlayCardData data);
 
         [OperationContract(IsOneWay = true)]
-        void DrawCard(string nickname);
+        void DrawCard(string lobbyCode, string nickname);
     }
 
     [ServiceContract]
@@ -35,6 +35,9 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void ReceiveInitialHand(List<Card> hand);
+
+        [OperationContract(IsOneWay = true)]
+        void ReceiveCards(List<Card> cards);
 
     }
 }

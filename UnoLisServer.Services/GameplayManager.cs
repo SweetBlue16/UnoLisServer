@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Contracts;
 using UnoLisServer.Contracts.DTOs;
+using UnoLisServer.Services.ManagerInterfaces;
 using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services
@@ -13,21 +14,38 @@ namespace UnoLisServer.Services
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class GameplayManager : IGameplayManager
     {
-        private readonly IGameplayCallback _callback;
+        private readonly IGameManager _gameManager;
 
-        public GameplayManager()
+        public GameplayManager() : this(new GameManager())
         {
-            _callback = OperationContext.Current.GetCallbackChannel<IGameplayCallback>();
+        }
+
+        public GameplayManager(IGameManager gameManager)
+        {
+            _gameManager = gameManager;
         }
 
         public void PlayCard(PlayCardData data)
         {
-            _callback.CardPlayed(data.Nickname, data.PlayedCard);
+            var context = new PlayCardContext(
+                data.LobbyCode,
+                data.Nickname,
+                data.CardId,
+                data.SelectedColorId
+            );
+
+            Task.Run(async () =>
+            {
+                await _gameManager.PlayCardAsync(context);
+            });
         }
 
-        public void DrawCard(string nickname)
+        public void DrawCard(string lobbyCode, string nickname)
         {
-            _callback.CardDrawn(nickname);
+            Task.Run(async () =>
+            {
+                await _gameManager.DrawCardAsync(lobbyCode, nickname);
+            });
         }
 
     }

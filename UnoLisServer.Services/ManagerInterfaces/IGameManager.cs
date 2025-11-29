@@ -9,7 +9,7 @@ namespace UnoLisServer.Services.ManagerInterfaces
         bool InitializeGame(string lobbyCode, List<string> playerNicknames);
         void ConnectPlayer(string lobbyCode, string nickname);
         void DisconnectPlayer(string lobbyCode, string nickname);
-        Task PlayCardAsync(string lobbyCode, string nickname, string cardId, int? selectedColorId);
+        Task PlayCardAsync(PlayCardContext context);
         Task DrawCardAsync(string lobbyCode, string nickname);
         Task SayUnoAsync(string lobbyCode, string nickname);
     }
