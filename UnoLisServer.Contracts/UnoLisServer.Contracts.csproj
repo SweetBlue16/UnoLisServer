@@ -62,6 +62,7 @@
     <Compile Include="DTOs\NetworkUpdateData.cs" />
     <Compile Include="DTOs\NotificationData.cs" />
     <Compile Include="DTOs\NotificationType.cs" />
+    <Compile Include="DTOs\PlayCardContext.cs" />
     <Compile Include="DTOs\PlayCardData.cs" />
     <Compile Include="DTOs\PlayerAvatar.cs" />
     <Compile Include="DTOs\ProfileData.cs" />
