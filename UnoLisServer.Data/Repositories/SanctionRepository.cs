@@ -31,7 +31,7 @@ namespace UnoLisServer.Data.Repositories
             using (var context = _contextFactory())
             {
                 return context.Sanction
-                    .Where(s => s.Player_idPlayer == idPlayer && s.sanctionEndDate > DateTime.Now)
+                    .Where(s => s.Player_idPlayer == idPlayer && s.sanctionEndDate > DateTime.UtcNow)
                     .OrderByDescending(s => s.sanctionEndDate)
                     .FirstOrDefault();
             }

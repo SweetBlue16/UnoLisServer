@@ -15,8 +15,5 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract]
         void PlayerDisconnected(string nickname);
-
-        [OperationContract]
-        void PlayerBanned(string reason, DateTime endDate);
     }
 }
