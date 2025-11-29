@@ -7,16 +7,14 @@ namespace UnoLisServer.Data.Repositories
     public class SanctionRepository : ISanctionRepository
     {
         private readonly Func<UNOContext> _contextFactory;
-        private readonly ISanctionRepository _sanctionRepository;
 
-        public SanctionRepository() : this(() => new UNOContext(), new SanctionRepository())
+        public SanctionRepository() : this(() => new UNOContext())
         {
         }
 
-        public SanctionRepository(Func<UNOContext> contextFactory, ISanctionRepository sanctionRepository)
+        public SanctionRepository(Func<UNOContext> contextFactory)
         {
             _contextFactory = contextFactory;
-            _sanctionRepository = sanctionRepository ?? new SanctionRepository();
         }
 
         public void AddSanction(Sanction sanction)
@@ -33,8 +31,7 @@ namespace UnoLisServer.Data.Repositories
             using (var context = _contextFactory())
             {
                 return context.Sanction
-                    .Include("Report")
-                    .Where(s => s.Player_idPlayer == idPlayer && s.sanctionEndDate > DateTime.Now)
+                    .Where(s => s.Player_idPlayer == idPlayer && s.sanctionEndDate > DateTime.UtcNow)
                     .OrderByDescending(s => s.sanctionEndDate)
                     .FirstOrDefault();
             }

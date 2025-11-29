@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
@@ -18,6 +19,10 @@ namespace UnoLisServer.Services
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ReportManager : IReportManager
     {
+        private static readonly Dictionary<string, IReportCallback> _suscribers =
+            new Dictionary<string, IReportCallback>();
+        private static readonly object _lock = new object();
+
         private readonly ReportValidator _reportValidator;
         private readonly SanctionEnforcer _sanctionEnforcer;
         private readonly IPlayerRepository _playerRepository;
@@ -56,7 +61,7 @@ namespace UnoLisServer.Services
 
                     SaveReport(context, reporter.idPlayer, reported.idPlayer, reportData.Description);
                     NotifySuccess(callback, reported.nickname);
-                    _sanctionEnforcer.TryApplySanction(context, reported);
+                    _sanctionEnforcer.TryApplySanction(context, reported, NotifyBannedPlayer);
                 }
             }
             catch (SqlException sqlEx)
@@ -89,11 +94,40 @@ namespace UnoLisServer.Services
             }
         }
 
+        public void SuscrbeToBanNotifications(string nickname)
+        {
+            var callback = OperationContext.Current?.GetCallbackChannel<IReportCallback>();
+            lock (_lock)
+            {
+                if (_suscribers.ContainsKey(nickname))
+                {
+                    _suscribers[nickname] = callback;
+                }
+                else
+                {
+                    _suscribers.Add(nickname, callback);
+                }
+            }
+            Logger.Log($"[INFO] {nickname} se ha suscrito a las notificaciones de baneos.");
+        }
+
+        public void UnsubscribeFromBanNotifications(string nickname)
+        {
+            lock (_lock)
+            {
+                if (_suscribers.ContainsKey(nickname))
+                {
+                    _suscribers.Remove(nickname);
+                    Logger.Log($"[INFO] {nickname} se ha desuscrito de las notificaciones de baneos.");
+                }
+            }
+        }
+
         private void SaveReport(UNOContext context, int reporterId, int reportedId, string description)
         {
             var report = new Report
             {
-                ReporterPlayer_idPlayer = reportedId,
+                ReporterPlayer_idPlayer = reporterId,
                 ReportedPlayer_idPlayer = reportedId,
                 reportDescription = description,
                 reportDate = DateTime.UtcNow
@@ -121,6 +155,32 @@ namespace UnoLisServer.Services
                 logMessage
             );
             ResponseHelper.SendResponse(callback.ReportPlayerResponse, response);
+        }
+
+        private void NotifyBannedPlayer(string nickname, BanInfo banInfo)
+        {
+            lock (_lock)
+            {
+                if (_suscribers.ContainsKey(nickname))
+                {
+                    try
+                    {
+                        var callback = _suscribers[nickname];
+                        var response = new ResponseInfo<BanInfo>(
+                            MessageCode.PlayerBanned,
+                            true,
+                            $"[INFO] El jugador {nickname} ha sido baneado.",
+                            banInfo
+                        );
+                        ResponseHelper.SendResponse(callback.OnPlayerBanned, response);
+                    }
+                    catch (CommunicationException)
+                    {
+                        Logger.Log($"[WARN] No se pudo notificar a {nickname} sobre su baneo. Eliminando de la lista de suscriptores.");
+                        _suscribers.Remove(nickname);
+                    }
+                }
+            }
         }
     }
 }

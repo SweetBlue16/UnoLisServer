@@ -9,6 +9,12 @@ namespace UnoLisServer.Contracts.Interfaces
     {
         [OperationContract(IsOneWay = true)]
         void ReportPlayer(ReportData reportData);
+
+        [OperationContract(IsOneWay = true)]
+        void SuscrbeToBanNotifications(string nickname);
+
+        [OperationContract(IsOneWay = true)]
+        void UnsubscribeFromBanNotifications(string nickname);
     }
 
     [ServiceContract]
@@ -18,6 +24,6 @@ namespace UnoLisServer.Contracts.Interfaces
         void ReportPlayerResponse(ServiceResponse<object> response);
 
         [OperationContract(IsOneWay = true)]
-        void OnPlayerKicked(ServiceResponse<object> response);
+        void OnPlayerBanned(ServiceResponse<BanInfo> response);
     }
 }

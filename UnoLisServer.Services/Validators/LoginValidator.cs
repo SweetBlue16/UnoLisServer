@@ -61,7 +61,7 @@ namespace UnoLisServer.Services.Validators
             {
                 return MapSanctionToBanInfo(activeSanction);
             }
-            return new BanInfo();
+            return null;
         }
 
         private static BanInfo MapSanctionToBanInfo(Sanction sanction)

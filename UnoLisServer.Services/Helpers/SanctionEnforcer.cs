@@ -3,6 +3,7 @@ using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Models;
+using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;
@@ -18,7 +19,7 @@ namespace UnoLisServer.Services.Helpers
 
         private readonly ISanctionRepository _sanctionRepository = new SanctionRepository();
 
-        public void TryApplySanction(UNOContext context, Player reported)
+        public void TryApplySanction(UNOContext context, Player reported, Action<string, BanInfo> onBanAction)
         {
             int reportCount = CountReports(context, reported.idPlayer);
             int banDuration = CalculateBanDuration(reportCount);
@@ -26,7 +27,8 @@ namespace UnoLisServer.Services.Helpers
             if (banDuration > 0)
             {
                 ApplyBan(reported, banDuration);
-                KickUser(reported.nickname, "Sanction applied due to accumulation of reports.", banDuration);
+                var banInfo = CreateBanInfo(banDuration);
+                onBanAction?.Invoke(reported.nickname, banInfo);
             }
         }
 
@@ -67,48 +69,16 @@ namespace UnoLisServer.Services.Helpers
             _sanctionRepository.AddSanction(sanction);
         }
 
-        private void KickUser(string nickname, string reason, int hours)
+        private BanInfo CreateBanInfo(int hours)
         {
-            ResponseInfo<object> responseInfo;
-            var callback = SessionManager.GetSession(nickname);
-
-            if (SessionManager.IsOnline(nickname))
+            var endDate = DateTime.UtcNow.AddHours(hours);
+            return new BanInfo
             {
-                try
-                {
-                    var endDate = DateTime.Now.AddHours(hours);
-
-                    callback?.PlayerBanned(reason, endDate);
-                }
-                catch (CommunicationException communicationEx)
-                {
-                    responseInfo = new ResponseInfo<object>(
-                        MessageCode.ConnectionFailed,
-                        false,
-                        $"[ERROR] Comunicación al aplicar sanción a {nickname}. Error: {communicationEx.Message}"
-                    );
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    responseInfo = new ResponseInfo<object>(
-                        MessageCode.Timeout,
-                        false,
-                        $"[ERROR] Tiempo de espera agotado al aplicar sanción a {nickname}. Error: {timeoutEx.Message}"
-                    );
-                }
-                catch (Exception ex)
-                {
-                    responseInfo = new ResponseInfo<object>(
-                        MessageCode.LoginInternalError,
-                        false,
-                        $"[ERROR] Excepción no controlada al aplicar sanción a '{nickname}': {ex.Message}"
-                    );
-                }
-                finally
-                {
-                    SessionManager.RemoveSession(nickname);
-                }
-            }
+                Reason = "Sanction applied due to accumulation of reports",
+                EndDate = endDate,
+                RemainingHours = hours,
+                FormattedTimeRemaining = $"{hours} h"
+            };
         }
     }
 }
