@@ -22,16 +22,19 @@ namespace UnoLisServer.Services
         private readonly LobbySessionHelper _sessionHelper;
         private readonly IPlayerRepository _playerRepository;
         private readonly ILobbyInvitationHelper _invitationHelper;
+        private readonly IGameManager _gameManager;
 
         public LobbyManager(LobbySessionHelper sessionHelper, IPlayerRepository playerRepo, 
-            ILobbyInvitationHelper invitationHelper)
+            ILobbyInvitationHelper invitationHelper, IGameManager gameManager)
         {
             _sessionHelper = sessionHelper;
             _playerRepository = playerRepo;
             _invitationHelper = invitationHelper;
+            _gameManager = gameManager;
         }
 
-        public LobbyManager() : this(LobbySessionHelper.Instance, new PlayerRepository(), new LobbyInvitationHelper())
+        public LobbyManager() : this(LobbySessionHelper.Instance, new PlayerRepository(), 
+            new LobbyInvitationHelper(), new GameManager())
         {
         }
 
@@ -317,7 +320,10 @@ namespace UnoLisServer.Services
         public async Task HandleReadyStatusAsync(string lobbyCode, string nickname, bool isReady)
         {
             var lobby = _sessionHelper.GetLobby(lobbyCode);
-            if (lobby == null) return;
+            if (lobby == null)
+            {
+                return;
+            }
 
             bool allReady = false;
 
@@ -337,11 +343,26 @@ namespace UnoLisServer.Services
             if (allReady)
             {
                 Logger.Log($"[LOBBY] All ready in {lobbyCode}. Countdown started.");
-                await Task.Delay(5000);
+                await Task.Delay(3000);
 
-                if (_sessionHelper.GetLobby(lobbyCode)?.Players.Count >= 2)
+                if (_sessionHelper.LobbyExists(lobbyCode) && lobby.Players.Count >= 2)
                 {
-                    _sessionHelper.BroadcastToLobby(lobbyCode, call => call.GameStarted());
+                    var playerNicks = lobby.Players.Select(lobbyPlayer => lobbyPlayer.Nickname).ToList();
+                    bool gameCreated = _gameManager.InitializeGame(lobbyCode, playerNicks);
+
+                    if (gameCreated)
+                    {
+                        Logger.Log($"[LOBBY] Game session initialized for {lobbyCode}. Broadcasting start.");
+                        _sessionHelper.BroadcastToLobby(lobbyCode, callback => callback.GameStarted());
+                    }
+                    else
+                    {
+                        Logger.Error($"[LOBBY] Failed to initialize game session for {lobbyCode}. Aborting start.");
+                    }
+                }
+                else
+                {
+                    Logger.Warn($"[LOBBY] Start aborted in {lobbyCode}: Lobby removed or players left during countdown.");
                 }
             }
         }

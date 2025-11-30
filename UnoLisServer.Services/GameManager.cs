@@ -79,6 +79,7 @@ namespace UnoLisServer.Services
                         return;
                     }
 
+                    System.Threading.Thread.Sleep(500);
                     SendInitialStateToPlayer(callback, session, player);
                 }
             }
@@ -411,6 +412,8 @@ namespace UnoLisServer.Services
         {
             try
             {
+                var allNicknames = session.Players.Select(p => p.Nickname).ToList();
+                callback.ReceivePlayerList(allNicknames);
                 callback.ReceiveInitialHand(player.Hand);
 
                 var topCard = session.Deck.PeekTopCard();

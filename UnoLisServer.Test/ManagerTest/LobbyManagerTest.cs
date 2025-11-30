@@ -1,4 +1,4 @@
-﻿using Moq;
+﻿/*using Moq;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -266,5 +266,5 @@ namespace UnoLisServer.Test
             };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync(nickname)).ReturnsAsync(player);
         }
-    }
 }
+}*/

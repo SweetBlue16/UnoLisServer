@@ -48,5 +48,10 @@ namespace UnoLisServer.Services
             });
         }
 
+        public void ConnectToGame(string lobbyCode, string nickname)
+        {
+            _gameManager.ConnectPlayer(lobbyCode, nickname);
+        }
+
     }
 }
