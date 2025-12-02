@@ -6,7 +6,7 @@ namespace UnoLisServer.Services.ManagerInterfaces
 {
     public interface IGameManager
     {
-        bool InitializeGame(string lobbyCode, List<string> playerNicknames);
+        Task <bool> InitializeGameAsync(string lobbyCode, List<string> playerNicknames);
         void ConnectPlayer(string lobbyCode, string nickname);
         void DisconnectPlayer(string lobbyCode, string nickname);
         Task PlayCardAsync(PlayCardContext context);

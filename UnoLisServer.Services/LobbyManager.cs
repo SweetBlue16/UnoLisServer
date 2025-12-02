@@ -348,7 +348,7 @@ namespace UnoLisServer.Services
                 if (_sessionHelper.LobbyExists(lobbyCode) && lobby.Players.Count >= 2)
                 {
                     var playerNicks = lobby.Players.Select(lobbyPlayer => lobbyPlayer.Nickname).ToList();
-                    bool gameCreated = _gameManager.InitializeGame(lobbyCode, playerNicks);
+                    bool gameCreated = await _gameManager.InitializeGameAsync(lobbyCode, playerNicks);
 
                     if (gameCreated)
                     {

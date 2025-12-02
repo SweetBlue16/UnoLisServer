@@ -54,6 +54,7 @@
     <Compile Include="DTOs\CreateRequest.cs" />
     <Compile Include="DTOs\FriendData.cs" />
     <Compile Include="DTOs\FriendRequestData.cs" />
+    <Compile Include="DTOs\GamePlayer.cs" />
     <Compile Include="DTOs\JoinMatchResponse.cs" />
     <Compile Include="DTOs\LeaderboardEntry.cs" />
     <Compile Include="DTOs\LobbyPlayerData.cs" />

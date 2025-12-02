@@ -43,7 +43,10 @@ namespace UnoLisServer.Contracts.Interfaces
         void ReceiveCards(List<Card> cards);
 
         [OperationContract(IsOneWay = true)]
-        void ReceivePlayerList(List<string> players);
+        void ReceivePlayerList(List<GamePlayer> players);
+
+        [OperationContract(IsOneWay = true)]
+        void GameMessage(string message);
 
     }
 }

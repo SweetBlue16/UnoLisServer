@@ -7,6 +7,8 @@ using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Enums;
 using UnoLisServer.Contracts.Interfaces;
+using UnoLisServer.Data.Repositories;
+using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services.GameLogic;
 using UnoLisServer.Services.GameLogic.Models;
 using UnoLisServer.Services.Helpers;
@@ -17,21 +19,35 @@ namespace UnoLisServer.Services
     public class GameManager : IGameManager
     {
         private readonly GameSessionHelper _sessionHelper;
+        private readonly IPlayerRepository _playerRepository;
 
-        public GameManager() : this(GameSessionHelper.Instance) 
+        public GameManager() : this(GameSessionHelper.Instance, new PlayerRepository()) 
         {
         }
 
-        public GameManager(GameSessionHelper sessionHelper)
+        public GameManager(GameSessionHelper sessionHelper, IPlayerRepository playerRepo)
         {
             _sessionHelper = sessionHelper;
+            _playerRepository = playerRepo;
         }
 
-        public bool InitializeGame(string lobbyCode, List<string> playerNicknames)
+        public async Task<bool> InitializeGameAsync(string lobbyCode, List<string> playerNicknames)
         {
             try
             {
-                var session = new GameSession(lobbyCode, playerNicknames);
+                var playerTasks = playerNicknames.Select(async nick =>
+                {
+                string avatar = await GetAvatarAsync(nick);
+                return new GamePlayer
+                {
+                    Nickname = nick, 
+                    AvatarName = avatar,
+                    CardCount = 0
+                };
+                });
+
+                var playersData = (await Task.WhenAll(playerTasks)).ToList();
+                var session = new GameSession(lobbyCode, playersData);
                 session.OnTurnTimeExpired += async (nick) => await HandleTurnExpired(lobbyCode, nick);
                 session.StartGame();
                 _sessionHelper.CreateGame(lobbyCode, session);
@@ -114,7 +130,7 @@ namespace UnoLisServer.Services
                 lock (session.GameLock)
                 {
                     var player = session.GetPlayer(context.Nickname);
-                    var cardToPlay = player?.Hand.FirstOrDefault(c => c.Id == context.CardId);
+                    var cardToPlay = player?.Hand.FirstOrDefault(card => card.Id == context.CardId);
 
                     if (!ValidatePlay(session, player, cardToPlay))
                     {
@@ -125,7 +141,8 @@ namespace UnoLisServer.Services
                     ProcessCardMove(session, cardToPlay, context);
                     NotifyPlay(context.LobbyCode, context.Nickname, cardToPlay);
 
-                    if (player.Hand.Count == 0)
+                    int emptyHand = 0;
+                    if (player.Hand.Count == emptyHand)
                     {
                         HandleWinCondition(session, player);
                         return Task.CompletedTask;
@@ -148,6 +165,37 @@ namespace UnoLisServer.Services
             }
 
             return Task.CompletedTask;
+        }
+
+        private async Task<string> GetAvatarAsync(string nickname)
+        {
+            if (UserHelper.IsGuest(nickname))
+            {
+                return "LogoUNO";
+            }
+
+            try
+            {
+                var player = await _playerRepository.GetPlayerWithDetailsAsync(nickname);
+
+                if (player?.SelectedAvatar_Avatar_idAvatar != null)
+                {
+                    var unlocked = player.AvatarsUnlocked
+                        .FirstOrDefault(avatarsUnlocked => avatarsUnlocked.Avatar_idAvatar == 
+                        player.SelectedAvatar_Avatar_idAvatar);
+
+                    if (unlocked?.Avatar != null)
+                    {
+                        return unlocked.Avatar.avatarName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[GAME] Error fetching avatar for {nickname}. Using default. Error: {ex.Message}");
+            }
+
+            return "LogoUNO";
         }
 
         private bool IsValidMove(Card card, GameSession session)
@@ -228,7 +276,11 @@ namespace UnoLisServer.Services
             {
                 if (context.SelectedColorId.HasValue && Enum.IsDefined(typeof(CardColor), context.SelectedColorId.Value))
                 {
-                    session.CurrentActiveColor = (CardColor)context.SelectedColorId.Value;
+                    var selectedColor = (CardColor)context.SelectedColorId.Value;
+                    session.CurrentActiveColor = selectedColor;
+
+                    string msg = $"{context.Nickname} ha cambiado el color a {selectedColor}";
+                    _sessionHelper.BroadcastToGame(session.LobbyCode, callback => callback.GameMessage(msg));
                 }
                 else
                 {
@@ -412,8 +464,14 @@ namespace UnoLisServer.Services
         {
             try
             {
-                var allNicknames = session.Players.Select(p => p.Nickname).ToList();
-                callback.ReceivePlayerList(allNicknames);
+                var playersListDto = session.Players.Select(p => new GamePlayer
+                {
+                    Nickname = p.Nickname,
+                    AvatarName = p.AvatarName,
+                    CardCount = p.Hand.Count
+                }).ToList();
+
+                callback.ReceivePlayerList(playersListDto);
                 callback.ReceiveInitialHand(player.Hand);
 
                 var topCard = session.Deck.PeekTopCard();

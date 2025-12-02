@@ -9,6 +9,9 @@ using UnoLisServer.Common.Helpers;
 
 namespace UnoLisServer.Services.GameLogic
 {
+    /// <summary>
+    /// GameSession class to handle Session in game
+    /// </summary>
     public class GameSession : IDisposable
     {
         public string LobbyCode { get; }
@@ -29,15 +32,15 @@ namespace UnoLisServer.Services.GameLogic
 
         public event Action<string> OnTurnTimeExpired;
 
-        public GameSession(string lobbyCode, List<string> playerNicknames)
+        public GameSession(string lobbyCode, List<GamePlayer> playersData)
         {
             LobbyCode = lobbyCode;
             Deck = new DeckManager();
             Players = new List<GamePlayerData>();
 
-            foreach (var nick in playerNicknames)
+            foreach (var player in playersData)
             {
-                Players.Add(new GamePlayerData(nick));
+                Players.Add(new GamePlayerData(player.Nickname, player.AvatarName));
             }
 
             _turnTimer = new Timer(TurnDurationSeconds * 1000);
