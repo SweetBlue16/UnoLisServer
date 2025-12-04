@@ -5,6 +5,7 @@ using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
+using UnoLisServer.Data.Repositories;
 
 namespace UnoLisServer.Services.Validators
 {
@@ -26,15 +27,12 @@ namespace UnoLisServer.Services.Validators
             return true;
         }
 
-        public bool CheckReportFrequency(UNOContext context, int reportedId, int reporterId, IReportCallback callback)
+        public bool CheckReportFrequency(int reportedId, int reporterId, IReportCallback callback)
         {
             var cutoff = DateTime.UtcNow.AddHours(-24);
 
-            bool exists = context.Report.Any(r =>
-                r.ReporterPlayer_idPlayer == reporterId &&
-                r.ReportedPlayer_idPlayer == reportedId &&
-                r.reportDate >= cutoff
-            );
+            var reportRepository = new ReportRepository(() => new UNOContext());
+            bool exists = reportRepository.HasRecentReport(reporterId, reportedId);
 
             if (exists)
             {

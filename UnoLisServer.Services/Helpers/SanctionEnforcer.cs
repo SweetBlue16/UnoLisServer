@@ -18,10 +18,11 @@ namespace UnoLisServer.Services.Helpers
         private const int MajorBanHours = 24;
 
         private readonly ISanctionRepository _sanctionRepository = new SanctionRepository();
+        private readonly IReportRepository _reportRepository = new ReportRepository();
 
-        public void TryApplySanction(UNOContext context, Player reported, Action<string, BanInfo> onBanAction)
+        public void TryApplySanction(Player reported, Action<string, BanInfo> onBanAction)
         {
-            int reportCount = CountReports(context, reported.idPlayer);
+            int reportCount = _reportRepository.CountReports(reported.idPlayer);
             int banDuration = CalculateBanDuration(reportCount);
 
             if (banDuration > 0)
@@ -30,11 +31,6 @@ namespace UnoLisServer.Services.Helpers
                 var banInfo = CreateBanInfo(banDuration);
                 onBanAction?.Invoke(reported.nickname, banInfo);
             }
-        }
-
-        private int CountReports(UNOContext context, int playerId)
-        {
-            return context.Report.Count(r => r.ReportedPlayer_idPlayer == playerId);
         }
 
         private int CalculateBanDuration(int count)

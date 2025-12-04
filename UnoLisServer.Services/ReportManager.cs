@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.Remoting.Contexts;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
@@ -26,12 +27,14 @@ namespace UnoLisServer.Services
         private readonly ReportValidator _reportValidator;
         private readonly SanctionEnforcer _sanctionEnforcer;
         private readonly IPlayerRepository _playerRepository;
+        private readonly IReportRepository _reportRepository;
 
         public ReportManager()
         {
             _reportValidator = new ReportValidator();
             _sanctionEnforcer = new SanctionEnforcer();
             _playerRepository = new PlayerRepository();
+            _reportRepository = new ReportRepository();
         }
 
         public void ReportPlayer(ReportData reportData)
@@ -44,25 +47,22 @@ namespace UnoLisServer.Services
 
             try
             {
-                using (var context = new UNOContext())
+                var reporter = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReporterNickname).Result;
+                var reported = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReportedNickname).Result;
+
+                if (!_reportValidator.ValidateRequest(reporter, reported, callback))
                 {
-                    var reporter = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReporterNickname).Result;
-                    var reported = _playerRepository.GetPlayerProfileByNicknameAsync(reportData.ReportedNickname).Result;
-
-                    if (!_reportValidator.ValidateRequest(reporter, reported, callback))
-                    {
-                        return;
-                    }
-
-                    if (!_reportValidator.CheckReportFrequency(context, reported.idPlayer, reporter.idPlayer, callback))
-                    {
-                        return;
-                    }
-
-                    SaveReport(context, reporter.idPlayer, reported.idPlayer, reportData.Description);
-                    NotifySuccess(callback, reported.nickname);
-                    _sanctionEnforcer.TryApplySanction(context, reported, NotifyBannedPlayer);
+                    return;
                 }
+
+                if (!_reportValidator.CheckReportFrequency(reported.idPlayer, reporter.idPlayer, callback))
+                {
+                    return;
+                }
+
+                SaveReport(reporter.idPlayer, reported.idPlayer, reportData.Description);
+                NotifySuccess(callback, reported.nickname);
+                _sanctionEnforcer.TryApplySanction(reported, NotifyBannedPlayer);
             }
             catch (SqlException sqlEx)
             {
@@ -123,7 +123,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private void SaveReport(UNOContext context, int reporterId, int reportedId, string description)
+        private void SaveReport(int reporterId, int reportedId, string description)
         {
             var report = new Report
             {
@@ -132,9 +132,7 @@ namespace UnoLisServer.Services
                 reportDescription = description,
                 reportDate = DateTime.UtcNow
             };
-
-            context.Report.Add(report);
-            context.SaveChanges();
+            _reportRepository.SaveReport(report);
         }
 
         private void NotifySuccess(IReportCallback callback, string reportedNickname)
@@ -177,6 +175,16 @@ namespace UnoLisServer.Services
                     catch (CommunicationException)
                     {
                         Logger.Log($"[WARN] No se pudo notificar a {nickname} sobre su baneo. Eliminando de la lista de suscriptores.");
+                        _suscribers.Remove(nickname);
+                    }
+                    catch (TimeoutException)
+                    {
+                        Logger.Log($"[WARN] Tiempo de espera agotado al notificar a {nickname} sobre su baneo. Eliminando de la lista de suscriptores.");
+                        _suscribers.Remove(nickname);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log($"[ERROR] Error al notificar a {nickname} sobre su baneo: {ex.Message}. Eliminando de la lista de suscriptores.");
                         _suscribers.Remove(nickname);
                     }
                 }
