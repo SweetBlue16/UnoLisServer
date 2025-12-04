@@ -12,9 +12,9 @@ namespace UnoLisServer.Contracts.DTOs
         public int Score { get; set; }
 
         [DataMember]
-        public int Position { get; set; }
+        public int Rank { get; set; }
 
         [DataMember]
-        public bool IsWinner { get; set; }
+        public bool AvatarName { get; set; }
     }
 }
