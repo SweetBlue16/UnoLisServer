@@ -23,6 +23,6 @@ namespace UnoLisServer.Data.RepositoryInterfaces
         Task UpdateSelectedAvatarAsync(string nickname, int newAvatarId);
         Task<List<PlayerStatistics>> GetTopPlayersByGlobalScoreAsync(int topCount);
         Task<Player> GetPlayerWithDetailsAsync(string nickname);
-
+        Task UpdateMatchResultAsync(string nickname, bool isWinner, int pointsEarned);
     }
 }

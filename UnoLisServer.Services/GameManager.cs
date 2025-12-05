@@ -340,11 +340,85 @@ namespace UnoLisServer.Services
                    value == CardValue.WildDrawSkipReverseFour;
         }
 
-        private void HandleWinCondition(GameSession session, GamePlayerData winner)
+        private async Task HandleWinCondition(GameSession session, GamePlayerData winner)
         {
-            var results = new List<ResultData>();
-            _sessionHelper.BroadcastToGame(session.LobbyCode, cb => cb.MatchEnded(results));
-            _sessionHelper.RemoveGame(session.LobbyCode);
+            try
+            {
+                var rankedPlayers = GetRankedPlayers(session, winner);
+
+                int totalPlayers = rankedPlayers.Count;
+                var results = new List<ResultData>();
+
+                for (int rank = 0; rank < totalPlayers; rank++)
+                {
+                    var player = rankedPlayers[rank];
+
+                    int points = CalculatePoints(totalPlayers, rank);
+                    bool isWinner = (rank == 0);
+
+                    results.Add(new ResultData
+                    {
+                        Nickname = player.Nickname,
+                        Rank = rank + 1,
+                        Score = points,
+                        AvatarName = player.AvatarName
+                    });
+
+                    if (!UserHelper.IsGuest(player.Nickname))
+                    {
+                        await _playerRepository.UpdateMatchResultAsync(player.Nickname, isWinner, points);
+                    }
+                }
+
+                _sessionHelper.BroadcastToGame(session.LobbyCode, cb => cb.MatchEnded(results));
+                _sessionHelper.RemoveGame(session.LobbyCode);
+
+                Logger.Log($"[GAME] Match {session.LobbyCode} ended. Winner: {winner.Nickname}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error handling win condition for {session.LobbyCode}", ex);
+            }
+        }
+
+        private List<GamePlayerData> GetRankedPlayers(GameSession session, GamePlayerData winner)
+        {
+            var allPlayers = session.Players;
+
+            var losers = allPlayers
+                .Where(p => p.Nickname != winner.Nickname)
+                .OrderBy(p => p.Hand.Count)
+                .ToList();
+
+            var rankedList = new List<GamePlayerData> { winner };
+            rankedList.AddRange(losers);
+
+            return rankedList;
+        }
+
+        private int CalculatePoints(int totalPlayers, int rankIndex)
+        {
+
+            if (totalPlayers == 2)
+            {
+                if (rankIndex == 0) return 100;
+                return 0;
+            }
+            else if (totalPlayers == 3)
+            {
+                if (rankIndex == 0) return 300;
+                if (rankIndex == 1) return 100;
+                return 0;
+            }
+            else if (totalPlayers == 4) 
+            {
+                if (rankIndex == 0) return 500;
+                if (rankIndex == 1) return 300;
+                if (rankIndex == 2) return 200;
+                return 50;
+            }
+
+            return 0;
         }
 
         public Task DrawCardAsync(string lobbyCode, string nickname)

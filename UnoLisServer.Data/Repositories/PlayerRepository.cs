@@ -438,5 +438,86 @@ namespace UnoLisServer.Data.Repositories
                 }
             }
         }
+
+        public async Task UpdateMatchResultAsync(string nickname, bool isWinner, int pointsEarned)
+        {
+            using (var context = _contextFactory())
+            {
+                try
+                {
+                    var player = await context.Player
+                        .Include(p => p.PlayerStatistics)
+                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+
+                    if (player == null)
+                    {
+                        return;
+                    }
+
+                    int coinsEarned = CalculateAndApplyCoins(player, pointsEarned);
+                    var stats = EnsureStatisticsExist(context, player);
+
+                    ApplyMatchLogicToStats(stats, isWinner, pointsEarned);
+                    await context.SaveChangesAsync();
+
+                    Logger.Log($"[DB] Stats updated for {nickname}: +{pointsEarned} pts, +{coinsEarned} coins.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DB] Error updating stats for {nickname}", ex);
+                    throw;
+                }
+            }
+        }
+
+        private int CalculateAndApplyCoins(Player player, int pointsEarned)
+        {
+            int coins = (int)(pointsEarned * 0.10);
+            player.revoCoins += coins;
+            return coins;
+        }
+
+        private PlayerStatistics EnsureStatisticsExist(UNOContext context, Player player)
+        {
+            var stats = player.PlayerStatistics.FirstOrDefault();
+
+            if (stats == null)
+            {
+                stats = new PlayerStatistics
+                {
+                    Player_idPlayer = player.idPlayer,
+                    matchesPlayed = 0,
+                    wins = 0,
+                    loses = 0,
+                    globalPoints = 0,
+                    streak = 0,
+                    maxStreak = 0
+                };
+                context.PlayerStatistics.Add(stats);
+            }
+            return stats;
+        }
+
+        private void ApplyMatchLogicToStats(PlayerStatistics stats, bool isWinner, int pointsEarned)
+        {
+            stats.matchesPlayed = (stats.matchesPlayed ?? 0) + 1;
+            stats.globalPoints = (stats.globalPoints ?? 0) + pointsEarned;
+
+            if (isWinner)
+            {
+                stats.wins = (stats.wins ?? 0) + 1;
+                stats.streak = (stats.streak ?? 0) + 1;
+
+                if (stats.streak > (stats.maxStreak ?? 0))
+                {
+                    stats.maxStreak = stats.streak;
+                }
+            }
+            else
+            {
+                stats.loses = (stats.loses ?? 0) + 1;
+                stats.streak = 0; 
+            }
+        }
     }
 }

@@ -15,6 +15,6 @@ namespace UnoLisServer.Contracts.DTOs
         public int Rank { get; set; }
 
         [DataMember]
-        public bool AvatarName { get; set; }
+        public string AvatarName { get; set; }
     }
 }
