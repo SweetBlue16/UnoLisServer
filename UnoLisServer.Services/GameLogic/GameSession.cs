@@ -19,7 +19,7 @@ namespace UnoLisServer.Services.GameLogic
         public DeckManager Deck { get; }
         public List<GamePlayerData> Players { get; }
 
-        public int CurrentTurnIndex { get; private set; }
+        public int CurrentTurnIndex { get; set; }
         public bool IsClockwise { get; private set; } = true;
         public CardColor CurrentActiveColor { get; set; } 
 

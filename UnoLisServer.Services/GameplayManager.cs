@@ -53,5 +53,12 @@ namespace UnoLisServer.Services
             _gameManager.ConnectPlayer(lobbyCode, nickname);
         }
 
+        public void SayUnoAsync(string lobbyCode, string nickname)
+        {
+            Task.Run(async () =>
+            {
+                await _gameManager.SayUnoAsync(lobbyCode, nickname);
+            });
+        }
     }
 }

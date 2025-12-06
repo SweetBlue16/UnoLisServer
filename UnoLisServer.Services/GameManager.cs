@@ -29,6 +29,7 @@ namespace UnoLisServer.Services
         {
             _sessionHelper = sessionHelper;
             _playerRepository = playerRepo;
+            _sessionHelper.OnPlayerDisconnected += HandlePlayerLeft;
         }
 
         public async Task<bool> InitializeGameAsync(string lobbyCode, List<string> playerNicknames)
@@ -120,35 +121,57 @@ namespace UnoLisServer.Services
             _sessionHelper.UnregisterCallback(lobbyCode, nickname);
         }
 
-        public Task PlayCardAsync(PlayCardContext context)
+        public async Task PlayCardAsync(PlayCardContext context)
         {
             try
             {
                 var session = _sessionHelper.GetGame(context.LobbyCode);
-                if (session == null) return Task.CompletedTask;
+                if (session == null) return;
+
+                bool isUnoRisk = false;
+                Card cardPlayed = null;
 
                 lock (session.GameLock)
                 {
                     var player = session.GetPlayer(context.Nickname);
-                    var cardToPlay = player?.Hand.FirstOrDefault(card => card.Id == context.CardId);
 
-                    if (!ValidatePlay(session, player, cardToPlay))
+                    if (session.GetCurrentPlayer().Nickname != player.Nickname)
                     {
-                        Logger.Warn($"[GAME] Invalid play attempt by {context.Nickname} in {context.LobbyCode}");
-                        return Task.CompletedTask;
+                        return;
                     }
 
-                    ProcessCardMove(session, cardToPlay, context);
-                    NotifyPlay(context.LobbyCode, context.Nickname, cardToPlay);
+                    cardPlayed = player.Hand.FirstOrDefault(c => c.Id == context.CardId);
+
+                    if (!ValidatePlay(session, player, cardPlayed))
+                    {
+                        Logger.Warn($"[GAME] Invalid play attempt by {context.Nickname} in {context.LobbyCode}");
+                        return;
+                    }
+
+                    ProcessCardMove(session, cardPlayed, context);
+                    NotifyPlay(context.LobbyCode, context.Nickname, cardPlayed);
 
                     int emptyHand = 0;
                     if (player.Hand.Count == emptyHand)
                     {
-                        HandleWinCondition(session, player);
-                        return Task.CompletedTask;
+
+                        _ = HandleWinCondition(session, player);
+                        return;
                     }
 
-                    AdvanceTurnLogic(session, cardToPlay, context.LobbyCode);
+                    if (player.Hand.Count == 1 && !player.HasSaidUno)
+                    {
+                        isUnoRisk = true;
+                    }
+                    else
+                    {
+                        AdvanceTurnLogic(session, cardPlayed, context.LobbyCode);
+                    }
+                } 
+
+                if (isUnoRisk)
+                {
+                    await HandleUnoRiskAsync(session, context.Nickname, cardPlayed);
                 }
             }
             catch (ArgumentOutOfRangeException argEx)
@@ -163,8 +186,93 @@ namespace UnoLisServer.Services
             {
                 Logger.Error($"[GAME] Critical error in PlayCard for {context.Nickname}", ex);
             }
+        }
 
-            return Task.CompletedTask;
+        private async Task HandleUnoRiskAsync(GameSession session, string nickname, Card cardPlayed)
+        {
+            try
+            {
+                await Task.Delay(3000);
+
+                lock (session.GameLock)
+                {
+                    var player = session.GetPlayer(nickname);
+
+                    if (!player.HasSaidUno)
+                    {
+                        Logger.Log($"[GAME] {nickname} forgot UNO! Penalizing...");
+
+                        var penaltyCards = session.Deck.DrawCards(2);
+                        player.Hand.AddRange(penaltyCards);
+
+                        _sessionHelper.SendToPlayer(session.LobbyCode, player.Nickname, cb => cb.ReceiveCards(penaltyCards));
+                        _sessionHelper.BroadcastToGame(session.LobbyCode, cb => cb.GameMessage($"{player.Nickname} olvidó gritar UNO (+2 cartas)"));
+                    }
+                    else
+                    {
+                        Logger.Log($"[GAME] {nickname} said UNO in time.");
+                    }
+
+                    AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error processing UNO risk for {nickname}", ex);
+                lock (session.GameLock)
+                {
+                    AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
+                }
+            }
+        }
+
+        private void HandlePlayerLeft(string lobbyCode, string nickname)
+        {
+            var session = _sessionHelper.GetGame(lobbyCode);
+            if (session == null) return;
+
+            lock (session.GameLock)
+            {
+                var playerToRemove = session.GetPlayer(nickname);
+                if (playerToRemove == null) return;
+
+                session.Players.Remove(playerToRemove);
+                Logger.Log($"[GAME] Removed {nickname} from session logic.");
+
+                if (session.Players.Count < 2)
+                {
+                    var winner = session.Players.FirstOrDefault();
+                    if (winner != null)
+                    {
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"¡Todos se han ido! {winner.Nickname} gana por default."));
+                        _ = HandleWinCondition(session, winner);
+                    }
+                    else
+                    {
+                        _sessionHelper.RemoveGame(lobbyCode); 
+                    }
+                    return;
+                }
+
+                // 3. Si el juego sigue: Ajustar turno
+                // Si el que se fue tenía el turno, pasamos al siguiente.
+                // Si el índice quedó fuera de rango, lo ajustamos.
+                if (session.CurrentTurnIndex >= session.Players.Count)
+                {
+                    session.CurrentTurnIndex = 0;
+                }
+
+                // Notificar a todos que alguien se fue
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"{nickname} se desconectó."));
+
+                // Actualizar la lista de jugadores en los clientes (para que desaparezca su mano)
+                // Puedes reutilizar SendInitialStateToPlayer o crear uno ligero UpdatePlayerList
+                var activePlayers = session.Players.Select(player => new GamePlayer { Nickname = player.Nickname, CardCount = player.Hand.Count, AvatarName = player.AvatarName }).ToList();
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.ReceivePlayerList(activePlayers));
+
+                // Forzar actualización de turno visual
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.TurnChanged(session.GetCurrentPlayer().Nickname));
+            }
         }
 
         private async Task<string> GetAvatarAsync(string nickname)
@@ -254,7 +362,11 @@ namespace UnoLisServer.Services
 
         private void NotifyPlay(string lobbyCode, string nickname, Card card)
         {
-            _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.CardPlayed(nickname, card));
+            var session = _sessionHelper.GetGame(lobbyCode);
+            var player = session.GetPlayer(nickname);
+            int count = player.Hand.Count;
+
+            _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardPlayed(nickname, card, count));
             Logger.Log($"[GAME] {nickname} played {card} in lobby {lobbyCode}");
         }
 
@@ -312,23 +424,28 @@ namespace UnoLisServer.Services
         private void ExecuteDrawForNextPlayer(GameSession session, int count, string lobbyCode)
         {
             int victimIndex;
+            int turnIndex = 1;
             if (session.IsClockwise)
             {
-                victimIndex = (session.CurrentTurnIndex + 1) % session.Players.Count;
+                victimIndex = (session.CurrentTurnIndex + turnIndex) % session.Players.Count;
             }
             else
             {
-                victimIndex = (session.CurrentTurnIndex - 1 + session.Players.Count) % session.Players.Count;
+                victimIndex = (session.CurrentTurnIndex - turnIndex + session.Players.Count) % session.Players.Count;
             }
 
             var victim = session.Players[victimIndex];
             var drawnCards = session.Deck.DrawCards(count);
+
             victim.Hand.AddRange(drawnCards);
-            _sessionHelper.SendToPlayer(lobbyCode, victim.Nickname, cb => cb.ReceiveCards(drawnCards));
+            victim.HasSaidUno = false;
+
+            int currentHandCount = victim.Hand.Count;
+            _sessionHelper.SendToPlayer(lobbyCode, victim.Nickname, callback => callback.ReceiveCards(drawnCards));
 
             for (int i = 0; i < count; i++)
             {
-                _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.CardDrawn(victim.Nickname));
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(victim.Nickname, currentHandCount));
             }
         }
 
@@ -424,7 +541,10 @@ namespace UnoLisServer.Services
         public Task DrawCardAsync(string lobbyCode, string nickname)
         {
             var session = _sessionHelper.GetGame(lobbyCode);
-            if (session == null) return Task.CompletedTask;
+            if (session == null)
+            {
+                return Task.CompletedTask;
+            }
 
             lock (session.GameLock)
             {
@@ -438,9 +558,11 @@ namespace UnoLisServer.Services
                     var card = session.Deck.DrawCard();
                     var player = session.GetPlayer(nickname);
                     player.Hand.Add(card);
+                    player.HasSaidUno = false;
 
-                    _sessionHelper.SendToPlayer(lobbyCode, nickname, cb => cb.ReceiveCards(new List<Card> { card }));
-                    _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.CardDrawn(nickname));
+                    int currentHandCount = player.Hand.Count;
+                    _sessionHelper.SendToPlayer(lobbyCode, nickname, callback => callback.ReceiveCards(new List<Card> { card }));
+                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(nickname, currentHandCount));
                 }
                 catch (InvalidOperationException)
                 {
@@ -461,6 +583,7 @@ namespace UnoLisServer.Services
             }
             return Task.CompletedTask;
         }
+
         public Task SayUnoAsync(string lobbyCode, string nickname)
         {
             try
@@ -478,6 +601,9 @@ namespace UnoLisServer.Services
                     {
                         player.HasSaidUno = true;
                         Logger.Log($"[GAME] {nickname} shouted UNO!");
+
+                        string message = $"{nickname} ha gritado ¡UNO!";
+                        _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.PlayerShoutedUno(nickname));
                     }
                 }
             }
@@ -538,20 +664,20 @@ namespace UnoLisServer.Services
         {
             try
             {
-                var playersListDto = session.Players.Select(p => new GamePlayer
+                var playersList = session.Players.Select(p => new GamePlayer
                 {
                     Nickname = p.Nickname,
                     AvatarName = p.AvatarName,
                     CardCount = p.Hand.Count
                 }).ToList();
 
-                callback.ReceivePlayerList(playersListDto);
+                callback.ReceivePlayerList(playersList);
                 callback.ReceiveInitialHand(player.Hand);
 
                 var topCard = session.Deck.PeekTopCard();
                 if (topCard != null)
                 {
-                    callback.CardPlayed("System", topCard);
+                    callback.CardPlayed("System", topCard, 0);
                 }
 
                 var currentTurnPlayer = session.GetCurrentPlayer();

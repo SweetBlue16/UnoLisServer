@@ -19,16 +19,19 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void ConnectToGame(string lobbyCode, string nickname);
+
+        [OperationContract(IsOneWay = true)]
+        void SayUnoAsync(string lobbyCode, string nickname);
     }
 
     [ServiceContract]
     public interface IGameplayCallback : ISessionCallback
     {
         [OperationContract(IsOneWay = true)]
-        void CardPlayed(string nickname, Card card);
+        void CardPlayed(string nickname, Card card, int cardsLeft);
 
         [OperationContract(IsOneWay = true)]
-        void CardDrawn(string nickname);
+        void CardDrawn(string nickname, int cardsLeft);
 
         [OperationContract(IsOneWay = true)]
         void TurnChanged(string nextPlayerNickname);
@@ -47,6 +50,9 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void GameMessage(string message);
+
+        [OperationContract(IsOneWay = true)]
+        void PlayerShoutedUno(string nickname);
 
     }
 }

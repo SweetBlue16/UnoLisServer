@@ -10,16 +10,14 @@ namespace UnoLisServer.Services.Helpers
 {
     public class GameSessionHelper
     {
+        public event Action<string, string> OnPlayerDisconnected;
         private static readonly Lazy<GameSessionHelper> _instance =
             new Lazy<GameSessionHelper>(() => new GameSessionHelper());
-
         public static GameSessionHelper Instance => _instance.Value;
 
         private readonly Dictionary<string, GameSession> _activeGames = new Dictionary<string, GameSession>();
-
         private readonly Dictionary<string, Dictionary<string, IGameplayCallback>> _gameCallbacks =
             new Dictionary<string, Dictionary<string, IGameplayCallback>>();
-
         private readonly object _lock = new object();
 
         private GameSessionHelper() { }
@@ -121,17 +119,17 @@ namespace UnoLisServer.Services.Helpers
             }
         }
 
-        private void ExecuteSafe(IGameplayCallback cb, Action<IGameplayCallback> action, string lobbyCode, string nickname)
+        private void ExecuteSafe(IGameplayCallback callback, Action<IGameplayCallback> action, string lobbyCode, string nickname)
         {
             try
             {
-                if (cb is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
+                if (callback is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
                 {
-                    action(cb);
+                    action(callback);
                 }
                 else
                 {
-                    UnregisterCallback(lobbyCode, nickname);
+                    HandleDisconnection(lobbyCode, nickname);
                 }
             }
             catch (ObjectDisposedException)
@@ -155,6 +153,24 @@ namespace UnoLisServer.Services.Helpers
                     UnregisterCallback(lobbyCode, nickname);
                 }
             }
+        }
+
+        private void HandleDisconnection(string lobbyCode, string nickname)
+        {
+            if (!_gameCallbacks.ContainsKey(lobbyCode) || !_gameCallbacks[lobbyCode].ContainsKey(nickname))
+            {
+                return;
+            }
+
+            Logger.Log($"[GAME] Detected disconnection of {nickname} in {lobbyCode}. Handling removal...");
+
+            UnregisterCallback(lobbyCode, nickname);
+
+            // 2. Avisar al GameManager para que actualice la lógica del juego
+            // Necesitamos una forma de llamar al GameManager. 
+            // Opción rápida: Evento estático o Inyección. 
+            // Opción limpia: GameSessionHelper dispara un evento.
+            OnPlayerDisconnected?.Invoke(lobbyCode, nickname);
         }
     }
 }
