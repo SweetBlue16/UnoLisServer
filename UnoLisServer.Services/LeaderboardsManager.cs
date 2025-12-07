@@ -20,7 +20,9 @@ namespace UnoLisServer.Services
         private readonly IPlayerRepository _playerRepository;
         private const int LeaderboardSize = 15;
 
-        public LeaderboardsManager() : this(new PlayerRepository()) { }
+        public LeaderboardsManager() : this(new PlayerRepository()) 
+        { 
+        }
 
         public LeaderboardsManager(IPlayerRepository playerRepository)
         {
@@ -35,7 +37,7 @@ namespace UnoLisServer.Services
 
                 if (topStats == null || !topStats.Any())
                 {
-                    Logger.Warn("[LEADERBOARD] No stats found.");
+                    Logger.Warn("[LEADERBOARD] No stats found in DB.");
                     return new ServiceResponse<List<LeaderboardEntry>>
                     {
                         Code = MessageCode.Success,
@@ -61,9 +63,27 @@ namespace UnoLisServer.Services
                     Data = leaderboardList
                 };
             }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Leaderboard fetch failed. Data Store unavailable.", ex);
+                return new ServiceResponse<List<LeaderboardEntry>>
+                {
+                    Code = MessageCode.DatabaseError,
+                    Success = false,
+                };
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Leaderboard fetch timeout.");
+                return new ServiceResponse<List<LeaderboardEntry>>
+                {
+                    Code = MessageCode.Timeout,
+                    Success = false,
+                };
+            }
             catch (CommunicationException commEx)
             {
-                Logger.Log($"[ERROR] Error de comunicación en GetGlobalLeaderboard: {commEx}");
+                Logger.Warn($"[WCF] Communication error fetching leaderboard: {commEx.Message}");
                 return new ServiceResponse<List<LeaderboardEntry>>
                 {
                     Code = MessageCode.ConnectionFailed,
@@ -72,7 +92,7 @@ namespace UnoLisServer.Services
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Log($"[ERROR] Timeout en GetGlobalLeaderboard: {timeoutEx}");
+                Logger.Warn($"[WCF] Timeout fetching leaderboard: {timeoutEx.Message}");
                 return new ServiceResponse<List<LeaderboardEntry>>
                 {
                     Code = MessageCode.Timeout,
@@ -81,7 +101,7 @@ namespace UnoLisServer.Services
             }
             catch (Exception ex)
             {
-                Logger.Log($"[ERROR] Excepción inesperada en GetGlobalLeaderboard: {ex}");
+                Logger.Error($"[CRITICAL] Unexpected error fetching leaderboard.", ex);
                 return new ServiceResponse<List<LeaderboardEntry>>
                 {
                     Code = MessageCode.LeaderboardInternalError,
@@ -92,8 +112,11 @@ namespace UnoLisServer.Services
 
         private string CalculateWinRate(PlayerStatistics stat)
         {
-            return (stat.matchesPlayed > 0)
-                ? $"{(double)(stat.wins) / stat.matchesPlayed:P0}"
+            int played = stat.matchesPlayed ?? 0;
+            int wins = stat.wins ?? 0;
+
+            return (played > 0)
+                ? $"{(double)wins / played:P0}"
                 : "0%";
         }
     }
