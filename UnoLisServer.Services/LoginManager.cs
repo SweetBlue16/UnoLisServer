@@ -15,7 +15,6 @@ namespace UnoLisServer.Services
     public class LoginManager : ILoginManager
     {
         private readonly ILoginCallback _callback;
-        private ResponseInfo<object> _responseInfo;
 
         public LoginManager()
         {
@@ -25,85 +24,107 @@ namespace UnoLisServer.Services
         public void Login(AuthCredentials credentials)
         {
             string nickname = credentials?.Nickname ?? "Unknown";
+            ResponseInfo<object> response = null;
+
             try
             {
+                Logger.Log($"[INFO] Attempting login for...");
+
                 LoginValidator.ValidateCredentials(credentials);
-                Logger.Log($"[INFO] Intentando inicio de sesión para '{nickname}'...");
+
                 LoginValidator.AuthenticatePlayer(credentials);
 
                 var banInfo = LoginValidator.IsPlayerBanned(nickname);
                 if (banInfo != null)
                 {
-                    var banResponse = CreateBanResponse(banInfo);
-                    ResponseHelper.SendResponse(_callback.LoginResponse, banResponse);
+                    Logger.Log($"[AUTH] Login denied for banned user.");
+                    response = CreateBanResponse(banInfo);
+                    ResponseHelper.SendResponse(_callback.LoginResponse, response);
                     return;
                 }
 
-                var session = OperationContext.Current.GetCallbackChannel<ILoginCallback>();
-                SessionManager.AddSession(nickname, session);
+                var sessionCallback = OperationContext.Current.GetCallbackChannel<ILoginCallback>();
+                SessionManager.AddSession(nickname, sessionCallback);
 
-                _responseInfo = new ResponseInfo<object>(
+                Logger.Log($"[INFO] User logged in successfully.");
+
+                response = new ResponseInfo<object>(
                     MessageCode.LoginSuccessful,
                     true,
-                    $"[INFO] Usuario {nickname} inició sesión correctamente."
+                    "Login successful."
                 );
             }
             catch (ValidationException validationEx)
             {
-                _responseInfo = new ResponseInfo<object>(
+                Logger.Warn($"[AUTH] Validation failed: {validationEx.Message}");
+                response = new ResponseInfo<object>(
                     validationEx.ErrorCode,
                     false,
-                    $"[WARNING] Validación durante el inicio de sesión de '{nickname}': {validationEx.Message}"
+                    validationEx.Message 
                 );
             }
-            catch (CommunicationException communicationEx)
+            catch (CommunicationException commEx)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.ConnectionFailed,
-                    false,
-                    $"[ERROR] Comunicación con '{nickname}'. Error: {communicationEx.Message}"
-                );
+                Logger.Warn($"[WCF] Communication error with client '{commEx}'.");
+                response = new ResponseInfo<object>(MessageCode.ConnectionFailed, false, "Connection error.");
             }
             catch (TimeoutException timeoutEx)
             {
-                _responseInfo = new ResponseInfo<object>(
-                    MessageCode.Timeout,
-                    false,
-                    $"[ERROR] Tiempo de espera agotado para '{nickname}'. Error: {timeoutEx.Message}"
-                );
+                Logger.Warn($"[WCF] WCF Timeout for '{timeoutEx}'.");
+                response = new ResponseInfo<object>(MessageCode.Timeout, false, "Request timed out.");
             }
-            catch (SqlException dbEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                _responseInfo = new ResponseInfo<object>(
+                Logger.Error($"[CRITICAL] Login failed. Data Store unavailable.", ex);
+                response = new ResponseInfo<object>(
                     MessageCode.DatabaseError,
                     false,
-                    $"[ERROR] Base de datos durante el inicio de sesión de '{nickname}': {dbEx.Message}"
+                    "Service is currently unavailable. Please try again later."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Login failed. Server busy/timeout.");
+                response = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    "Server is taking too long to respond."
                 );
             }
             catch (Exception ex)
             {
-                _responseInfo = new ResponseInfo<object>(
+                Logger.Error($"[FATAL] Unhandled exception during login.", ex);
+
+                response = new ResponseInfo<object>(
                     MessageCode.LoginInternalError,
                     false,
-                    $"[ERROR] Excepción no controlada durante el inicio de sesión de '{nickname}': {ex.Message}"
+                    "An unexpected internal error occurred."
                 );
             }
-            ResponseHelper.SendResponse(_callback.LoginResponse, _responseInfo);
+
+            try
+            {
+                if (response != null)
+                {
+                    ResponseHelper.SendResponse(_callback.LoginResponse, response);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Error($"[WCF-FATAL] Failed to send login response.", sendEx);
+            }
         }
 
         private ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
         {
-            ResponseInfo<object> responseInfo = null;
-            if (banInfo != null)
-            {
-                responseInfo = new ResponseInfo<object>(
-                    MessageCode.PlayerBanned,
-                    false,
-                    $"[WARNING] Intento de inicio de sesión de usuario baneado. Tiempo restante: {banInfo.FormattedTimeRemaining}",
-                    banInfo
-                );
-            }
-            return responseInfo;
+            if (banInfo == null) return null;
+
+            return new ResponseInfo<object>(
+                MessageCode.PlayerBanned,
+                false,
+                $"Access denied. Account banned until: {banInfo.FormattedTimeRemaining}",
+                banInfo
+            );
         }
     }
 }

@@ -36,8 +36,8 @@ namespace UnoLisServer.Services
 
                 if (callback is ICommunicationObject channel)
                 {
-                    channel.Closed += (s, e) => HandleChannelDeath(nickname);
-                    channel.Faulted += (s, e) => HandleChannelDeath(nickname);
+                    channel.Closed += (s, e) => RemoveSession(nickname);
+                    channel.Faulted += (s, e) => RemoveSession(nickname);
                 }
             }
         }
@@ -57,7 +57,7 @@ namespace UnoLisServer.Services
                 {
                     callbackToRemove = _activeSessions[nickname];
                     _activeSessions.Remove(nickname);
-                    Logger.Log($"[SESSION] User '{nickname}' removed. Total sessions: {_activeSessions.Count}");
+                    Logger.Log($"[SESSION] User removed.");
                 }
             }
 
@@ -70,14 +70,18 @@ namespace UnoLisServer.Services
         public static ISessionCallback GetSession(string nickname)
         {
             if (string.IsNullOrWhiteSpace(nickname))
-            {
-                return null;
-            }
+                throw new ArgumentNullException(nameof(nickname));
 
             lock (_lock)
             {
-                return _activeSessions.ContainsKey(nickname) ? _activeSessions[nickname] : null;
+                if (_activeSessions.ContainsKey(nickname))
+                {
+                    return _activeSessions[nickname];
+                }
             }
+
+            throw new KeyNotFoundException($"Session not found for user. Please check IsOnline() " +
+                $"before calling GetSession().");
         }
 
         public static bool IsOnline(string nickname)
@@ -90,18 +94,6 @@ namespace UnoLisServer.Services
             lock (_lock)
             {
                 return _activeSessions.ContainsKey(nickname);
-            }
-        }
-
-        private static void HandleChannelDeath(string nickname)
-        {
-            lock (_lock)
-            {
-                if (_activeSessions.ContainsKey(nickname))
-                {
-                    _activeSessions.Remove(nickname);
-                    Logger.Log($"[SESSION] Channel closed/faulted for '{nickname}'. Session cleared.");
-                }
             }
         }
 
