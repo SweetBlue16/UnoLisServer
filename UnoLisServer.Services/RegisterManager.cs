@@ -53,17 +53,17 @@ namespace UnoLisServer.Services
 
                 if (await _playerRepository.IsNicknameTakenAsync(data.Nickname))
                 {
-                    throw new ValidationException(MessageCode.NicknameAlreadyTaken, $"El nickname '{data.Nickname}' ya está en uso.");
+                    throw new ValidationException(MessageCode.NicknameAlreadyTaken, $"Nickname is already taken.");
                 }
 
                 if (await _playerRepository.IsEmailRegisteredAsync(data.Email))
                 {
-                    throw new ValidationException(MessageCode.EmailAlreadyRegistered, $"El email '{data.Email}' ya está registrado.");
+                    throw new ValidationException(MessageCode.EmailAlreadyRegistered, $"Email is already registered.");
                 }
 
                 if (!_verificationCodeHelper.CanRequestCode(data.Email, CodeType.EmailVerification))
                 {
-                    throw new ValidationException(MessageCode.RateLimitExceeded, "Demasiadas solicitudes. Intente más tarde.");
+                    throw new ValidationException(MessageCode.RateLimitExceeded, "Too many requests. Please wait");
                 }
 
                 var pendingData = new PendingRegistration
@@ -74,31 +74,58 @@ namespace UnoLisServer.Services
                 };
 
                 _pendingRegistrationHelper.StorePendingRegistration(data.Email, pendingData);
-
                 var code = _verificationCodeHelper.GenerateAndStoreCode(data.Email, CodeType.EmailVerification);
-
                 await _notificationSender.SendAccountVerificationEmailAsync(data.Email, code);
 
                 responseInfo = new ResponseInfo<object>(
                     MessageCode.VerificationCodeSent,
                     true,
-                    $"[INFO] Código enviado a '{email}'."
+                    "Verification code sent successfully."
                 );
             }
             catch (ValidationException valEx)
             {
+                Logger.Warn($"[REGISTER] Validation failed for {email}: {valEx.Message}");
                 responseInfo = new ResponseInfo<object>(valEx.ErrorCode, false, valEx.Message);
-                Logger.Warn($"[REGISTER] Validación fallida: {valEx.Message}");
+            }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Register failed for {email}. Database/Network unavailable.", ex);
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.DatabaseError,
+                    false,
+                    "Service unavailable. Please try again later."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Register failed for {email}. Server busy/timeout.");
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    "Server request timed out."
+                );
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<object>(MessageCode.RegistrationInternalError, false, "Error interno en el registro.");
-                Logger.Error($"[ERROR] Fallo en registro para {email}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error during register for {email}", ex);
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.RegistrationInternalError,
+                    false,
+                    "An unexpected error occurred during registration."
+                );
             }
 
-            if (_callback != null)
+            try
             {
-                ResponseHelper.SendResponse(_callback.RegisterResponse, responseInfo);
+                if (_callback != null && responseInfo != null)
+                {
+                    ResponseHelper.SendResponse(_callback.RegisterResponse, responseInfo);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Warn($"[WCF] Failed to send register response. Client might have disconnected '{sendEx}'.");
             }
         }
     }

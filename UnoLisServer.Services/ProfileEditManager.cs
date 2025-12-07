@@ -34,25 +34,25 @@ namespace UnoLisServer.Services
         public async void UpdateProfileData(ProfileData data)
         {
             string userNickname = data?.Nickname ?? "Unknown";
-            ResponseInfo<ProfileData> responseInfo;
+            ResponseInfo<ProfileData> responseInfo = null;
 
             try
             {
                 ProfileEditValidator.ValidateProfileFormats(data);
 
                 var currentPlayer = await _playerRepository.GetPlayerProfileByNicknameAsync(userNickname);
-
                 if (currentPlayer == null)
                 {
-                    throw new ValidationException(MessageCode.PlayerNotFound, "Jugador no encontrado.");
+                    throw new ValidationException(MessageCode.PlayerNotFound, "Player not found.");
                 }
 
                 if (!string.IsNullOrWhiteSpace(data.Password))
                 {
                     string currentHash = currentPlayer.Account.FirstOrDefault()?.password;
-                    if (PasswordHelper.VerifyPassword(data.Password, currentHash))
+                    if (!string.IsNullOrEmpty(currentHash) && PasswordHelper.VerifyPassword(data.Password, currentHash))
                     {
-                        throw new ValidationException(MessageCode.SamePassword, "La nueva contraseña no puede ser igual a la anterior.");
+                        throw new ValidationException(MessageCode.SamePassword, "New password cannot be the " +
+                            "same as the old one.");
                     }
                 }
 
@@ -61,23 +61,67 @@ namespace UnoLisServer.Services
                 responseInfo = new ResponseInfo<ProfileData>(
                     MessageCode.ProfileUpdated,
                     true,
-                    $"[INFO] Perfil de '{userNickname}' actualizado."
+                    "Profile updated successfully."
                 );
             }
             catch (ValidationException valEx)
             {
+                Logger.Warn($"[PROFILE] Validation error updating '{userNickname}': {valEx.Message}");
                 responseInfo = new ResponseInfo<ProfileData>(valEx.ErrorCode, false, valEx.Message);
-                Logger.Warn($"[VALIDATION] Error al editar perfil: {valEx.Message}");
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[WCF] Communication error with during profile update '{commEx}'.");
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.ConnectionFailed, false, "Connection error.");
+            }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Profile update failed for '{userNickname}'. Data Store unavailable.", ex);
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.DatabaseError,
+                    false,
+                    "Service unavailable. Please try again later."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Profile update timeout for '{userNickname}'.");
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.Timeout,
+                    false,
+                    "Request timed out."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Data_Conflict")
+            {
+                Logger.Warn($"[DATA] Constraint violation updating profile for '{userNickname}'. Possible " +
+                    $"duplicate email.");
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileUpdateFailed,
+                    false,
+                    "Update failed. The information might conflict with another account."
+                );
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<ProfileData>(MessageCode.ProfileUpdateFailed, false, "Error interno al actualizar perfil.");
-                Logger.Error($"[ERROR] Fallo al actualizar perfil de {userNickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error updating profile for '{userNickname}'", ex);
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.ProfileUpdateFailed,
+                    false,
+                    "An internal error occurred."
+                );
             }
 
-            if (_callback != null)
+            try
             {
-                ResponseHelper.SendResponse(_callback.ProfileUpdateResponse, responseInfo);
+                if (_callback != null && responseInfo != null)
+                {
+                    ResponseHelper.SendResponse(_callback.ProfileUpdateResponse, responseInfo);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Error($"[WCF-FATAL] Failed to send profile update response to '{userNickname}'.", sendEx);
             }
         }
     }

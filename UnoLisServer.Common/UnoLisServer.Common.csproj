@@ -62,6 +62,7 @@
     <Compile Include="Helpers\PendingRegistrationHelper.cs" />
     <Compile Include="Helpers\ResponseHelper.cs" />
     <Compile Include="Helpers\SecureRandom.cs" />
+    <Compile Include="Helpers\SqlErrorHandler.cs" />
     <Compile Include="Helpers\UserHelper.cs" />
     <Compile Include="Helpers\VerificationCodeHelper.cs" />
     <Compile Include="Models\CodeValidationRequest.cs" />

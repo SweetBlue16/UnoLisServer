@@ -15,7 +15,7 @@ namespace UnoLisServer.Services.Validators
             if (unlockedAvatars == null || !unlockedAvatars.Any(a => a.AvatarId == newAvatarId))
             {
                 throw new ValidationException(MessageCode.InvalidAvatarSelection,
-                    $"El avatar con ID {newAvatarId} no está desbloqueado o no existe.");
+                    $"Avatar with ID: {newAvatarId} is not unlocked or it does not exist.");
             }
         }
     }

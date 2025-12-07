@@ -43,8 +43,9 @@ namespace UnoLisServer.Services
 
         public async void ConfirmCode(string email, string code)
         {
-            Logger.Log($"[INFO] Confirmando código para '{email}'...");
-            ResponseInfo<object> responseInfo;
+            string safeEmail = email ?? "Unknown";
+            Logger.Log($"[INFO] Confirming code for '{safeEmail}'...");
+            ResponseInfo<object> responseInfo = null;
 
             try
             {
@@ -60,13 +61,14 @@ namespace UnoLisServer.Services
 
                 if (!_verificationCodeHelper.ValidateCode(request))
                 {
-                    throw new ValidationException(MessageCode.VerificationCodeInvalid, "Código inválido o expirado.");
+                    throw new ValidationException(MessageCode.VerificationCodeInvalid, "Invalid or expired code.");
                 }
 
                 var pendingData = _pendingRegistrationHelper.GetAndRemovePendingRegistration(email);
                 if (pendingData == null)
                 {
-                    throw new ValidationException(MessageCode.RegistrationDataLost, "Datos de registro no encontrados. Regístrese de nuevo.");
+                    throw new ValidationException(MessageCode.RegistrationDataLost, "Registration session expired. " +
+                        "Please register again.");
                 }
 
                 await _playerRepository.CreatePlayerFromPendingAsync(email, pendingData);
@@ -74,30 +76,70 @@ namespace UnoLisServer.Services
                 responseInfo = new ResponseInfo<object>(
                     MessageCode.RegistrationSuccessful,
                     true,
-                    $"[INFO] Cuenta creada para '{email}'."
+                    "Account created successfully."
                 );
             }
             catch (ValidationException valEx)
             {
+                Logger.Warn($"[CONFIRM] Validation error: {valEx.Message}");
                 responseInfo = new ResponseInfo<object>(valEx.ErrorCode, false, valEx.Message);
-                Logger.Warn($"[CONFIRM] Error validación: {valEx.Message}");
+            }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Account creation failed. Data Store unavailable.", ex);
+
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.DatabaseError,
+                    false,
+                    "Service unavailable. Please try again later."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Account creation timeout.");
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.Timeout,
+                    false,
+                    "Request timed out."
+                );
+            }
+            catch (Exception ex) when (ex.Message == "Data_Conflict")
+            {
+                Logger.Warn($"[DATA] Constraint violation creating account.");
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.RegistrationInternalError,
+                    false,
+                    "Account creation failed. Email might already be in use."
+                );
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<object>(MessageCode.ConfirmationInternalError, false, "Error al confirmar cuenta.");
-                Logger.Error($"[ERROR] Confirmación fallida para {email}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error confirming code", ex);
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.ConfirmationInternalError,
+                    false,
+                    "An unexpected error occurred."
+                );
             }
 
-            if (_callback != null)
+            try
             {
-                ResponseHelper.SendResponse(_callback.ConfirmationResponse, responseInfo);
+                if (_callback != null && responseInfo != null)
+                {
+                    ResponseHelper.SendResponse(_callback.ConfirmationResponse, responseInfo);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Warn($"[WCF] Failed to send confirmation response. {sendEx}.");
             }
         }
 
         public async void ResendConfirmationCode(string email)
         {
-            Logger.Log($"[INFO] Reenviando código a '{email}'...");
-            ResponseInfo<object> responseInfo;
+            string safeEmail = email ?? "Unknown";
+            Logger.Log($"[INFO] Resending code to '{safeEmail}'...");
+            ResponseInfo<object> responseInfo = null;
 
             try
             {
@@ -105,7 +147,8 @@ namespace UnoLisServer.Services
 
                 if (!_verificationCodeHelper.CanRequestCode(email, CodeType.EmailVerification))
                 {
-                    throw new ValidationException(MessageCode.RateLimitExceeded, "Espere antes de pedir otro código.");
+                    throw new ValidationException(MessageCode.RateLimitExceeded, "Please wait before " +
+                        "requesting a new code.");
                 }
 
                 var newCode = _verificationCodeHelper.GenerateAndStoreCode(email, CodeType.EmailVerification);
@@ -115,7 +158,7 @@ namespace UnoLisServer.Services
                 responseInfo = new ResponseInfo<object>(
                     MessageCode.VerificationCodeResent,
                     true,
-                    "Código reenviado."
+                    "Verification code resent."
                 );
             }
             catch (ValidationException valEx)
@@ -124,13 +167,24 @@ namespace UnoLisServer.Services
             }
             catch (Exception ex)
             {
-                responseInfo = new ResponseInfo<object>(MessageCode.ConfirmationInternalError, false, "Error al reenviar código.");
-                Logger.Error($"[ERROR] Reenvío fallido para {email}", ex);
+                Logger.Error($"[ERROR] Failed to resend code to {safeEmail}", ex);
+                responseInfo = new ResponseInfo<object>(
+                    MessageCode.ConfirmationInternalError,
+                    false,
+                    "Failed to send email. Please try again later."
+                );
             }
 
-            if (_callback != null)
+            try
             {
-                ResponseHelper.SendResponse(_callback.ResendCodeResponse, responseInfo);
+                if (_callback != null && responseInfo != null)
+                {
+                    ResponseHelper.SendResponse(_callback.ResendCodeResponse, responseInfo);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Warn($"[WCF] Failed to send resend-code response, {sendEx}.");
             }
         }
     }

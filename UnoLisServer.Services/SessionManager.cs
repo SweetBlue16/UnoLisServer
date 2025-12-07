@@ -14,51 +14,66 @@ namespace UnoLisServer.Services
 
         public static void AddSession(string nickname, ISessionCallback callback)
         {
+            if (string.IsNullOrWhiteSpace(nickname) || callback == null)
+            {
+                return;
+            }
+
             lock (_lock)
             {
-                if (!_activeSessions.ContainsKey(nickname))
+                if (_activeSessions.ContainsKey(nickname))
                 {
-                    _activeSessions.Add(nickname, callback);
-                    var channel = (ICommunicationObject)callback;
-                    channel.Closed += (sender, args) => RemoveSession(nickname);
-                    channel.Faulted += (sender, args) => RemoveSession(nickname);
+                    Logger.Warn($"[SESSION] Duplicate login detected for '{nickname}'. Closing old session.");
+                    var oldCallback = _activeSessions[nickname];
+
+                    _activeSessions.Remove(nickname);
+
+                    CloseChannelSafe(oldCallback);
+                }
+
+                _activeSessions.Add(nickname, callback);
+                Logger.Log($"[SESSION] User '{nickname}' connected. Total sessions: {_activeSessions.Count}");
+
+                if (callback is ICommunicationObject channel)
+                {
+                    channel.Closed += (s, e) => HandleChannelDeath(nickname);
+                    channel.Faulted += (s, e) => HandleChannelDeath(nickname);
                 }
             }
         }
 
         public static void RemoveSession(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
+            ISessionCallback callbackToRemove = null;
+
             lock (_lock)
             {
                 if (_activeSessions.ContainsKey(nickname))
                 {
-                    var callback = _activeSessions[nickname];
+                    callbackToRemove = _activeSessions[nickname];
                     _activeSessions.Remove(nickname);
-
-                    var channel = (ICommunicationObject)callback;
-                    try
-                    {
-                        channel.Closed -= (sender, args) => RemoveSession(nickname);
-                        channel.Faulted -= (sender, args) => RemoveSession(nickname);
-                    }
-                    catch (CommunicationException commEx)
-                    {
-                        Logger.Log($"[WARNING] Events could not be unlinked '{nickname}': {commEx.Message}");
-                    }
-                    catch (TimeoutException timeoutEx)
-                    {
-                        Logger.Log($"[WARNING] Timeout reached unlinking events for '{nickname}': {timeoutEx.Message}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Log($"[ERROR] Unexpected errors unlinking events for '{nickname}': {ex.Message}");
-                    }
+                    Logger.Log($"[SESSION] User '{nickname}' removed. Total sessions: {_activeSessions.Count}");
                 }
+            }
+
+            if (callbackToRemove != null)
+            {
+                CloseChannelSafe(callbackToRemove);
             }
         }
 
         public static ISessionCallback GetSession(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return null;
+            }
+
             lock (_lock)
             {
                 return _activeSessions.ContainsKey(nickname) ? _activeSessions[nickname] : null;
@@ -67,9 +82,57 @@ namespace UnoLisServer.Services
 
         public static bool IsOnline(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return false;
+            }
+
             lock (_lock)
             {
                 return _activeSessions.ContainsKey(nickname);
+            }
+        }
+
+        private static void HandleChannelDeath(string nickname)
+        {
+            lock (_lock)
+            {
+                if (_activeSessions.ContainsKey(nickname))
+                {
+                    _activeSessions.Remove(nickname);
+                    Logger.Log($"[SESSION] Channel closed/faulted for '{nickname}'. Session cleared.");
+                }
+            }
+        }
+
+        private static void CloseChannelSafe(ISessionCallback callback)
+        {
+            if (callback is ICommunicationObject channel)
+            {
+                try
+                {
+                    if (channel.State == CommunicationState.Opened || channel.State == CommunicationState.Opening)
+                    {
+                        channel.Close();
+                    }
+                    else
+                    {
+                        channel.Abort();
+                    }
+                }
+                catch (CommunicationException)
+                {
+                    channel.Abort();
+                }
+                catch (TimeoutException)
+                {
+                    channel.Abort();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("[SESSION] Unexpected error closing channel.", ex);
+                    channel.Abort();
+                }
             }
         }
     }

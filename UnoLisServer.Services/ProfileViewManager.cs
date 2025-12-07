@@ -37,7 +37,7 @@ namespace UnoLisServer.Services
         public async void GetProfileData(string nickname)
         {
             string userNickname = nickname ?? "Unknown";
-            ResponseInfo<ProfileData> responseInfo;
+            ResponseInfo<ProfileData> responseInfo = null;
 
             try
             {
@@ -50,66 +50,72 @@ namespace UnoLisServer.Services
                     responseInfo = await ExecuteGetProfileLogic(userNickname);
                 }
             }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[WCF] Communication error with requesting profile. '{commEx}'.");
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.ConnectionFailed, false, "Connection error.");
+            }
             catch (TimeoutException timeoutEx)
             {
-                responseInfo = new ResponseInfo<ProfileData>(MessageCode.Timeout, false,
-                    $"[ERROR] Tiempo de espera agotado al obtener perfil para '{userNickname}'. Error: {timeoutEx.Message}"
-                );
-                Logger.Error(responseInfo.LogMessage, timeoutEx);
+                Logger.Warn($"[WCF] WCF Timeout. '{timeoutEx}'.");
+                responseInfo = new ResponseInfo<ProfileData>(MessageCode.Timeout, false, "Request timed out.");
             }
-            catch (CommunicationException communicationEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                responseInfo = new ResponseInfo<ProfileData>(MessageCode.ConnectionFailed, false,
-                    $"[ERROR] Comunicación al obtener perfil para '{userNickname}'. Error: {communicationEx.Message}"
+                Logger.Error($"[CRITICAL] Failed fetching profile for '{userNickname}'. Data Store unavailable.", ex);
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.DatabaseError,
+                    false,
+                    "Service unavailable. Please try again later."
                 );
-                Logger.Error(responseInfo.LogMessage, communicationEx);
             }
-            catch (SqlException dbEx)
+            catch (Exception ex) when (ex.Message == "Server_Busy")
             {
-                responseInfo = new ResponseInfo<ProfileData>(MessageCode.DatabaseError, false,
-                    $"[FATAL] Error de base de datos al obtener perfil para '{userNickname}'. Error: {dbEx.Message}"
+                Logger.Warn($"[WARN] Timeout fetching profile for '{userNickname}'.");
+                responseInfo = new ResponseInfo<ProfileData>(
+                    MessageCode.Timeout,
+                    false,
+                    "Server request timed out."
                 );
-                Logger.Error(responseInfo.LogMessage, dbEx);
-            }
-            catch (EntityException entityEx)
-            {
-                responseInfo = new ResponseInfo<ProfileData>(MessageCode.DatabaseError, false,
-                    $"[FATAL] Error de Entity Framework: {entityEx.Message}");
-                Logger.Error(responseInfo.LogMessage, entityEx);
             }
             catch (Exception ex)
             {
+                Logger.Error($"[CRITICAL] Unexpected error fetching profile for '{userNickname}'.", ex);
                 responseInfo = new ResponseInfo<ProfileData>(
                     MessageCode.ProfileFetchFailed,
                     false,
-                    $"[FATAL] Error inesperado al obtener perfil para '{userNickname}'. Error: {ex.Message}"
+                    "An unexpected error occurred."
                 );
-                Logger.Error(responseInfo.LogMessage, ex);
             }
 
-            if (_callback != null)
+            try
             {
-                ResponseHelper.SendResponse(_callback.ProfileDataReceived, responseInfo);
+                if (_callback != null && responseInfo != null)
+                {
+                    ResponseHelper.SendResponse(_callback.ProfileDataReceived, responseInfo);
+                }
+            }
+            catch (Exception sendEx)
+            {
+                Logger.Warn($"[WCF] Failed to send profile data response. Client might be disconnected. '{sendEx}'");
             }
         }
 
         private async Task<ResponseInfo<ProfileData>> ExecuteGetProfileLogic(string userNickname)
         {
-            Logger.Log($"[INFO] Iniciando obtención de perfil para '{userNickname}'.");
-
             var player = await _playerRepository.GetPlayerProfileByNicknameAsync(userNickname);
 
             if (player == null)
             {
                 return new ResponseInfo<ProfileData>(MessageCode.PlayerNotFound, false,
-                    $"[INFO] No se encontró el perfil para '{userNickname}'.", null
+                    "Player profile not found.", null
                 );
             }
 
             var profileData = MapToProfileData(player);
 
             return new ResponseInfo<ProfileData>(MessageCode.ProfileDataRetrieved, true,
-                $"[INFO] Perfil obtenido exitosamente para '{userNickname}'.", profileData
+                "Profile data retrieved successfully.", profileData
             );
         }
 
@@ -172,12 +178,12 @@ namespace UnoLisServer.Services
                 TikTokUrl = null
             };
 
-            Logger.Log($"[PROFILE] Generated dummy profile for guest: {nickname}");
+            Logger.Log($"[PROFILE] Generated dummy profile for guest)");
 
             return new ResponseInfo<ProfileData>(
                 MessageCode.ProfileDataRetrieved,
                 true,
-                $"[INFO] Perfil de invitado generado para '{nickname}'.",
+                "Guest profile generated.",
                 guestData
             );
         }
