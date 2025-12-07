@@ -113,6 +113,11 @@ namespace UnoLisServer.Services
 
         public void UnsubscribeFromBanNotifications(string nickname)
         {
+            if (string.IsNullOrEmpty(nickname))
+            {
+                return;
+            }
+
             lock (_lock)
             {
                 if (_suscribers.ContainsKey(nickname))

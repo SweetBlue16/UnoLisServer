@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
-using System.ServiceModel;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
@@ -22,6 +23,12 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void SayUnoAsync(string lobbyCode, string nickname);
+
+        [OperationContract(IsOneWay = true)]
+        void DisconnectPlayer(string lobbyCode, string nickname);
+
+        [OperationContract(IsOneWay = true)]
+        void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname);
     }
 
     [ServiceContract]

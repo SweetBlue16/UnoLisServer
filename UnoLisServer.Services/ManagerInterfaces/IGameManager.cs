@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Services.ManagerInterfaces
@@ -12,5 +13,6 @@ namespace UnoLisServer.Services.ManagerInterfaces
         Task PlayCardAsync(PlayCardContext context);
         Task DrawCardAsync(string lobbyCode, string nickname);
         Task SayUnoAsync(string lobbyCode, string nickname);
+        void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname);
     }
 }

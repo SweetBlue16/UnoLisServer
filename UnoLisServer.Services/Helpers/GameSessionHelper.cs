@@ -135,42 +135,58 @@ namespace UnoLisServer.Services.Helpers
             catch (ObjectDisposedException)
             {
                 Logger.Warn($"[GAME-BROADCAST] Client object disposed in {lobbyCode}. Marking for removal.");
+                HandleDisconnection(lobbyCode, nickname);
             }
             catch (TimeoutException timeoutEx)
             {
                 Logger.Warn($"[GAME-BROADCAST] Timeout broadcasting to client in {lobbyCode}: {timeoutEx.Message}");
+                HandleDisconnection(lobbyCode, nickname);
             }
             catch (CommunicationException commEx)
             {
                 Logger.Warn($"[GAME-BROADCAST] Communication error in {lobbyCode}: {commEx.Message}");
+                HandleDisconnection(lobbyCode, nickname);
             }
             catch (Exception ex)
             {
                 Logger.Error($"[GAME-BROADCAST] Critical error executing action in {lobbyCode}", ex);
                 Logger.Warn($"[GAME-SEND] Error sending to {nickname}: {ex.Message}");
-                if (ex is CommunicationException || ex is TimeoutException || ex is ObjectDisposedException)
-                {
-                    UnregisterCallback(lobbyCode, nickname);
-                }
+                HandleDisconnection(lobbyCode, nickname);
+                
             }
         }
 
         private void HandleDisconnection(string lobbyCode, string nickname)
         {
-            if (!_gameCallbacks.ContainsKey(lobbyCode) || !_gameCallbacks[lobbyCode].ContainsKey(nickname))
+            lock (_lock)
             {
-                return;
+                if (!_gameCallbacks.ContainsKey(lobbyCode) || !_gameCallbacks[lobbyCode].ContainsKey(nickname))
+                {
+                    return;
+                }
             }
 
             Logger.Log($"[GAME] Detected disconnection of {nickname} in {lobbyCode}. Handling removal...");
-
             UnregisterCallback(lobbyCode, nickname);
-
-            // 2. Avisar al GameManager para que actualice la lógica del juego
-            // Necesitamos una forma de llamar al GameManager. 
-            // Opción rápida: Evento estático o Inyección. 
-            // Opción limpia: GameSessionHelper dispara un evento.
             OnPlayerDisconnected?.Invoke(lobbyCode, nickname);
+        }
+
+        public void UpdateCallback(string lobbyCode, string nickname, IGameplayCallback newCallback)
+        {
+            lock (_lock)
+            {
+                if (_gameCallbacks.ContainsKey(lobbyCode))
+                {
+                    _gameCallbacks[lobbyCode][nickname] = newCallback;
+                }
+                else
+                {
+                    _gameCallbacks[lobbyCode] = new Dictionary<string, IGameplayCallback>
+                    {
+                        { nickname, newCallback }
+                    };
+                }
+            }
         }
     }
 }

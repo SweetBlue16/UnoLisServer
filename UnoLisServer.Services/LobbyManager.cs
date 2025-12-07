@@ -176,8 +176,8 @@ namespace UnoLisServer.Services
 
             try
             {
-                var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
-                _sessionHelper.RegisterCallback(lobbyCode, callback);
+                var lobbyCallback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+                _sessionHelper.RegisterCallback(lobbyCode, nickname, lobbyCallback);
 
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
                 if (lobby == null)
@@ -186,15 +186,13 @@ namespace UnoLisServer.Services
                     return;
                 }
 
-                SendInitialStateToPlayer(callback, lobby, nickname);
+                SendInitialStateToPlayer(lobbyCallback, lobby, nickname);
 
-                var lobbyPlayer = lobby.Players.FirstOrDefault(x => x.Nickname == nickname);
+                var lobbyPlayer = lobby.Players.FirstOrDefault(player => player.Nickname == nickname);
                 string avatar = lobbyPlayer?.AvatarName ?? "LogoUNO";
 
-                _sessionHelper.BroadcastToLobby(lobbyCode, cb => cb.PlayerJoined(nickname, avatar));
-                _sessionHelper.BroadcastToLobby(lobbyCode, cb => cb.UpdatePlayerList(lobby.Players.ToArray()));
-
-                Logger.Log($"[LOBBY] {nickname} connection registered and announced in {lobbyCode}");
+                _sessionHelper.BroadcastToLobby(lobbyCode, call => call.PlayerJoined(nickname, avatar));
+                _sessionHelper.BroadcastToLobby(lobbyCode, call => call.UpdatePlayerList(lobby.Players.ToArray()));
             }
             catch (CommunicationException commEx)
             {
@@ -234,17 +232,7 @@ namespace UnoLisServer.Services
         {
             try
             {
-                var resolution = ResolveCallback(cachedCallback);
-
-                if (resolution.IsSuccess)
-                {
-                    _sessionHelper.UnregisterCallback(lobbyCode, resolution.Callback);
-                }
-                else
-                {
-                    Logger.Warn($"[LOBBY] Callback cleanup warning for {nickname}: {resolution.StatusInfo}");
-                }
-
+                _sessionHelper.UnregisterCallback(lobbyCode, nickname);
                 RemovePlayerAndNotify(lobbyCode, nickname);
             }
             catch (CommunicationException commEx)
@@ -259,46 +247,6 @@ namespace UnoLisServer.Services
             {
                 Logger.Error($"[LOBBY] Critical error removing connection for {nickname}", ex);
             }
-        }
-
-        private ConnectionResolutionResult ResolveCallback(ILobbyDuplexCallback cached)
-        {
-            if (cached != null)
-            {
-                return new ConnectionResolutionResult(cached, "Cached Reference");
-            }
-
-            if (OperationContext.Current != null)
-            {
-                try
-                {
-                    var callback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
-
-                    if (callback is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
-                    {
-                        return new ConnectionResolutionResult(callback, "OperationContext (Active)");
-                    }
-
-                    return ConnectionResolutionResult.Failure($"OperationContext found but channel state is {(callback as ICommunicationObject)?.State}");
-                }
-                catch (CommunicationException commEx)
-                {
-                    Logger.Warn($"[LOBBY] Communication error resolving callback: {commEx.Message}");
-                    return ConnectionResolutionResult.Failure("Communication Error");
-                }
-                catch (TimeoutException timeEx)
-                {
-                    Logger.Warn($"[LOBBY] Timeout resolving callback: {timeEx.Message}");
-                    return ConnectionResolutionResult.Failure("Timeout");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"[LOBBY] Unexpected error resolving callback from context", ex);
-                    return ConnectionResolutionResult.Failure($"Error: {ex.Message}");
-                }
-            }
-
-            return ConnectionResolutionResult.Failure("No Context Available");
         }
 
         private void RemovePlayerAndNotify(string lobbyCode, string nickname)

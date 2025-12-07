@@ -17,8 +17,8 @@ namespace UnoLisServer.Services.Helpers
         public static LobbySessionHelper Instance => _instance.Value;
 
         private readonly Dictionary<string, LobbyInfo> _activeLobbies = new Dictionary<string, LobbyInfo>();
-        private readonly Dictionary<string, List<ILobbyDuplexCallback>> _lobbyCallbacks = new Dictionary<string,
-            List<ILobbyDuplexCallback>>();
+        private readonly Dictionary<string, Dictionary<string, ILobbyDuplexCallback>> _lobbyCallbacks =
+            new Dictionary<string, Dictionary<string, ILobbyDuplexCallback>>();
 
         private readonly object _lock = new object();
 
@@ -31,7 +31,7 @@ namespace UnoLisServer.Services.Helpers
                 if (!_activeLobbies.ContainsKey(code))
                 {
                     _activeLobbies.Add(code, lobby);
-                    _lobbyCallbacks.Add(code, new List<ILobbyDuplexCallback>());
+                    _lobbyCallbacks.Add(code, new Dictionary<string, ILobbyDuplexCallback>());
                 }
             }
         }
@@ -58,24 +58,27 @@ namespace UnoLisServer.Services.Helpers
             }
         }
 
-        public void RegisterCallback(string code, ILobbyDuplexCallback callback)
-        {
-            lock (_lock)
-            {
-                if (_lobbyCallbacks.ContainsKey(code) && !_lobbyCallbacks[code].Contains(callback))
-                {
-                    _lobbyCallbacks[code].Add(callback);
-                }
-            }
-        }
-
-        public void UnregisterCallback(string code, ILobbyDuplexCallback callback)
+        public void RegisterCallback(string code, string nickname, ILobbyDuplexCallback callback)
         {
             lock (_lock)
             {
                 if (_lobbyCallbacks.ContainsKey(code))
                 {
-                    _lobbyCallbacks[code].Remove(callback);
+                    _lobbyCallbacks[code][nickname] = callback;
+                }
+            }
+        }
+
+        public void UnregisterCallback(string code, string nickname)
+        {
+            lock (_lock)
+            {
+                if (_lobbyCallbacks.ContainsKey(code))
+                {
+                    if (_lobbyCallbacks[code].ContainsKey(nickname))
+                    {
+                        _lobbyCallbacks[code].Remove(nickname);
+                    }
                 }
             }
         }
@@ -83,12 +86,13 @@ namespace UnoLisServer.Services.Helpers
         public void BroadcastToLobby(string code, Action<ILobbyDuplexCallback> action)
         {
             List<ILobbyDuplexCallback> targets = null;
-            List<ILobbyDuplexCallback> deadCallbacks = new List<ILobbyDuplexCallback>();
+            List<string> deadNicknames = new List<string>();
+
             lock (_lock)
             {
                 if (_lobbyCallbacks.ContainsKey(code))
                 {
-                    targets = new List<ILobbyDuplexCallback>(_lobbyCallbacks[code]);
+                    targets = _lobbyCallbacks[code].Values.ToList();
                 }
             }
 
@@ -97,8 +101,18 @@ namespace UnoLisServer.Services.Helpers
                 return;
             }
 
-            foreach (var callback in targets)
+            Dictionary<string, ILobbyDuplexCallback> currentSnapshot;
+            lock (_lock)
             {
+                if (!_lobbyCallbacks.ContainsKey(code)) return;
+                currentSnapshot = new Dictionary<string, ILobbyDuplexCallback>(_lobbyCallbacks[code]);
+            }
+
+            foreach (var kvp in currentSnapshot)
+            {
+                var nickname = kvp.Key;
+                var callback = kvp.Value;
+
                 try
                 {
                     if (callback is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
@@ -107,47 +121,50 @@ namespace UnoLisServer.Services.Helpers
                     }
                     else
                     {
-                        deadCallbacks.Add(callback);
+                        deadNicknames.Add(nickname);
                     }
                 }
                 catch (ObjectDisposedException)
                 {
-                    deadCallbacks.Add(callback);
+                    deadNicknames.Add(nickname);
                     Logger.Warn($"[LOBBY-BROADCAST] Client object disposed in {code} during broadcast.");
                 }
                 catch (TimeoutException timeoutEx)
                 {
-                    deadCallbacks.Add(callback);
+                    deadNicknames.Add(nickname);
                     Logger.Warn($"[LOBBY-BROADCAST] Timeout sending to a client in {code}: {timeoutEx.Message}");
                 }
                 catch (CommunicationException commEx)
                 {
-                    deadCallbacks.Add(callback);
+                    deadNicknames.Add(nickname);
                     Logger.Warn($"[LOBBY-BROADCAST] Communication error with client in {code}: {commEx.Message}");
                 }
                 catch (Exception ex)
                 {
-                    deadCallbacks.Add(callback);
+                    deadNicknames.Add(nickname);
                     Logger.Error($"[LOBBY-BROADCAST] Critical error executing broadcast action in {code}", ex);
                 }
             }
 
-            RemoveDeadCallbacks(code, deadCallbacks);
+            if (deadNicknames.Any())
+            {
+                RemoveDeadCallbacks(code, deadNicknames);
+            }
         }
-        private void RemoveDeadCallbacks(string code, List<ILobbyDuplexCallback> deadCallbacks)
+        private void RemoveDeadCallbacks(string code, List<string> deadNicknames)
         {
-            if (deadCallbacks == null || !deadCallbacks.Any()) return;
-
             lock (_lock)
             {
-                if (_lobbyCallbacks.TryGetValue(code, out var currentList))
+                if (_lobbyCallbacks.ContainsKey(code))
                 {
-                    foreach (var dead in deadCallbacks)
+                    foreach (var nick in deadNicknames)
                     {
-                        currentList.Remove(dead);
+                        if (_lobbyCallbacks[code].ContainsKey(nick))
+                        {
+                            _lobbyCallbacks[code].Remove(nick);
+                            Logger.Log($"[LOBBY-CLEANUP] Removed zombie session for {nick} in {code}");
+                        }
                     }
-
-                    Logger.Log($"[LOBBY-CLEANUP] Removed {deadCallbacks.Count} zombie connections from lobby {code}.");
                 }
             }
         }

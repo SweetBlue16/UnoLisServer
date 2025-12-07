@@ -32,16 +32,13 @@ namespace UnoLisServer.Services.GameLogic
 
         public event Action<string> OnTurnTimeExpired;
 
-        public GameSession(string lobbyCode, List<GamePlayer> playersData)
+        public GameSession(string lobbyCode, List<GamePlayerData> playersData)
         {
             LobbyCode = lobbyCode;
             Deck = new DeckManager();
             Players = new List<GamePlayerData>();
 
-            foreach (var player in playersData)
-            {
-                Players.Add(new GamePlayerData(player.Nickname, player.AvatarName));
-            }
+            Players = playersData;
 
             _turnTimer = new Timer(TurnDurationSeconds * 1000);
             _turnTimer.AutoReset = false; 
@@ -50,11 +47,12 @@ namespace UnoLisServer.Services.GameLogic
 
         public void StartGame()
         {
+            int initialHand = 7;
             lock (GameLock)
             {
                 foreach (var player in Players)
                 {
-                    player.Hand.AddRange(Deck.DrawCards(7));
+                    player.Hand.AddRange(Deck.DrawCards(initialHand));
                 }
 
                 var initialCard = Deck.StartDiscardPile();
@@ -108,7 +106,7 @@ namespace UnoLisServer.Services.GameLogic
 
         public GamePlayerData GetPlayer(string nickname)
         {
-            return Players.FirstOrDefault(p => p.Nickname == nickname);
+            return Players.FirstOrDefault(player => player.Nickname == nickname);
         }
 
         public void StartTurnTimer()

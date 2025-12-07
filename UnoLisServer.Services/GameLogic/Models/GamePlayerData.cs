@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Services.GameLogic.Models
@@ -11,13 +12,17 @@ namespace UnoLisServer.Services.GameLogic.Models
         public bool HasSaidUno { get; set; }
         public bool HasDrawnThisTurn { get; set; }
 
+        public GamePlayerData()
+        {
+        }
         public GamePlayerData(string nickname, string avatarName)
         {
             Nickname = nickname;
             AvatarName = avatarName;
             Hand = new List<Card>();
             HasSaidUno = false;
-            
         }
+
+        public Dictionary<ItemType, int> Items { get; set; } = new Dictionary<ItemType, int>();
     }
 }

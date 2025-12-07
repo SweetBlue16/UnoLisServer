@@ -4,14 +4,20 @@ using System.Linq;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Contracts;
 using UnoLisServer.Contracts.DTOs;
-using UnoLisServer.Services.ManagerInterfaces;
 using UnoLisServer.Contracts.Interfaces;
+using UnoLisServer.Services.ManagerInterfaces;
 
 namespace UnoLisServer.Services
 {
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
+    /// <summary>
+    /// Facade for logic manager for game
+    /// </summary>
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = 
+        ConcurrencyMode.Reentrant)]
+
     public class GameplayManager : IGameplayManager
     {
         private readonly IGameManager _gameManager;
@@ -58,6 +64,19 @@ namespace UnoLisServer.Services
             Task.Run(async () =>
             {
                 await _gameManager.SayUnoAsync(lobbyCode, nickname);
+            });
+        }
+
+        public void DisconnectPlayer(string lobbyCode, string nickname)
+        {
+            _gameManager.DisconnectPlayer(lobbyCode, nickname);
+        }
+
+        public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
+        {
+            Task.Run(() =>
+            {
+                _gameManager.UseItem(lobbyCode, nickname, itemType, targetNickname);
             });
         }
     }

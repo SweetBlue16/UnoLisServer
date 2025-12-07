@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Enums;
@@ -39,12 +40,13 @@ namespace UnoLisServer.Services
                 var playerTasks = playerNicknames.Select(async nick =>
                 {
                 string avatar = await GetAvatarAsync(nick);
-                return new GamePlayer
-                {
-                    Nickname = nick, 
-                    AvatarName = avatar,
-                    CardCount = 0
-                };
+                    return new GamePlayerData
+                    {
+                        Nickname = nick,
+                        AvatarName = avatar,
+                        Hand = new List<Card>(),
+                        Items = CreateDefaultInventory()
+                    };
                 });
 
                 var playersData = (await Task.WhenAll(playerTasks)).ToList();
@@ -83,21 +85,29 @@ namespace UnoLisServer.Services
             try
             {
                 var callback = OperationContext.Current.GetCallbackChannel<IGameplayCallback>();
-                _sessionHelper.RegisterCallback(lobbyCode, nickname, callback);
-
                 var session = _sessionHelper.GetGame(lobbyCode);
+
                 if (session != null)
                 {
-                    var player = session.GetPlayer(nickname);
-
-                    if (player == null)
+                    lock (session.GameLock)
                     {
-                        Logger.Warn($"[GAME] Player {nickname} not found in session {lobbyCode}");
-                        return;
-                    }
+                        var player = session.GetPlayer(nickname);
 
-                    System.Threading.Thread.Sleep(500);
-                    SendInitialStateToPlayer(callback, session, player);
+                        if (player == null)
+                        {
+                            Logger.Warn($"[GAME] Player {nickname} not found in session logic {lobbyCode}");
+                            return;
+                        }
+
+                        _sessionHelper.UpdateCallback(lobbyCode, nickname, callback);
+
+                        System.Threading.Thread.Sleep(500);
+                        SendInitialStateToPlayer(callback, session, player);
+                    }
+                }
+                else
+                {
+                    Logger.Warn($"[GAME] Session {lobbyCode} not found for ConnectPlayer");
                 }
             }
             catch (CommunicationException commEx)
@@ -118,7 +128,7 @@ namespace UnoLisServer.Services
 
         public void DisconnectPlayer(string lobbyCode, string nickname)
         {
-            _sessionHelper.UnregisterCallback(lobbyCode, nickname);
+            HandlePlayerLeft(lobbyCode, nickname);
         }
 
         public async Task PlayCardAsync(PlayCardContext context)
@@ -229,12 +239,18 @@ namespace UnoLisServer.Services
         private void HandlePlayerLeft(string lobbyCode, string nickname)
         {
             var session = _sessionHelper.GetGame(lobbyCode);
-            if (session == null) return;
+            if (session == null)
+            {
+                return;
+            }
 
             lock (session.GameLock)
             {
                 var playerToRemove = session.GetPlayer(nickname);
-                if (playerToRemove == null) return;
+                if (playerToRemove == null)
+                {
+                    return;
+                }
 
                 session.Players.Remove(playerToRemove);
                 Logger.Log($"[GAME] Removed {nickname} from session logic.");
@@ -244,7 +260,8 @@ namespace UnoLisServer.Services
                     var winner = session.Players.FirstOrDefault();
                     if (winner != null)
                     {
-                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"¡Todos se han ido! {winner.Nickname} gana por default."));
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"¡Todos se han " +
+                            $"ido! {winner.Nickname} gana por default."));
                         _ = HandleWinCondition(session, winner);
                     }
                     else
@@ -254,24 +271,70 @@ namespace UnoLisServer.Services
                     return;
                 }
 
-                // 3. Si el juego sigue: Ajustar turno
-                // Si el que se fue tenía el turno, pasamos al siguiente.
-                // Si el índice quedó fuera de rango, lo ajustamos.
                 if (session.CurrentTurnIndex >= session.Players.Count)
                 {
                     session.CurrentTurnIndex = 0;
                 }
 
-                // Notificar a todos que alguien se fue
-                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"{nickname} se desconectó."));
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"{nickname} se " +
+                    $"desconectó."));
 
-                // Actualizar la lista de jugadores en los clientes (para que desaparezca su mano)
-                // Puedes reutilizar SendInitialStateToPlayer o crear uno ligero UpdatePlayerList
-                var activePlayers = session.Players.Select(player => new GamePlayer { Nickname = player.Nickname, CardCount = player.Hand.Count, AvatarName = player.AvatarName }).ToList();
+                var activePlayers = session.Players.Select(player => new GamePlayer 
+                { 
+                    Nickname = player.Nickname, 
+                    CardCount = player.Hand.Count, 
+                    AvatarName = player.AvatarName 
+                }).ToList();
+
                 _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.ReceivePlayerList(activePlayers));
+                _sessionHelper.BroadcastToGame(lobbyCode, 
+                    callback => callback.TurnChanged(session.GetCurrentPlayer().Nickname));
+            }
+        }
 
-                // Forzar actualización de turno visual
-                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.TurnChanged(session.GetCurrentPlayer().Nickname));
+        public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
+        {
+            var session = _sessionHelper.GetGame(lobbyCode);
+            if (session == null) return;
+
+            lock (session.GameLock)
+            {
+                var player = session.GetPlayer(nickname);
+
+                if (player == null || session.GetCurrentPlayer().Nickname != nickname)
+                {
+                    return;
+                }
+
+                if (!player.Items.ContainsKey(itemType) || player.Items[itemType] <= 0)
+                {
+                    return;
+                }
+
+                if (itemType == ItemType.SwapHands)
+                {
+                    var targetPlayer = session.GetPlayer(targetNickname);
+                    if (targetPlayer == null || targetPlayer.Nickname == nickname)
+                    {
+                        return;
+                    }
+
+                    var tempHand = player.Hand;
+                    player.Hand = targetPlayer.Hand;
+                    targetPlayer.Hand = tempHand;
+
+                    player.Items[itemType]--;
+
+                    _sessionHelper.SendToPlayer(lobbyCode, player.Nickname, cb => cb.ReceiveInitialHand(player.Hand));
+                    _sessionHelper.SendToPlayer(lobbyCode, targetPlayer.Nickname, cb => cb.ReceiveInitialHand(targetPlayer.Hand));
+
+                    foreach (var p in session.Players)
+                    {
+                        _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.CardDrawn(p.Nickname, p.Hand.Count));
+                    }
+
+                    _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.GameMessage($"{nickname} cambió manos con {targetNickname} 🔄"));
+                }
             }
         }
 
@@ -419,6 +482,16 @@ namespace UnoLisServer.Services
             }
 
             _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.TurnChanged(session.GetCurrentPlayer().Nickname));
+        }
+
+        private Dictionary<ItemType, int> CreateDefaultInventory()
+        {
+            return new Dictionary<ItemType, int>
+            {
+                { ItemType.SwapHands, 1 }, 
+                { ItemType.Shield, 1 },
+                { ItemType.Thief, 1 }
+            };
         }
 
         private void ExecuteDrawForNextPlayer(GameSession session, int count, string lobbyCode)
