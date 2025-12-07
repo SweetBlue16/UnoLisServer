@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core;
@@ -39,67 +40,86 @@ namespace UnoLisServer.Data.Repositories
 
         public async Task<Player> GetPlayerProfileByNicknameAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return null;
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     return await context.Player
                         .AsNoTracking()
-                        .Include(p => p.Account)
-                        .Include(p => p.PlayerStatistics)
-                        .Include(p => p.SocialNetwork)
-                        .Include(p => p.AvatarsUnlocked.Select(au => au.Avatar))
-                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                        .Include(player => player.Account)
+                        .Include(player => player.PlayerStatistics)
+                        .Include(player => player.SocialNetwork)
+                        .Include(player => player.AvatarsUnlocked.Select(avatarsUnlocked => avatarsUnlocked.Avatar))
+                        .FirstOrDefaultAsync(player => player.nickname == nickname);
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error SQL al obtener perfil de {nickname}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
-                catch (EntityCommandExecutionException entityCmdEx)
+                catch (EntityException entityEx)
                 {
-                    Logger.Error($"[DB] Error de ejecución de comando EF para {nickname}", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching profile.", entityEx);
+                    throw new Exception("DataStore_Unavailable", entityEx);
                 }
-                catch (TimeoutException timeoutEx)
+                catch (TimeoutException timeEx)
                 {
-                    Logger.Error($"[DB] Timeout al obtener perfil para {nickname}", timeoutEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Timed out fetching profile: {timeEx.Message}");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general al obtener perfil de {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching profile.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task UpdatePlayerProfileAsync(ProfileData data)
         {
+            if(data == null)
+            {
+                throw new ArgumentNullException(nameof(data), "Profile data cannot be null.");
+            }
+
+            string newPasswordHash = null;
+            if (!string.IsNullOrWhiteSpace(data.Password))
+            {
+                newPasswordHash = PasswordHelper.HashPassword(data.Password);
+            }
+
             using (var context = _contextFactory())
             using (var transaction = context.Database.BeginTransaction())
             {
                 try
                 {
                     var player = await context.Player
-                        .Include(p => p.Account)
-                        .Include(p => p.SocialNetwork)
-                        .FirstOrDefaultAsync(p => p.nickname == data.Nickname);
+                        .Include(playerData => playerData.Account)
+                        .Include(playerData => playerData.SocialNetwork)
+                        .FirstOrDefaultAsync(playerData => playerData.nickname == data.Nickname);
 
                     if (player == null)
-                        throw new ValidationException(MessageCode.PlayerNotFound, $"Jugador '{data.Nickname}' no " +
-                            $"encontrado.");
+                    {
+                        throw new ValidationException(MessageCode.PlayerNotFound, $"Player not found.");
+                    }
 
                     var account = player.Account.FirstOrDefault();
                     if (account == null)
-                        throw new ValidationException(MessageCode.AccountNotVerified, "Cuenta asociada no encontrada.");
+                    {
+                        throw new ValidationException(MessageCode.AccountNotVerified, "Associated account not found.");
+                    }
 
                     player.fullName = data.FullName;
                     account.email = data.Email;
 
-                    if (!string.IsNullOrWhiteSpace(data.Password))
+                    if (newPasswordHash != null)
                     {
-                        account.password = PasswordHelper.HashPassword(data.Password);
+                        account.password = newPasswordHash;
                     }
 
                     UpdateOrAddNetwork(context, player, "Facebook", data.FacebookUrl);
@@ -109,57 +129,63 @@ namespace UnoLisServer.Data.Repositories
                     await context.SaveChangesAsync();
                     transaction.Commit();
                 }
-                catch (DbEntityValidationException entityEx)
+                catch (ValidationException)
                 {
                     transaction.Rollback();
-                    var errorMessages = entityEx.EntityValidationErrors
+                    throw; 
+                }
+                catch (DbEntityValidationException valEx)
+                {
+                    transaction.Rollback();
+                    var errorMessages = valEx.EntityValidationErrors
                         .SelectMany(x => x.ValidationErrors)
                         .Select(x => x.ErrorMessage);
                     string fullError = string.Join("; ", errorMessages);
 
-                    Logger.Error($"[DB] Error de validación de entidad al actualizar {data.Nickname}: {fullError}", 
-                        entityEx);
-                    throw new EntityException($"Error de validación en base de datos: {fullError}", entityEx);
+                    Logger.Error($"[DATA-VALIDATION] Entity validation failed updating: {fullError}", valEx);
+                    throw new Exception("Invalid_Data_Format", valEx);
+                }
+                catch (SqlException sqlEx)
+                {
+                    transaction.Rollback();
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
+                }
+                catch (EntityException entityEx)
+                {
+                    transaction.Rollback();
+                    Logger.Error($"[EF-CRITICAL] Provider failed during update.", entityEx);
+                    throw new Exception("DataStore_Unavailable", entityEx);
                 }
                 catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error de actualización (SQL/FK) al actualizar {data.Nickname}", dbEx);
-                    throw;
+                    Logger.Error($"[DATA-CONSTRAINT] Constraint violation updating.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
+                }
+                catch (TimeoutException timeEx)
+                {
+                    transaction.Rollback();
+                    Logger.Warn($"[DATA-TIMEOUT] Transaction timed out updating.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error inesperado al actualizar {data.Nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error updating profile", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
-        private void UpdateOrAddNetwork(UNOContext context, Player player, string type, string url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) return;
-
-            var existing = player.SocialNetwork.FirstOrDefault(sn => sn.tipoRedSocial == type);
-
-            if (existing != null)
-            {
-                existing.linkRedSocial = url;
-            }
-            else
-            {
-                var newNetwork = new SocialNetwork
-                {
-                    tipoRedSocial = type,
-                    linkRedSocial = url,
-                    Player_idPlayer = player.idPlayer
-                };
-                context.SocialNetwork.Add(newNetwork);
-            }
-        }
+        
 
         public async Task<bool> IsNicknameTakenAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return false;
+            }
+
             using (var context = _contextFactory())
             {
                 try
@@ -168,29 +194,34 @@ namespace UnoLisServer.Data.Repositories
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error de conexión/SQL al verificar nickname '{nickname}'", sqlEx);
-                    throw;
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    Logger.Error($"[DB] Timeout agotado al verificar nickname '{nickname}'", timeoutEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException entityCmdEx)
                 {
-                    Logger.Error($"[DB] Error interno de EF al verificar nickname '{nickname}'", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed verifying nickname.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out verifying nickname.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general inesperado al verificar nickname '{nickname}'", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error verifying nickname.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task<bool> IsEmailRegisteredAsync(string email)
         {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return false;
+            }
+
             using (var context = _contextFactory())
             {
                 try
@@ -199,23 +230,23 @@ namespace UnoLisServer.Data.Repositories
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error de conexión/SQL al verificar email '{email}'", sqlEx);
-                    throw;
-                }
-                catch (TimeoutException timeoutEx)
-                {
-                    Logger.Error($"[DB] Timeout agotado al verificar email '{email}'", timeoutEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException entityCmdEx)
                 {
-                    Logger.Error($"[DB] Error interno de EF al verificar email '{email}'", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed verifying email.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out verifying email.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general inesperado al verificar email '{email}'", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error verifying email.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -236,62 +267,34 @@ namespace UnoLisServer.Data.Repositories
             await SavePlayerGraphAsync(newPlayer);
         }
 
-        private async Task SavePlayerGraphAsync(Player playerEntity)
-        {
-            using (var context = _contextFactory())
-            using (var transaction = context.Database.BeginTransaction())
-            {
-                try
-                {
-                    context.Player.Add(playerEntity);
-                    await context.SaveChangesAsync();
-
-                    playerEntity.SelectedAvatar_Player_idPlayer = playerEntity.idPlayer;
-                    playerEntity.SelectedAvatar_Avatar_idAvatar = 1;
-
-                    context.Entry(playerEntity).State = EntityState.Modified;
-                    await context.SaveChangesAsync();
-
-                    transaction.Commit();
-                }
-                catch (DbUpdateException dbEx)
-                {
-                    transaction.Rollback();
-                    Logger.Error($"[DB] Error SQL al crear jugador {playerEntity.nickname}", dbEx);
-                    throw;
-                }
-                catch (DbEntityValidationException valEx)
-                {
-                    transaction.Rollback();
-                    Logger.Error($"[DB] Error validación entidad al crear jugador {playerEntity.nickname}", valEx);
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    Logger.Error($"[DB] Error general al crear jugador {playerEntity.nickname}", ex);
-                    throw;
-                }
-            }
-        }
+        
 
         public async Task<List<PlayerAvatar>> GetPlayerAvatarsAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return null;
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     var player = await context.Player
                         .AsNoTracking()
-                        .Select(p => new { p.idPlayer, p.nickname, p.SelectedAvatar_Avatar_idAvatar })
-                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                        .Select(playerData => new { playerData.idPlayer, playerData.nickname, 
+                            playerData.SelectedAvatar_Avatar_idAvatar })
+                        .FirstOrDefaultAsync(playerData => playerData.nickname == nickname);
 
-                    if (player == null) return null;
+                    if (player == null)
+                    {
+                        return null;
+                    }
 
                     var unlockedAvatarIds = new HashSet<int>(await context.AvatarsUnlocked
                         .AsNoTracking()
-                        .Where(au => au.Player_idPlayer == player.idPlayer)
-                        .Select(au => au.Avatar_idAvatar)
+                        .Where(avatarsUnlocked => avatarsUnlocked.Player_idPlayer == player.idPlayer)
+                        .Select(avatarsUnlocked => avatarsUnlocked.Avatar_idAvatar)
                         .ToListAsync());
 
                     var allAvatars = await context.Avatar
@@ -319,23 +322,23 @@ namespace UnoLisServer.Data.Repositories
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error crítico de SQL al obtener avatares para {nickname}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException entityCmdEx)
                 {
-                    Logger.Error($"[DB] Error de ejecución de comando EF para {nickname}", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching avatars.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
                 }
                 catch (TimeoutException timeoutEx)
                 {
-                    Logger.Error($"[DB] Timeout al obtener avatares para {nickname}", timeoutEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out fetching avatars.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general inesperado al obtener avatares para {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching avatars", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -344,113 +347,155 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
+                if (string.IsNullOrWhiteSpace(nickname))
+                {
+                    throw new ArgumentNullException(nameof(nickname));
+                }
+
                 try
                 {
-                    var player = await context.Player.FirstOrDefaultAsync(p => p.nickname == nickname);
+                    var player = await context.Player.FirstOrDefaultAsync(playerData => playerData.nickname == nickname);
 
                     if (player == null)
-                        throw new ValidationException(MessageCode.PlayerNotFound, $"Jugador '{nickname}' no " +
+                    {
+                        throw new ValidationException(MessageCode.PlayerNotFound, $"Jugador no " +
                             $"encontrado para actualizar avatar.");
+                    }
 
                     player.SelectedAvatar_Avatar_idAvatar = newAvatarId;
                     await context.SaveChangesAsync();
                 }
+                catch (ValidationException)
+                {
+                    throw;
+                }
                 catch (DbUpdateException dbEx)
                 {
-                    Logger.Error($"[DB] Error FK/SQL al cambiar avatar de {nickname} a {newAvatarId}", dbEx);
-                    throw;
+                    Logger.Error($"[DATA-CONSTRAINT] Failed to update avatar. Target " +
+                        $"AvatarID {newAvatarId} might be invalid.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
+                }
+                catch (SqlException sqlEx)
+                {
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[EF-CRITICAL] Provider failed updating avatar.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out updating avatar.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error inesperado al cambiar avatar de {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error updating avatar.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task<List<PlayerStatistics>> GetTopPlayersByGlobalScoreAsync(int topCount)
         {
+            if (topCount <= 0)
+            {
+                return new List<PlayerStatistics>();
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     return await context.PlayerStatistics
                         .AsNoTracking()
-                        .Include(ps => ps.Player)
-                        .OrderByDescending(s => s.globalPoints)
+                        .Include(playerStatistics => playerStatistics.Player)
+                        .OrderByDescending(statistics => statistics.globalPoints)
                         .Take(topCount)
                         .ToListAsync();
                 }
-                catch (SqlException ex)
+                catch (SqlException sqlEx)
                 {
-                    Logger.Error("Error fetching top players", ex);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException entityCmdEx)
                 {
-                    Logger.Error($"[DB] Execution error of EF command", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching top players.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
                 }
                 catch (TimeoutException timeoutEx)
                 {
-                    Logger.Error($"[DB] Timeout while obtaining details", timeoutEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out fetching top players.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error obtaining details", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching top players", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task<Player> GetPlayerWithDetailsAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return null;
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     return await context.Player
                         .AsNoTracking()
-                        .Include("Account")
-                        .Include("AvatarsUnlocked.Avatar")
-                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                        .Include(player => player.Account)
+                        .Include(player => player.AvatarsUnlocked.Select(avatarsUnlocked => avatarsUnlocked.Avatar)) 
+                        .FirstOrDefaultAsync(player => player.nickname == nickname);
                 }
-                catch(SqlException sqlEx)
+                catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Critical errol recovering details for {nickname}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException entityCmdEx)
                 {
-                    Logger.Error($"[DB] Execution error of EF command for {nickname}", entityCmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching details.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
                 }
                 catch (TimeoutException timeoutEx)
                 {
-                    Logger.Error($"[DB] Timeout while obtaining details for {nickname}", timeoutEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out fetching details.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error obtaining details for {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching details.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task UpdateMatchResultAsync(string nickname, bool isWinner, int pointsEarned)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     var player = await context.Player
-                        .Include(p => p.PlayerStatistics)
-                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                        .Include(playerData => playerData.PlayerStatistics)
+                        .FirstOrDefaultAsync(playerData => playerData.nickname == nickname);
 
                     if (player == null)
                     {
+                        Logger.Warn($"[DATA] Player not found. Match results skipped.");
                         return;
                     }
 
@@ -460,20 +505,144 @@ namespace UnoLisServer.Data.Repositories
                     ApplyMatchLogicToStats(stats, isWinner, pointsEarned);
                     await context.SaveChangesAsync();
 
-                    Logger.Log($"[DB] Stats updated for {nickname}: +{pointsEarned} pts, +{coinsEarned} coins.");
+                    Logger.Log($"[DB] Stats updated: +{pointsEarned} pts, +{coinsEarned} coins.");
+                }
+                catch (SqlException sqlEx)
+                {
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    Logger.Error($"[DATA-CONSTRAINT] Failed saving match results for {nickname}.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[EF-CRITICAL] Provider failed updating match result for {nickname}.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Warn($"[DATA-TIMEOUT] Operation timed out updating match result for {nickname}.");
+                    throw new Exception("Server_Busy", timeoutEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error updating stats for {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error updating match result for {nickname}", ex);
+                    throw new Exception("Server_Internal_Error", ex);
+                }
+            }
+        }
+
+        private void UpdateOrAddNetwork(UNOContext context, Player player, string type, string url)
+        {
+            if (context == null || player == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return;
+            }
+
+            var existing = player.SocialNetwork.FirstOrDefault(socialNetwork => socialNetwork.tipoRedSocial == type);
+
+            if (existing != null)
+            {
+                existing.linkRedSocial = url;
+            }
+            else
+            {
+                var newNetwork = new SocialNetwork
+                {
+                    tipoRedSocial = type,
+                    linkRedSocial = url,
+                    Player_idPlayer = player.idPlayer
+                };
+                context.SocialNetwork.Add(newNetwork);
+            }
+        }
+
+        private async Task SavePlayerGraphAsync(Player playerEntity)
+        {
+            if (playerEntity == null)
+            {
+                throw new ArgumentNullException(nameof(playerEntity));
+            }
+
+            using (var context = _contextFactory())
+            using (var transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    int defaultAvatar = 1;
+                    context.Player.Add(playerEntity);
+                    await context.SaveChangesAsync();
+
+                    playerEntity.SelectedAvatar_Player_idPlayer = playerEntity.idPlayer;
+                    playerEntity.SelectedAvatar_Avatar_idAvatar = defaultAvatar;
+
+                    context.Entry(playerEntity).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+
+                    transaction.Commit();
+                }
+                catch (DbEntityValidationException valEx)
+                {
+                    transaction.Rollback();
+                    var errorMessages = valEx.EntityValidationErrors
+                        .SelectMany(x => x.ValidationErrors)
+                        .Select(x => x.ErrorMessage);
+                    string fullError = string.Join("; ", errorMessages);
+
+                    Logger.Error($"[DATA-VALIDATION] Entity validation failed creating player: {fullError}", valEx);
+                    throw new Exception("Invalid_Data_Format", valEx);
+                }
+                catch (SqlException sqlEx)
+                {
+                    transaction.Rollback();
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    transaction.Rollback();
+
+                    if (dbEx.InnerException?.InnerException is SqlException sqlInner)
+                    {
+                        SqlErrorHandler.HandleAndThrow(sqlInner);
+                    }
+
+                    Logger.Error($"[DATA-CONSTRAINT] Database update failed creating player.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
+                }
+                catch (EntityException entityEx)
+                {
+                    transaction.Rollback();
+                    Logger.Error($"[EF-CRITICAL] Provider failed creating player.", entityEx);
+                    throw new Exception("DataStore_Unavailable", entityEx);
+                }
+                catch (TimeoutException timeEx)
+                {
+                    transaction.Rollback();
+                    Logger.Warn($"[DATA-TIMEOUT] Transaction timed out creating player.");
+                    throw new Exception("Server_Busy", timeEx);
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error($"[CRITICAL] Unexpected error creating player", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         private int CalculateAndApplyCoins(Player player, int pointsEarned)
         {
-            int coins = (int)(pointsEarned * 0.10);
+            double coinPercentage = 0.10;
+            int coins = (int)(pointsEarned * coinPercentage);
             player.revoCoins += coins;
+
             return coins;
         }
 
@@ -500,6 +669,11 @@ namespace UnoLisServer.Data.Repositories
 
         private void ApplyMatchLogicToStats(PlayerStatistics stats, bool isWinner, int pointsEarned)
         {
+            if (stats == null)
+            {
+                return;
+            }
+
             stats.matchesPlayed = (stats.matchesPlayed ?? 0) + 1;
             stats.globalPoints = (stats.globalPoints ?? 0) + pointsEarned;
 
