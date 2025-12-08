@@ -19,6 +19,7 @@ namespace UnoLisServer.Services
         private ILobbyDuplexCallback _cachedCallback;
 
         private bool _disposed = false;
+        private readonly object _lock = new object();
 
         public LobbyDuplexManager() : this(new LobbyManager())
         {
@@ -38,15 +39,40 @@ namespace UnoLisServer.Services
 
         public void ConnectToLobby(string lobbyCode, string nickname)
         {
-            _currentLobbyCode = lobbyCode;
-            _currentNickname = nickname;
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname)) return;
 
-            if (_cachedCallback == null && OperationContext.Current != null)
+            lock (_lock)
             {
-                _cachedCallback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+                _currentLobbyCode = lobbyCode;
+                _currentNickname = nickname;
+
+                if (_cachedCallback == null && OperationContext.Current != null)
+                {
+                    _cachedCallback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+
+                    var channel = (ICommunicationObject)_cachedCallback;
+                    channel.Closed += Channel_Closed;
+                    channel.Faulted += Channel_Closed;
+                }
             }
 
-            _lobbyManager.RegisterConnection(lobbyCode, nickname);
+            try
+            {
+                _lobbyManager.RegisterConnection(lobbyCode, nickname);
+                Logger.Log($"[DUPLEX] Connected to lobby {lobbyCode} as {nickname}");
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Error($"[DUPLEX] Communication error registering connection: {commEx.Message}", commEx);
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Error($"[DUPLEX] Timeout error registering connection: {timeEx.Message}", timeEx);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[DUPLEX] Error registering connection for {nickname}", ex);
+            }
         }
 
         public void DisconnectFromLobby(string lobbyCode, string nickname)
@@ -58,53 +84,97 @@ namespace UnoLisServer.Services
         {
             Task.Run(async () =>
             {
-                await _lobbyManager.HandleReadyStatusAsync(lobbyCode, nickname, isReady);
+                try
+                {
+                    await _lobbyManager.HandleReadyStatusAsync(lobbyCode, nickname, isReady);
+                }
+                catch (CommunicationException commEx)
+                {
+                    Logger.Error($"[DUPLEX-ASYNC] Communication error setting ready status: {commEx.Message}", commEx);
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Logger.Error($"[DUPLEX-ASYNC] Timeout error setting ready status: {timeEx.Message}", timeEx);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[DUPLEX-ASYNC] Error setting ready status for {nickname}", ex);
+                }
             });
         }
 
         private void Channel_Closed(object sender, EventArgs e)
         {
+            Logger.Warn($"[DUPLEX] Channel closed/faulted detected for session.");
             Dispose();
         }
 
         public void Dispose()
         {
-            if (_disposed)
+            lock (_lock)
             {
-                return;
-            }
+                if (_disposed)
+                {
+                    return;
+                }
 
-            if (!string.IsNullOrEmpty(_currentLobbyCode) && !string.IsNullOrEmpty(_currentNickname))
-            {
-                Logger.Log($"[DUPLEX] Detected abrupt disconnection for {_currentNickname}");
-                CleanUp(_currentLobbyCode, _currentNickname);
-            }
+                if (!string.IsNullOrEmpty(_currentLobbyCode) && !string.IsNullOrEmpty(_currentNickname))
+                {
+                    Logger.Log($"[DUPLEX] Detected abrupt disconnection");
+                    CleanUp(_currentLobbyCode, _currentNickname);
+                }
 
-            _disposed = true;
+                if (_cachedCallback is ICommunicationObject channel)
+                {
+                    try
+                    {
+                        channel.Closed -= Channel_Closed;
+                        channel.Faulted -= Channel_Closed;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        Logger.Warn($"[DUPLEX] Callback channel already disposed when detaching event handlers.");
+                    }
+                    catch (Exception)
+                    {
+                        Logger.Warn($"[DUPLEX] Error detaching event handlers from callback channel.");
+                    }
+                }
+
+                _disposed = true;
+            }
         }
 
         private void CleanUp(string code, string nick)
         {
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nick))
+            {
+                return;
+            }
+
             try
             {
                 _lobbyManager.RemoveConnection(code, nick, _cachedCallback);
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[DUPLEX] Communication error during cleanup for {nick}: {commEx.Message}");
+                Logger.Warn($"[DUPLEX] Communication error during cleanup: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[DUPLEX] Timeout during cleanup for {nick}: {timeEx.Message}");
+                Logger.Warn($"[DUPLEX] Timeout during cleanup: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[DUPLEX] Unexpected error during cleanup for {nick}", ex);
+                Logger.Error($"[DUPLEX] Unexpected error during cleanup", ex);
             }
             finally
             {
-                _currentLobbyCode = null;
-                _currentNickname = null;
+                lock (_lock)
+                {
+                    _currentLobbyCode = null;
+                    _currentNickname = null;
+                }
             }
         }
     }

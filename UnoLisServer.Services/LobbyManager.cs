@@ -24,7 +24,7 @@ namespace UnoLisServer.Services
         private readonly ILobbyInvitationHelper _invitationHelper;
         private readonly IGameManager _gameManager;
 
-        public LobbyManager(LobbySessionHelper sessionHelper, IPlayerRepository playerRepo, 
+        public LobbyManager(LobbySessionHelper sessionHelper, IPlayerRepository playerRepo,
             ILobbyInvitationHelper invitationHelper, IGameManager gameManager)
         {
             _sessionHelper = sessionHelper;
@@ -33,13 +33,18 @@ namespace UnoLisServer.Services
             _gameManager = gameManager;
         }
 
-        public LobbyManager() : this(LobbySessionHelper.Instance, new PlayerRepository(), 
+        public LobbyManager() : this(LobbySessionHelper.Instance, new PlayerRepository(),
             new LobbyInvitationHelper(), new GameManager())
         {
         }
 
         public async Task<CreateMatchResponse> CreateLobbyAsync(MatchSettings settings)
         {
+            if (settings == null)
+            {
+                return new CreateMatchResponse { Success = false, Message = "Invalid settings." };
+            }
+
             try
             {
                 LobbyValidator.ValidateSettings(settings);
@@ -52,7 +57,7 @@ namespace UnoLisServer.Services
                 lobbyInfo.AddPlayer(settings.HostNickname, hostAvatar);
                 _sessionHelper.AddLobby(code, lobbyInfo);
 
-                Logger.Log($"[LOBBY] Created {code} by {settings.HostNickname}");
+                Logger.Log($"[LOBBY] Created {code}");
 
                 return new CreateMatchResponse
                 {
@@ -66,25 +71,35 @@ namespace UnoLisServer.Services
                 Logger.Warn($"[LOBBY] Invalid settings creating lobby: {argEx.Message}");
                 return new CreateMatchResponse { Success = false, Message = argEx.Message };
             }
-            catch (SqlException sqlEx)
-            {
-                Logger.Error($"[LOBBY] SQL Error creating lobby for {settings?.HostNickname}", sqlEx);
-                return new CreateMatchResponse { Success = false, Message = "Service temporarily unavailable (Database error)." };
-            }
             catch (TimeoutException timeEx)
             {
-                Logger.Error($"[LOBBY] Timeout creating lobby for {settings?.HostNickname}", timeEx);
+                Logger.Error($"[LOBBY] Timeout creating lobby", timeEx);
+                return new CreateMatchResponse { Success = false, Message = "Server busy. Please try again." };
+            }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Create Lobby failed. Data Store unavailable.", ex);
+                return new CreateMatchResponse { Success = false, Message = "Service temporarily unavailable." };
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout creating lobby.");
                 return new CreateMatchResponse { Success = false, Message = "Server busy. Please try again." };
             }
             catch (Exception ex)
             {
-                Logger.Error($"[LOBBY] Critical error creating lobby", ex);
+                Logger.Error($"[CRITICAL] Unexpected error creating lobby", ex);
                 return new CreateMatchResponse { Success = false, Message = "Internal server error." };
             }
         }
 
         public async Task<JoinMatchResponse> JoinLobbyAsync(string lobbyCode, string nickname)
         {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                return new JoinMatchResponse { Success = false, Message = "Invalid input." };
+            }
+
             try
             {
                 LobbyValidator.ValidateJoinRequest(lobbyCode, nickname);
@@ -101,11 +116,10 @@ namespace UnoLisServer.Services
 
                 if (!joined)
                 {
-                    Logger.Warn($"[LOBBY] Join attempt failed: {nickname} -> {lobbyCode} (Lobby full or user exists).");
+                    Logger.Warn($"[LOBBY] Join attempt failed: {lobbyCode} (Lobby full or user exists).");
                     return new JoinMatchResponse { Success = false, Message = "Lobby full or player already exists." };
                 }
 
-                Logger.Log($"[LOBBY] {nickname} successfully joined {lobbyCode}");
                 return new JoinMatchResponse
                 {
                     Success = true,
@@ -118,15 +132,20 @@ namespace UnoLisServer.Services
                 Logger.Warn($"[LOBBY] Invalid join data: {argEx.Message}");
                 return new JoinMatchResponse { Success = false, Message = argEx.Message };
             }
-            catch (SqlException sqlEx)
-            {
-                Logger.Error($"[LOBBY] SQL Error during join for {nickname}", sqlEx);
-                return new JoinMatchResponse { Success = false, Message = "Service unavailable (Database error)." };
-            }
             catch (TimeoutException timeEx)
             {
-                Logger.Error($"[LOBBY] Timeout during join for {nickname}", timeEx);
+                Logger.Error($"[LOBBY] Timeout during join", timeEx);
                 return new JoinMatchResponse { Success = false, Message = "Server busy. Please try again." };
+            }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Error($"[CRITICAL] Join Lobby failed. DB Unavailable.", ex);
+                return new JoinMatchResponse { Success = false, Message = "Service unavailable." };
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout joining lobby.");
+                return new JoinMatchResponse { Success = false, Message = "Server busy." };
             }
             catch (Exception ex)
             {
@@ -137,52 +156,110 @@ namespace UnoLisServer.Services
 
         public Task<bool> SetLobbyBackgroundAsync(string lobbyCode, string backgroundName)
         {
-            var lobby = _sessionHelper.GetLobby(lobbyCode);
-            if (lobby != null && !string.IsNullOrWhiteSpace(backgroundName))
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(backgroundName))
             {
-                lobby.SelectedBackgroundVideo = backgroundName;
-                Logger.Log($"[LOBBY] Background for {lobbyCode} set to {backgroundName}");
-                return Task.FromResult(true);
+                return Task.FromResult(false);
             }
+
+            try
+            {
+                var lobby = _sessionHelper.GetLobby(lobbyCode);
+                if (lobby != null)
+                {
+                    lobby.SelectedBackgroundVideo = backgroundName;
+                    return Task.FromResult(true);
+                }
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Error($"[LOBBY] Timeout setting background", timeEx);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Unexpected error setting background for {lobbyCode}", ex);
+            }
+
             return Task.FromResult(false);
         }
 
         public LobbySettings GetLobbySettings(string lobbyCode)
         {
-            var lobby = _sessionHelper.GetLobby(lobbyCode);
-            if (lobby != null)
+            try
             {
-                return new LobbySettings
+                var lobby = _sessionHelper.GetLobby(lobbyCode);
+                if (lobby != null)
                 {
-                    BackgroundVideoName = lobby.SelectedBackgroundVideo,
-                    UseSpecialRules = lobby.Settings.UseSpecialRules
-                };
+                    return new LobbySettings
+                    {
+                        BackgroundVideoName = lobby.SelectedBackgroundVideo,
+                        UseSpecialRules = lobby.Settings.UseSpecialRules
+                    };
+                }
             }
-            return null;
+            catch (TimeoutException timeEx)
+            {
+                Logger.Error($"[LOBBY] Timeout getting lobby Settings", timeEx);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Unexpected error getting lobby settings for {lobbyCode}", ex);
+            }
+
+            return new LobbySettings();
         }
 
-        public async Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames)
+        public async Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname,
+            List<string> invitedNicknames)
         {
-            return await _invitationHelper.SendInvitationsAsync(lobbyCode, senderNickname, invitedNicknames);
+            if (string.IsNullOrWhiteSpace(lobbyCode) || invitedNicknames == null || !invitedNicknames.Any())
+            {
+                return false;
+            }
+
+            try
+            {
+                return await _invitationHelper.SendInvitationsAsync(lobbyCode, senderNickname, invitedNicknames);
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Error($"[LOBBY] Timeout sending invitations", timeEx);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Error sending invitations", ex);
+                return false;
+            }
         }
 
         public void RegisterConnection(string lobbyCode, string nickname)
         {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
             if (OperationContext.Current == null)
             {
-                Logger.Warn($"[LOBBY] RegisterConnection called without OperationContext for {nickname}");
+                Logger.Warn($"[LOBBY] RegisterConnection called without OperationContext");
                 return;
             }
 
             try
             {
                 var lobbyCallback = OperationContext.Current.GetCallbackChannel<ILobbyDuplexCallback>();
+                if (lobbyCallback == null)
+                {
+                    Logger.Warn($"[LOBBY] Callback channel is null. Cannot register.");
+                    return;
+                }
+
                 _sessionHelper.RegisterCallback(lobbyCode, nickname, lobbyCallback);
 
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
                 if (lobby == null)
                 {
-                    Logger.Warn($"[LOBBY] Player {nickname} registered connection but lobby {lobbyCode} not found.");
+                    Logger.Warn($"[LOBBY] Player registered connection but lobby {lobbyCode} not found.");
                     return;
                 }
 
@@ -196,40 +273,51 @@ namespace UnoLisServer.Services
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[LOBBY] Communication error registering {nickname}: {commEx.Message}");
+                Logger.Warn($"[LOBBY] Communication error registering: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[LOBBY] Timeout registering {nickname}: {timeEx.Message}");
+                Logger.Warn($"[LOBBY] Timeout registering: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[LOBBY] Critical connection error for {nickname}", ex);
+                Logger.Error($"[LOBBY] Critical connection error", ex);
             }
         }
 
         private void SendInitialStateToPlayer(ILobbyDuplexCallback callback, LobbyInfo lobby, string nickname)
         {
+            if (callback == null || lobby == null)
+            {
+                return;
+            }
+
             try
             {
-                callback.UpdatePlayerList(lobby.Players.ToArray());
+                var playerList = lobby.Players.ToArray();
+                callback.UpdatePlayerList(playerList);
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[LOBBY] Failed to send initial state to {nickname}: {commEx.Message}");
+                Logger.Warn($"[LOBBY] Failed to send initial state: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[LOBBY] Timeout sending initial state to {nickname}: {timeEx.Message}");
+                Logger.Warn($"[LOBBY] Timeout sending initial state: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[LOBBY] Unexpected error sending state to {nickname}", ex);
+                Logger.Error($"[LOBBY] Unexpected error sending state", ex);
             }
         }
 
         public void RemoveConnection(string lobbyCode, string nickname, ILobbyDuplexCallback cachedCallback = null)
         {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
             try
             {
                 _sessionHelper.UnregisterCallback(lobbyCode, nickname);
@@ -237,124 +325,220 @@ namespace UnoLisServer.Services
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[LOBBY] WCF Communication error removing {nickname}: {commEx.Message}");
+                Logger.Warn($"[LOBBY] WCF Communication error removing player: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[LOBBY] Timeout removing {nickname}: {timeEx.Message}");
+                Logger.Warn($"[LOBBY] Timeout removing player: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[LOBBY] Critical error removing connection for {nickname}", ex);
+                Logger.Error($"[LOBBY] Critical error removing connection", ex);
             }
         }
 
         private void RemovePlayerAndNotify(string lobbyCode, string nickname)
         {
-            var lobby = _sessionHelper.GetLobby(lobbyCode);
-
-            if (lobby == null)
+            try
             {
-                return;
+                var lobby = _sessionHelper.GetLobby(lobbyCode);
+
+                if (lobby == null)
+                {
+                    Logger.Warn($"[LOBBY] Attempted to remove but lobby {lobbyCode} does not exist.");
+                    return;
+                }
+
+                lobby.RemovePlayer(nickname);
+                _sessionHelper.BroadcastToLobby(lobbyCode, call => call.PlayerLeft(nickname));
+
+                var currentPlayers = lobby.Players.ToArray();
+                _sessionHelper.BroadcastToLobby(lobbyCode, call => call.UpdatePlayerList(currentPlayers));
             }
-
-            lobby.RemovePlayer(nickname);
-            _sessionHelper.BroadcastToLobby(lobbyCode, call => call.PlayerLeft(nickname));
-            _sessionHelper.BroadcastToLobby(lobbyCode, call => call.UpdatePlayerList(lobby.Players.ToArray()));
-
-            Logger.Log($"[LOBBY] {nickname} removed from {lobbyCode} and notification sent.");
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[LOBBY] Communication error notifying removal: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[LOBBY] Timeout notifying removal: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Unexpected error removing player from lobby", ex);
+            }
         }
 
         public async Task HandleReadyStatusAsync(string lobbyCode, string nickname, bool isReady)
         {
-            var lobby = _sessionHelper.GetLobby(lobbyCode);
-            if (lobby == null)
+            int minPlayersToStart = 2;
+            if (string.IsNullOrWhiteSpace(lobbyCode))
             {
                 return;
             }
 
-            bool allReady = false;
+            try
+            {
+                var lobby = _sessionHelper.GetLobby(lobbyCode);
+                if (lobby == null)
+                {
+                    Logger.Warn($"[LOBBY] Ready status ignored. Lobby {lobbyCode} not found.");
+                    return;
+                }
+
+                bool allReady = false;
+
+                lock (lobby.LobbyLock)
+                {
+                    var player = lobby.Players.FirstOrDefault(lobbyPlayer => lobbyPlayer.Nickname == nickname);
+                    if (player != null)
+                    {
+                        player.IsReady = isReady;
+                    }
+
+                    if (lobby.Players.Count >= minPlayersToStart && lobby.Players.All(lobbyPlayer => lobbyPlayer.IsReady))
+                    {
+                        allReady = true;
+                    }
+                }
+
+                _sessionHelper.BroadcastToLobby(lobbyCode, call => call.PlayerReadyStatusChanged(nickname, isReady));
+
+                if (allReady)
+                {
+                    await HandleGameStartSequenceAsync(lobby, lobbyCode);
+                }
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[LOBBY] Communication error handling ready status: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[LOBBY] Timeout handling ready status: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[LOBBY] Critical error handling ready status for {lobbyCode}", ex);
+            }
+        }
+
+        private async Task HandleGameStartSequenceAsync(LobbyInfo lobby, string lobbyCode)
+        {
+            await Task.Delay(3000);
+
+            bool isValidToStart = false;
+            List<string> playerNicks = null;
 
             lock (lobby.LobbyLock)
             {
-                var player = lobby.Players.FirstOrDefault(p => p.Nickname == nickname);
-                if (player != null) player.IsReady = isReady;
-
-                if (lobby.Players.Count >= 2 && lobby.Players.All(lobbyPlayer => lobbyPlayer.IsReady))
+                if (_sessionHelper.GetLobby(lobbyCode) != null && lobby.Players.Count >= 2)
                 {
-                    allReady = true;
-                }
-            }
-
-            _sessionHelper.BroadcastToLobby(lobbyCode, call => call.PlayerReadyStatusChanged(nickname, isReady));
-
-            if (allReady)
-            {
-                Logger.Log($"[LOBBY] All ready in {lobbyCode}. Countdown started.");
-                await Task.Delay(3000);
-
-                if (_sessionHelper.LobbyExists(lobbyCode) && lobby.Players.Count >= 2)
-                {
-                    var playerNicks = lobby.Players.Select(lobbyPlayer => lobbyPlayer.Nickname).ToList();
-                    bool gameCreated = await _gameManager.InitializeGameAsync(lobbyCode, playerNicks);
-
-                    if (gameCreated)
+                    if (lobby.Players.All(player => player.IsReady))
                     {
-                        Logger.Log($"[LOBBY] Game session initialized for {lobbyCode}. Broadcasting start.");
-                        _sessionHelper.BroadcastToLobby(lobbyCode, callback => callback.GameStarted());
+                        isValidToStart = true;
+                        playerNicks = lobby.Players.Select(player => player.Nickname).ToList();
                     }
                     else
                     {
-                        Logger.Error($"[LOBBY] Failed to initialize game session for {lobbyCode}. Aborting start.");
+                        Logger.Log($"[LOBBY] Start aborted in {lobbyCode}. A player unreadied during countdown.");
                     }
                 }
                 else
                 {
-                    Logger.Warn($"[LOBBY] Start aborted in {lobbyCode}: Lobby removed or players left during countdown.");
+                    Logger.Warn($"[LOBBY] Start aborted in {lobbyCode}. Lobby closed or players left during countdown.");
+                }
+            }
+
+            if (isValidToStart && playerNicks != null)
+            {
+                try
+                {
+                    bool gameCreated = await _gameManager.InitializeGameAsync(lobbyCode, playerNicks);
+
+                    if (gameCreated)
+                    {
+                        Logger.Log($"[LOBBY] Game session initialized for {lobbyCode}. Broadcasting GameStarted.");
+                        _sessionHelper.BroadcastToLobby(lobbyCode, callback => callback.GameStarted());
+                    }
+                    else
+                    {
+                        Logger.Error($"[LOBBY] Failed to initialize game logic for {lobbyCode}. Aborting.");
+                    }
+                }
+                catch (CommunicationException commEx)
+                {
+                    Logger.Warn($"[LOBBY] Communication error initializing game: {commEx.Message}");
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Logger.Warn($"[LOBBY] Timeout initializing game: {timeEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[CRITICAL] Exception initializing game for {lobbyCode}", ex);
                 }
             }
         }
 
         private async Task<string> GetAvatarAsync(string nickname)
         {
+            const string DefaultAvatar = "LogoUNO";
+
             if (UserHelper.IsGuest(nickname))
             {
-                return "LogoUNO";
+                return DefaultAvatar;
             }
 
             try
             {
                 var player = await _playerRepository.GetPlayerWithDetailsAsync(nickname);
-                if (player?.SelectedAvatar_Avatar_idAvatar != null)
+                if (player?.SelectedAvatar_Avatar_idAvatar != null && player.AvatarsUnlocked != null)
                 {
                     var unlocked = player.AvatarsUnlocked
-                        .FirstOrDefault(au => au.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar);
-                    if (unlocked?.Avatar != null) return unlocked.Avatar.avatarName;
+                        .FirstOrDefault(avatarsUnlocked => avatarsUnlocked.Avatar_idAvatar == player.SelectedAvatar_Avatar_idAvatar);
+
+                    if (unlocked?.Avatar != null)
+                    {
+                        return unlocked.Avatar.avatarName;
+                    }
                 }
             }
-            catch (CommunicationException commEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Warn($"[LOBBY] Communication error resolving callback: {commEx.Message}");
+                Logger.Warn($"[LOBBY] Could not fetch avatar. DB Unavailable. Using default.");
             }
-            catch (TimeoutException timeEx)
+            catch (Exception ex) when (ex.Message == "Server_Busy")
             {
-                Logger.Warn($"[LOBBY] Timeout resolving callback: {timeEx.Message}");
+                Logger.Warn($"[LOBBY] Timeout fetching avatar. Using default.");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[LOBBY] Unexpected error resolving callback from context", ex);
+                Logger.Error($"[LOBBY] Unexpected error resolving avatar", ex);
             }
-            return "LogoUNO";
+
+            return DefaultAvatar;
         }
 
         private string GenerateUniqueLobbyCode()
         {
             string code;
+            int attempts = 0;
+            const int MaxAttempts = 100;
+
             do
             {
                 code = SecureRandom.GetRandomString(5);
+                attempts++;
+
+                if (attempts > MaxAttempts)
+                {
+                    Logger.Error("[CRITICAL] Failed to generate unique lobby code after 100 attempts.");
+                    throw new Exception("Server_Busy");
+                }
             }
             while (_sessionHelper.LobbyExists(code));
+
             return code;
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
@@ -39,99 +40,114 @@ namespace UnoLisServer.Services
             {
                 var callback = _callbackProvider.GetCallback();
                 _sessionHelper.AddClient(nickname, callback);
-
-                Logger.Log($"[CHAT] Jugador registrado: {nickname}");
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[CHAT] Error de comunicación al registrar a {nickname}: {commEx.Message}");
+                Logger.Warn($"[WCF] Communication error registering: {commEx.Message}");
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Warn($"[CHAT] Timeout al registrar a {nickname}: {timeoutEx.Message}");
+                Logger.Warn($"[WCF] Timeout registering: {timeoutEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error crítico al registrar jugador {nickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error registering player", ex);
             }
         }
 
         public void SendMessage(ChatMessageData message)
         {
+            if (message == null)
+            {
+                return;
+            }
+
             try
             {
                 ChatValidator.ValidateMessage(message);
                 string channel = message.ChannelId ?? "General";
                 _sessionHelper.AddToHistory(channel, message);
 
-                Logger.Log($"[CHAT] Mensaje de {message.Nickname} en {channel}");
-
                 BroadcastToClients(message);
             }
             catch (ValidationException valEx)
             {
-                Logger.Warn($"[CHAT] Validación fallida mensaje de {message?.Nickname}: {valEx.Message}");
+                Logger.Warn($"[CHAT] Message validation failed: {valEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error crítico en orquestación de SendMessage", ex);
+                Logger.Error($"[CRITICAL] Error orchestrating SendMessage", ex);
             }
         }
 
-        /// <summary>
-        /// Auxiliar method to notify active clients in that a message has been sent
-        /// </summary>
         private void BroadcastToClients(ChatMessageData message)
         {
             var activeClients = _sessionHelper.GetActiveClients();
 
-            foreach (var client in activeClients)
+            if (activeClients == null)
+            {
+                return;
+            }
+
+            var clientsSnapshot = activeClients.ToList();
+
+            foreach (var client in clientsSnapshot)
             {
                 try
                 {
-                    client.MessageReceived(message);
+                    if (client is ICommunicationObject commObj && commObj.State == CommunicationState.Opened)
+                    {
+                        client.MessageReceived(message);
+                    }
                 }
                 catch (CommunicationException)
                 {
-                    Logger.Warn($"[CHAT] No se pudo entregar mensaje: Cliente desconectado.");
+                    Logger.Warn($"[CHAT] Delivery failed: Client disconnected.");
                 }
                 catch (TimeoutException)
                 {
-                    Logger.Warn($"[CHAT] Timeout al entregar mensaje a un cliente.");
+                    Logger.Warn($"[CHAT] Delivery failed: Timeout.");
                 }
                 catch (ObjectDisposedException)
                 {
-                    Logger.Warn($"[CHAT] Intento de envío a un canal cerrado (ObjectDisposed).");
+                    Logger.Warn($"[CHAT] Delivery failed: Object disposed.");
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn($"[CHAT] Error inesperado enviando a cliente: {ex.Message}");
+                    Logger.Warn($"[CHAT] Unexpected delivery error: {ex.Message}");
                 }
             }
         }
 
         public void GetChatHistory(string channelId)
         {
+            string targetChannel = channelId ?? "General";
+
             try
             {
-                var history = _sessionHelper.GetHistory(channelId ?? "General");
                 var callback = _callbackProvider.GetCallback();
+                if (callback == null)
+                {
+                    Logger.Warn($"[CHAT] Cannot send history. Callback channel is null.");
+                    return;
+                }
 
-                callback.ChatHistoryReceived(history.ToArray());
+                var historyList = _sessionHelper.GetHistory(targetChannel);
+                var historyArray = historyList?.ToArray() ?? new ChatMessageData[0];
 
-                Logger.Log($"[CHAT] Historial enviado a solicitante (Canal: {channelId})");
+                callback.ChatHistoryReceived(historyArray);
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[CHAT] Error de comunicación al enviar historial (Cliente desconectado): {commEx.Message}");
+                Logger.Warn($"[WCF] Communication error sending history: {commEx.Message}");
             }
             catch (TimeoutException timeoutEx)
             {
-                Logger.Warn($"[CHAT] Timeout al enviar historial al cliente: {timeoutEx.Message}");
+                Logger.Warn($"[WCF] Timeout sending history: {timeoutEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[CHAT] Error crítico al recuperar historial", ex);
+                Logger.Error($"[CRITICAL] Unexpected error retrieving chat history", ex);
             }
         }
     }
