@@ -59,7 +59,7 @@ namespace UnoLisServer.Services
             try
             {
                 _lobbyManager.RegisterConnection(lobbyCode, nickname);
-                Logger.Log($"[DUPLEX] Connected to lobby {lobbyCode} as {nickname}");
+                Logger.Log($"[DUPLEX] Connected to lobby {lobbyCode}");
             }
             catch (CommunicationException commEx)
             {
@@ -71,7 +71,7 @@ namespace UnoLisServer.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"[DUPLEX] Error registering connection for {nickname}", ex);
+                Logger.Error($"[DUPLEX] Error registering connection", ex);
             }
         }
 

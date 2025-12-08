@@ -17,8 +17,14 @@ using UnoLisServer.Services.ManagerInterfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class for managing game logic and sessions during gameplay
+    /// </summary>
     public class GameManager : IGameManager
     {
+        private const int UnoPenaltyDelayMs = 3000;
+        private const int PenaltyCardCount = 2;
+        private const int MinPlayersToContinue = 2;
         private readonly GameSessionHelper _sessionHelper;
         private readonly IPlayerRepository _playerRepository;
 
@@ -28,13 +34,20 @@ namespace UnoLisServer.Services
 
         public GameManager(GameSessionHelper sessionHelper, IPlayerRepository playerRepo)
         {
-            _sessionHelper = sessionHelper;
-            _playerRepository = playerRepo;
+            _sessionHelper = sessionHelper ?? throw new ArgumentNullException(nameof(sessionHelper));
+            _playerRepository = playerRepo ?? throw new ArgumentNullException(nameof(playerRepo));
+
+            _sessionHelper.OnPlayerDisconnected -= HandlePlayerLeft;
             _sessionHelper.OnPlayerDisconnected += HandlePlayerLeft;
         }
 
         public async Task<bool> InitializeGameAsync(string lobbyCode, List<string> playerNicknames)
         {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || playerNicknames == null || !playerNicknames.Any())
+            {
+                return false;
+            }
+
             try
             {
                 var playerTasks = playerNicknames.Select(async nick =>
@@ -78,7 +91,7 @@ namespace UnoLisServer.Services
         {
             if (OperationContext.Current == null)
             {
-                Logger.Warn($"[GAME] ConnectPlayer called without OperationContext for {nickname}");
+                Logger.Warn($"[GAME] ConnectPlayer called without OperationContext");
                 return;
             }
 
@@ -95,19 +108,40 @@ namespace UnoLisServer.Services
 
                         if (player == null)
                         {
-                            Logger.Warn($"[GAME] Player {nickname} not found in session logic {lobbyCode}");
+                            Logger.Warn($"[GAME] Player not found in session logic {lobbyCode}");
                             return;
                         }
 
                         _sessionHelper.UpdateCallback(lobbyCode, nickname, callback);
-
-                        System.Threading.Thread.Sleep(500);
-                        SendInitialStateToPlayer(callback, session, player);
                     }
+
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Task.Delay(500);
+                            lock (session.GameLock)
+                            {
+                                var playerRef = session.GetPlayer(nickname);
+                                if (playerRef != null)
+                                {
+                                    SendInitialStateToPlayer(callback, session, playerRef);
+                                }
+                            }
+                        }
+                        catch (InvalidOperationException invOpEx)
+                        {
+                            Logger.Warn($"[GAME-ASYNC] Invalid operation sending initial state: {invOpEx.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error($"[GAME-ASYNC] Error sending initial state to {nickname}", ex);
+                        }
+                    });
                 }
                 else
                 {
-                    Logger.Warn($"[GAME] Session {lobbyCode} not found for ConnectPlayer");
+                    Logger.Warn($"[GAME] Session {lobbyCode} not found during connection attempt");
                 }
             }
             catch (CommunicationException commEx)
@@ -128,7 +162,25 @@ namespace UnoLisServer.Services
 
         public void DisconnectPlayer(string lobbyCode, string nickname)
         {
-            HandlePlayerLeft(lobbyCode, nickname);
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname)) return;
+
+            try
+            {
+                HandlePlayerLeft(lobbyCode, nickname);
+                Logger.Log($"[GAME] Player {nickname} disconnected handled for {lobbyCode}");
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed handling disconnection (Communication) in {lobbyCode}: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout handling disconnection in {lobbyCode}: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error handling disconnection for {nickname} in {lobbyCode}", ex);
+            }
         }
 
         public async Task PlayCardAsync(PlayCardContext context)
@@ -202,33 +254,49 @@ namespace UnoLisServer.Services
         {
             try
             {
-                await Task.Delay(3000);
+                await Task.Delay(UnoPenaltyDelayMs);
 
                 lock (session.GameLock)
                 {
                     var player = session.GetPlayer(nickname);
+                    if (player == null)
+                    {
+                        Logger.Warn($"[GAME] UNO Risk check aborted. Player left the session.");
+                        AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
+                        return;
+                    }
 
                     if (!player.HasSaidUno)
                     {
-                        Logger.Log($"[GAME] {nickname} forgot UNO! Penalizing...");
-
-                        var penaltyCards = session.Deck.DrawCards(2);
+                        var penaltyCards = session.Deck.DrawCards(PenaltyCardCount);
                         player.Hand.AddRange(penaltyCards);
 
-                        _sessionHelper.SendToPlayer(session.LobbyCode, player.Nickname, cb => cb.ReceiveCards(penaltyCards));
-                        _sessionHelper.BroadcastToGame(session.LobbyCode, cb => cb.GameMessage($"{player.Nickname} olvidó gritar UNO (+2 cartas)"));
-                    }
-                    else
-                    {
-                        Logger.Log($"[GAME] {nickname} said UNO in time.");
+                        _sessionHelper.SendToPlayer(session.LobbyCode, player.Nickname, callback => callback.ReceiveCards(penaltyCards));
+                        _sessionHelper.BroadcastToGame(session.LobbyCode, callback => callback.GameMessage($"Player forgot olvidó gritar UNO (+2 cartas)"));
                     }
 
                     AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
                 }
             }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed processing UNO risk (Communication): {commEx.Message}");
+                lock (session.GameLock)
+                {
+                    AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
+                }
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout processing UNO risk: {timeEx.Message}");
+                lock (session.GameLock)
+                {
+                    AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
+                }
+            }
             catch (Exception ex)
             {
-                Logger.Error($"[GAME] Error processing UNO risk for {nickname}", ex);
+                Logger.Error($"[GAME] Error processing UNO risk", ex);
                 lock (session.GameLock)
                 {
                     AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
@@ -238,6 +306,106 @@ namespace UnoLisServer.Services
 
         private void HandlePlayerLeft(string lobbyCode, string nickname)
         {
+            try
+            {
+                var session = _sessionHelper.GetGame(lobbyCode);
+                if (session == null)
+                {
+                    return;
+                }
+
+                lock (session.GameLock)
+                {
+                    var playerToRemove = session.GetPlayer(nickname);
+                    if (playerToRemove == null)
+                    {
+                        return;
+                    }
+
+                    session.Players.Remove(playerToRemove);
+                    Logger.Log($"[GAME] Removed Player from session logic.");
+
+                    if (session.Players.Count < MinPlayersToContinue)
+                    {
+                        var winner = session.Players.FirstOrDefault();
+                        if (winner != null)
+                        {
+                            _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"Everyone left" +
+                                $"! {winner.Nickname} wins by default."));
+
+                            Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await HandleWinCondition(session, winner);
+                                }
+                                catch (CommunicationException commEx)
+                                {
+                                    Logger.Warn($"[GAME] Error saving default win (Communication): {commEx.Message}");
+                                }
+                                catch (TimeoutException timeEx)
+                                {
+                                    Logger.Warn($"[GAME] Timeout saving default win: {timeEx.Message}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.Error($"[GAME] Error saving default win", ex);
+                                }
+                            });
+                        }
+                        else
+                        {
+                            _sessionHelper.RemoveGame(lobbyCode);
+                        }
+
+                        return;
+                    }
+
+                    if (session.CurrentTurnIndex >= session.Players.Count)
+                    {
+                        session.CurrentTurnIndex = 0;
+                    }
+
+                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"Player " +
+                        $"disconnected."));
+
+                    var activePlayers = session.Players.Select(player => new GamePlayer
+                    {
+                        Nickname = player.Nickname,
+                        CardCount = player.Hand.Count,
+                        AvatarName = player.AvatarName
+                    }).ToList();
+
+                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.ReceivePlayerList(activePlayers));
+
+                    var currentPlayer = session.GetCurrentPlayer();
+                    if (currentPlayer != null)
+                    {
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.TurnChanged(currentPlayer.Nickname));
+                    }
+                }
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed handling player left (Communication) in {lobbyCode}: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout handling player left in {lobbyCode}: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error handling player left in {lobbyCode}", ex);
+            }
+        }
+
+        public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
+        {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
+
             var session = _sessionHelper.GetGame(lobbyCode);
             if (session == null)
             {
@@ -246,68 +414,18 @@ namespace UnoLisServer.Services
 
             lock (session.GameLock)
             {
-                var playerToRemove = session.GetPlayer(nickname);
-                if (playerToRemove == null)
-                {
-                    return;
-                }
-
-                session.Players.Remove(playerToRemove);
-                Logger.Log($"[GAME] Removed {nickname} from session logic.");
-
-                if (session.Players.Count < 2)
-                {
-                    var winner = session.Players.FirstOrDefault();
-                    if (winner != null)
-                    {
-                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"¡Todos se han " +
-                            $"ido! {winner.Nickname} gana por default."));
-                        _ = HandleWinCondition(session, winner);
-                    }
-                    else
-                    {
-                        _sessionHelper.RemoveGame(lobbyCode); 
-                    }
-                    return;
-                }
-
-                if (session.CurrentTurnIndex >= session.Players.Count)
-                {
-                    session.CurrentTurnIndex = 0;
-                }
-
-                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"{nickname} se " +
-                    $"desconectó."));
-
-                var activePlayers = session.Players.Select(player => new GamePlayer 
-                { 
-                    Nickname = player.Nickname, 
-                    CardCount = player.Hand.Count, 
-                    AvatarName = player.AvatarName 
-                }).ToList();
-
-                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.ReceivePlayerList(activePlayers));
-                _sessionHelper.BroadcastToGame(lobbyCode, 
-                    callback => callback.TurnChanged(session.GetCurrentPlayer().Nickname));
-            }
-        }
-
-        public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
-        {
-            var session = _sessionHelper.GetGame(lobbyCode);
-            if (session == null) return;
-
-            lock (session.GameLock)
-            {
                 var player = session.GetPlayer(nickname);
 
                 if (player == null || session.GetCurrentPlayer().Nickname != nickname)
                 {
+                    Logger.Warn($"[GAME] Player tried to use item out of turn or doesn't exist.");
                     return;
                 }
 
-                if (!player.Items.ContainsKey(itemType) || player.Items[itemType] <= 0)
+                int emptyItemCount = 0;
+                if (!player.Items.ContainsKey(itemType) || player.Items[itemType] <= emptyItemCount)
                 {
+                    Logger.Warn($"[GAME] Player tried to use {itemType} but has quantity 0.");
                     return;
                 }
 
@@ -325,24 +443,30 @@ namespace UnoLisServer.Services
 
                     player.Items[itemType]--;
 
-                    _sessionHelper.SendToPlayer(lobbyCode, player.Nickname, cb => cb.ReceiveInitialHand(player.Hand));
-                    _sessionHelper.SendToPlayer(lobbyCode, targetPlayer.Nickname, cb => cb.ReceiveInitialHand(targetPlayer.Hand));
+                    _sessionHelper.SendToPlayer(lobbyCode, player.Nickname, callback => 
+                    callback.ReceiveInitialHand(player.Hand));
+                    _sessionHelper.SendToPlayer(lobbyCode, targetPlayer.Nickname, callback => 
+                    callback.ReceiveInitialHand(targetPlayer.Hand));
 
-                    foreach (var p in session.Players)
+                    foreach (var matchPlayer in session.Players)
                     {
-                        _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.CardDrawn(p.Nickname, p.Hand.Count));
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => 
+                        callback.CardDrawn(matchPlayer.Nickname, matchPlayer.Hand.Count));
                     }
 
-                    _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.GameMessage($"{nickname} cambió manos con {targetNickname} 🔄"));
+                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.GameMessage($"Player " +
+                        $"switched hands 🔄"));
                 }
             }
         }
 
         private async Task<string> GetAvatarAsync(string nickname)
         {
+            const string DefaultAvatar = "LogoUNO";
+
             if (UserHelper.IsGuest(nickname))
             {
-                return "LogoUNO";
+                return DefaultAvatar;
             }
 
             try
@@ -361,16 +485,25 @@ namespace UnoLisServer.Services
                     }
                 }
             }
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+            {
+                Logger.Warn($"[GAME] Avatar fetch failed (DB Unavailable). Using default.");
+            }
             catch (Exception ex)
             {
-                Logger.Warn($"[GAME] Error fetching avatar for {nickname}. Using default. Error: {ex.Message}");
+                Logger.Error($"[GAME] Unexpected error fetching avatar", ex);
             }
 
-            return "LogoUNO";
+            return DefaultAvatar;
         }
 
         private bool IsValidMove(Card card, GameSession session)
         {
+            if (card == null || session == null)
+            {
+                return false;
+            }
+
             var topCard = session.Deck.PeekTopCard();
             if (IsWildCard(card.Value))
             {
@@ -392,6 +525,14 @@ namespace UnoLisServer.Services
 
         private bool ApplyCardEffects(GameSession session, Card card, string lobbyCode)
         {
+            if (session == null || card == null)
+            {
+                return false;
+            }
+
+            int pairPlayers = 2;
+            int drawFour = 4;
+            int drawTen = 10;
             bool skipNext = false;
             switch (card.Value)
             {
@@ -400,23 +541,23 @@ namespace UnoLisServer.Services
                     break;
                 case CardValue.Reverse:
                     session.ReverseDirection();
-                    if (session.Players.Count == 2) skipNext = true;
+                    if (session.Players.Count == pairPlayers) skipNext = true;
                     break;
                 case CardValue.DrawTwo:
-                    ExecuteDrawForNextPlayer(session, 2, lobbyCode);
+                    ExecuteDrawForNextPlayer(session, pairPlayers, lobbyCode);
                     skipNext = true;
                     break;
                 case CardValue.WildDrawFour:
-                    ExecuteDrawForNextPlayer(session, 4, lobbyCode);
+                    ExecuteDrawForNextPlayer(session, drawFour, lobbyCode);
                     skipNext = true;
                     break;
                 case CardValue.WildDrawTen:
-                    ExecuteDrawForNextPlayer(session, 10, lobbyCode);
+                    ExecuteDrawForNextPlayer(session, drawTen, lobbyCode);
                     skipNext = true;
                     break;
                 case CardValue.WildDrawSkipReverseFour:
                     session.ReverseDirection();
-                    ExecuteDrawForNextPlayer(session, 4, lobbyCode);
+                    ExecuteDrawForNextPlayer(session, drawFour, lobbyCode);
                     skipNext = true;
                     break;
             }
@@ -425,19 +566,51 @@ namespace UnoLisServer.Services
 
         private void NotifyPlay(string lobbyCode, string nickname, Card card)
         {
-            var session = _sessionHelper.GetGame(lobbyCode);
-            var player = session.GetPlayer(nickname);
-            int count = player.Hand.Count;
+            try
+            {
+                var session = _sessionHelper.GetGame(lobbyCode);
+                if (session == null)
+                {
+                    return;
+                }
 
-            _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardPlayed(nickname, card, count));
-            Logger.Log($"[GAME] {nickname} played {card} in lobby {lobbyCode}");
+                var player = session.GetPlayer(nickname);
+                if (player == null)
+                {
+                    Logger.Warn($"[GAME] NotifyPlay skipped. Player not found in session.");
+                    return;
+                }
+
+                int count = player.Hand.Count;
+
+                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardPlayed(nickname, card, count));
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed notifying play (Communication): {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout notifying play: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error notifying play in {lobbyCode}", ex);
+            }
         }
 
         private bool ValidatePlay(GameSession session, GamePlayerData player, Card card)
         {
-            if (player == null) return false;
-            if (session.GetCurrentPlayer().Nickname != player.Nickname) return false;
-            if (card == null) return false;
+            if (session == null || player == null || card == null)
+            {
+                return false;
+            }
+
+            var currentPlayer = session.GetCurrentPlayer();
+            if (currentPlayer == null || currentPlayer.Nickname != player.Nickname)
+            {
+                return false;
+            }
 
             return IsValidMove(card, session);
         }
@@ -445,20 +618,42 @@ namespace UnoLisServer.Services
         private void ProcessCardMove(GameSession session, Card card, PlayCardContext context)
         {
             var player = session.GetPlayer(context.Nickname);
+            if (player == null)
+            {
+                return;
+            }
+
             player.Hand.Remove(card);
 
             if (IsWildCard(card.Value))
             {
-                if (context.SelectedColorId.HasValue && Enum.IsDefined(typeof(CardColor), context.SelectedColorId.Value))
+                if (context.SelectedColorId.HasValue && Enum.IsDefined(typeof(CardColor), 
+                    context.SelectedColorId.Value))
                 {
                     var selectedColor = (CardColor)context.SelectedColorId.Value;
                     session.CurrentActiveColor = selectedColor;
 
-                    string msg = $"{context.Nickname} ha cambiado el color a {selectedColor}";
-                    _sessionHelper.BroadcastToGame(session.LobbyCode, callback => callback.GameMessage(msg));
+                    try
+                    {
+                        string message = $"Player has changed color to {selectedColor}";
+                        _sessionHelper.BroadcastToGame(session.LobbyCode, callback => callback.GameMessage(message));
+                    }
+                    catch (CommunicationException commEx)
+                    {
+                        Logger.Warn($"[GAME] Failed broadcasting color change (Communication): {commEx.Message}");
+                    }
+                    catch (TimeoutException timeEx)
+                    {
+                        Logger.Warn($"[GAME] Timeout broadcasting color change: {timeEx.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"[GAME] Error broadcasting color change message", ex);
+                    }
                 }
                 else
                 {
+                    Logger.Warn($"[GAME] Invalid/Missing color selection. Defaulting to Red.");
                     session.CurrentActiveColor = CardColor.Red; 
                 }
             }
@@ -481,7 +676,33 @@ namespace UnoLisServer.Services
                 session.NextTurn();
             }
 
-            _sessionHelper.BroadcastToGame(lobbyCode, cb => cb.TurnChanged(session.GetCurrentPlayer().Nickname));
+            try
+            {
+                var nextPlayer = session.GetCurrentPlayer();
+
+                if (nextPlayer != null)
+                {
+                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.TurnChanged(nextPlayer.Nickname));
+                }
+                else
+                {
+                    Logger.Error($"[CRITICAL] Turn advanced but no player found in {lobbyCode}. Game " +
+                        $"state might be empty.");
+                }
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME-UI] Failed to broadcast TurnChanged (Communication) in {lobbyCode}: " +
+                    $"{commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME-UI] Timeout broadcasting TurnChanged in {lobbyCode}: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME-UI] Failed to broadcast TurnChanged in {lobbyCode}", ex);
+            }
         }
 
         private Dictionary<ItemType, int> CreateDefaultInventory()
@@ -496,29 +717,77 @@ namespace UnoLisServer.Services
 
         private void ExecuteDrawForNextPlayer(GameSession session, int count, string lobbyCode)
         {
-            int victimIndex;
-            int turnIndex = 1;
-            if (session.IsClockwise)
+            try
             {
-                victimIndex = (session.CurrentTurnIndex + turnIndex) % session.Players.Count;
+                int victimIndex;
+                int step = 1;
+                if (session.IsClockwise)
+                {
+                    victimIndex = (session.CurrentTurnIndex + step) % session.Players.Count;
+                }
+                else
+                {
+                    victimIndex = (session.CurrentTurnIndex - step + session.Players.Count) % session.Players.Count;
+                }
+
+                var victim = session.Players[victimIndex];
+                var drawnCards = session.Deck.DrawCards(count);
+
+                victim.Hand.AddRange(drawnCards);
+                victim.HasSaidUno = false;
+
+                int currentHandCount = victim.Hand.Count;
+                try
+                {
+                    _sessionHelper.SendToPlayer(lobbyCode, victim.Nickname, callback => callback.ReceiveCards(drawnCards));
+                }
+                catch (CommunicationException commEx)
+                {
+                    Logger.Warn($"[GAME] Failed sending drawn cards (Communication) to {victim.Nickname}: {commEx.Message}");
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Logger.Warn($"[GAME] Timeout sending drawn cards to {victim.Nickname}: {timeEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[GAME] Error sending drawn cards to {victim.Nickname}", ex);
+                }
+                try
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(victim.Nickname, currentHandCount));
+                    }
+                }
+                catch (CommunicationException commEx)
+                {
+                    Logger.Warn($"[GAME] Failed broadcasting drawn cards (Communication) for {victim.Nickname}: {commEx.Message}");
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Logger.Warn($"[GAME] Timeout broadcasting drawn cards for {victim.Nickname}: {timeEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[GAME] Error broadcasting drawn cards for {victim.Nickname}", ex);
+                }
             }
-            else
+            catch (InvalidOperationException)
             {
-                victimIndex = (session.CurrentTurnIndex - turnIndex + session.Players.Count) % session.Players.Count;
+                Logger.Error($"[GAME] Deck exhausted in {lobbyCode} during draw execution.");
             }
-
-            var victim = session.Players[victimIndex];
-            var drawnCards = session.Deck.DrawCards(count);
-
-            victim.Hand.AddRange(drawnCards);
-            victim.HasSaidUno = false;
-
-            int currentHandCount = victim.Hand.Count;
-            _sessionHelper.SendToPlayer(lobbyCode, victim.Nickname, callback => callback.ReceiveCards(drawnCards));
-
-            for (int i = 0; i < count; i++)
+            catch (CommunicationException commEx)
             {
-                _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(victim.Nickname, currentHandCount));
+                Logger.Warn($"[GAME] Failed executing draw for next player (Communication): {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout executing draw for next player: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error executing draw for next player", ex);
             }
         }
 
@@ -532,6 +801,11 @@ namespace UnoLisServer.Services
 
         private async Task HandleWinCondition(GameSession session, GamePlayerData winner)
         {
+            if (session == null)
+            {
+                return;
+            }
+
             try
             {
                 var rankedPlayers = GetRankedPlayers(session, winner);
@@ -542,7 +816,6 @@ namespace UnoLisServer.Services
                 for (int rank = 0; rank < totalPlayers; rank++)
                 {
                     var player = rankedPlayers[rank];
-
                     int points = CalculatePoints(totalPlayers, rank);
                     bool isWinner = (rank == 0);
 
@@ -556,14 +829,49 @@ namespace UnoLisServer.Services
 
                     if (!UserHelper.IsGuest(player.Nickname))
                     {
-                        await _playerRepository.UpdateMatchResultAsync(player.Nickname, isWinner, points);
+                        try
+                        {
+                            await _playerRepository.UpdateMatchResultAsync(player.Nickname, isWinner, points);
+                        }
+                        catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
+                        {
+                            Logger.Warn($"[GAME] Could not update match result for {player.Nickname} " +
+                                $"(DB Unavailable).");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error($"[GAME] Unexpected error updating match result for " +
+                                $"{player.Nickname}", ex);
+                        }
                     }
                 }
+                try
+                {
+                    _sessionHelper.BroadcastToGame(session.LobbyCode, callback => callback.MatchEnded(results));
+                    _sessionHelper.RemoveGame(session.LobbyCode);
+                }
+                catch (CommunicationException commEx)
+                {
+                    Logger.Warn($"[GAME] Failed broadcasting match end (Communication): {commEx.Message}");
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Logger.Warn($"[GAME] Timeout broadcasting match end: {timeEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[GAME] Error broadcasting match end for {session.LobbyCode}", ex);
+                }
 
-                _sessionHelper.BroadcastToGame(session.LobbyCode, cb => cb.MatchEnded(results));
-                _sessionHelper.RemoveGame(session.LobbyCode);
-
-                Logger.Log($"[GAME] Match {session.LobbyCode} ended. Winner: {winner.Nickname}");
+                Logger.Log($"[GAME] Match {session.LobbyCode} ended.");
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed handling win condition (Communication): {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout handling win condition: {timeEx.Message}");
             }
             catch (Exception ex)
             {
@@ -573,6 +881,11 @@ namespace UnoLisServer.Services
 
         private List<GamePlayerData> GetRankedPlayers(GameSession session, GamePlayerData winner)
         {
+            if (session == null || winner == null)
+            {
+                return new List<GamePlayerData>();
+            }
+
             var allPlayers = session.Players;
 
             var losers = allPlayers
@@ -588,19 +901,21 @@ namespace UnoLisServer.Services
 
         private int CalculatePoints(int totalPlayers, int rankIndex)
         {
-
-            if (totalPlayers == 2)
+            int pairPlayers = 2;
+            int trioPlayers = 3;
+            int quadPlayers = 4;
+            if (totalPlayers == pairPlayers)
             {
                 if (rankIndex == 0) return 100;
                 return 0;
             }
-            else if (totalPlayers == 3)
+            else if (totalPlayers == trioPlayers)
             {
                 if (rankIndex == 0) return 300;
                 if (rankIndex == 1) return 100;
                 return 0;
             }
-            else if (totalPlayers == 4) 
+            else if (totalPlayers == quadPlayers) 
             {
                 if (rankIndex == 0) return 500;
                 if (rankIndex == 1) return 300;
@@ -613,46 +928,67 @@ namespace UnoLisServer.Services
 
         public Task DrawCardAsync(string lobbyCode, string nickname)
         {
-            var session = _sessionHelper.GetGame(lobbyCode);
-            if (session == null)
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
             {
                 return Task.CompletedTask;
             }
 
-            lock (session.GameLock)
+            try
             {
-                if (session.GetCurrentPlayer().Nickname != nickname)
+                var session = _sessionHelper.GetGame(lobbyCode);
+                if (session == null)
                 {
                     return Task.CompletedTask;
                 }
 
-                try
+                lock (session.GameLock)
                 {
-                    var card = session.Deck.DrawCard();
-                    var player = session.GetPlayer(nickname);
-                    player.Hand.Add(card);
-                    player.HasSaidUno = false;
+                    if (session.GetCurrentPlayer().Nickname != nickname)
+                    {
+                        Logger.Warn($"[GAME] Turn violation: Player tried to draw out of turn.");
+                        return Task.CompletedTask;
+                    }
 
-                    int currentHandCount = player.Hand.Count;
-                    _sessionHelper.SendToPlayer(lobbyCode, nickname, callback => callback.ReceiveCards(new List<Card> { card }));
-                    _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(nickname, currentHandCount));
+                    try
+                    {
+                        var card = session.Deck.DrawCard();
+                        var player = session.GetPlayer(nickname);
+                        player.Hand.Add(card);
+                        player.HasSaidUno = false;
+
+                        int currentHandCount = player.Hand.Count;
+                        _sessionHelper.SendToPlayer(lobbyCode, nickname, callback => callback.ReceiveCards(new List<Card> { card }));
+                        _sessionHelper.BroadcastToGame(lobbyCode, callback => callback.CardDrawn(nickname, currentHandCount));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        Logger.Error($"[GAME] Deck exhausted in {lobbyCode}");
+                    }
+                    catch (CommunicationException commEx)
+                    {
+                        Logger.Warn($"[GAME] Failed communication for deck {commEx.Message}");
+                    }
+                    catch (TimeoutException timeEx)
+                    {
+                        Logger.Warn($"[GAME] Timeout resolving deck {timeEx.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"[GAME] Error in SayUno", ex);
+                    }
                 }
-                catch (InvalidOperationException)
-                {
-                    Logger.Error($"[GAME] Deck exhausted in {lobbyCode}");
-                }
-                catch (CommunicationException commEx)
-                {
-                    Logger.Warn($"[GAME] Failed communication for deck {commEx.Message}");
-                }
-                catch (TimeoutException timeEx)
-                {
-                    Logger.Warn($"[GAME] Timeout resolving deck {timeEx.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"[GAME] Error in SayUno", ex);
-                }
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed drawing card (Communication): {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout drawing card: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error drawing card in {lobbyCode}", ex);
             }
             return Task.CompletedTask;
         }
@@ -696,6 +1032,7 @@ namespace UnoLisServer.Services
             {
                 Logger.Error($"[GAME] Error in SayUno", ex);
             }
+
             return Task.CompletedTask;
         }
 
@@ -737,11 +1074,11 @@ namespace UnoLisServer.Services
         {
             try
             {
-                var playersList = session.Players.Select(p => new GamePlayer
+                var playersList = session.Players.Select(matchPlayer => new GamePlayer
                 {
-                    Nickname = p.Nickname,
-                    AvatarName = p.AvatarName,
-                    CardCount = p.Hand.Count
+                    Nickname = matchPlayer.Nickname,
+                    AvatarName = matchPlayer.AvatarName,
+                    CardCount = matchPlayer.Hand.Count
                 }).ToList();
 
                 callback.ReceivePlayerList(playersList);

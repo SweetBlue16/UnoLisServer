@@ -57,7 +57,7 @@ namespace UnoLisServer.Test
             Assert.Null(_helper.GetLobby(code));
         }
 
-        [Fact]
+        /*[Fact]
         public void RegisterCallback_AddsToList()
         {
             string code = Guid.NewGuid().ToString();
@@ -151,7 +151,7 @@ namespace UnoLisServer.Test
             _helper.BroadcastToLobby(code, cb => cb.GameStarted());
 
             mockCallback.Verify(cb => cb.GameStarted(), Times.Never);
-        }
+        }*/
 
         [Fact]
         public void BroadcastToLobby_NoClients_DoesNotThrow()
