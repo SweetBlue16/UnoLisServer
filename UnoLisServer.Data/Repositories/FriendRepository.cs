@@ -29,45 +29,82 @@ namespace UnoLisServer.Data.Repositories
 
         public async Task<Player> GetPlayerByNicknameAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return null;
+            }
+
             using (var context = _contextFactory())
             {
-                return await context.Player.FirstOrDefaultAsync(p => p.nickname == nickname);
+                try
+                {
+                    return await context.Player
+                        .AsNoTracking() 
+                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                }
+                catch (SqlException sqlEx)
+                {
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
+                    throw;
+                }
+                catch (EntityCommandExecutionException entityCmdEx)
+                {
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching player.", entityCmdEx);
+                    throw new Exception("DataStore_Unavailable", entityCmdEx);
+                }
+                catch (TimeoutException timeoutEx)
+                {
+                    Logger.Warn($"[DATA-TIMEOUT] Timeout fetching player.");
+                    throw new Exception("Server_Busy", timeoutEx);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[CRITICAL] Unexpected error fetching player.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
+                }
             }
         }
 
         public async Task<List<Player>> GetFriendsEntitiesAsync(string nickname)
         {
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return new List<Player>();
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
                     var player = await context.Player
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(p => p.nickname == nickname);
+                        .FirstOrDefaultAsync(playerFriend => playerFriend.nickname == nickname);
 
                     if (player == null)
                     {
+                        Logger.Warn($"[DATA] Player not found when fetching friends.");
                         return new List<Player>();
                     }
 
                     var friendships = await context.FriendList
                         .AsNoTracking()
-                        .Include(f => f.Player)
-                        .Include(f => f.Player1) 
-                        .Where(fl => fl.friendRequest == true &&
-                                     (fl.Player_idPlayer == player.idPlayer || fl.Player_idPlayer1 == player.idPlayer))
+                        .Include(friend => friend.Player)
+                        .Include(friend => friend.Player1)
+                        .Where(friendList => friendList.friendRequest == true &&
+                                     (friendList.Player_idPlayer == player.idPlayer ||
+                                     friendList.Player_idPlayer1 == player.idPlayer))
                         .ToListAsync();
 
                     var friends = new List<Player>();
-                    foreach (var f in friendships)
+                    foreach (var friend in friendships)
                     {
-                        if (f.Player_idPlayer == player.idPlayer)
+                        if (friend.Player_idPlayer == player.idPlayer)
                         {
-                            friends.Add(f.Player1);
+                            friends.Add(friend.Player1);
                         }
                         else
                         {
-                            friends.Add(f.Player);
+                            friends.Add(friend.Player);
                         }
                     }
 
@@ -75,67 +112,76 @@ namespace UnoLisServer.Data.Repositories
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error de conexión/SQL al obtener amigos de {nickname}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException cmdEx)
                 {
-                    Logger.Error($"[DB] Error ejecutando comando EF para amigos de {nickname}", cmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching friends.", cmdEx);
+                    throw new Exception("DataStore_Unavailable", cmdEx);
                 }
                 catch (TimeoutException timeEx)
                 {
-                    Logger.Error($"[DB] Timeout al obtener amigos de {nickname}", timeEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Timeout fetching friends.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general al obtener amigos de {nickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching friends.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
 
         public async Task<List<FriendList>> GetPendingRequestsEntitiesAsync(string targetNickname)
         {
+            if (string.IsNullOrWhiteSpace(targetNickname))
+            {
+                return new List<FriendList>();
+            }
+
             using (var context = _contextFactory())
             {
                 try
                 {
-                    var target = await context.Player
+                    var targetId = await context.Player
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(p => p.nickname == targetNickname);
+                        .Where(player => player.nickname == targetNickname)
+                        .Select(player => player.idPlayer)
+                        .FirstOrDefaultAsync();
 
-                    if (target == null)
+                    if (targetId == 0)
                     {
+                        Logger.Warn($"[DATA] Target player not found fetching requests.");
                         return new List<FriendList>();
                     }
 
                     return await context.FriendList
                         .AsNoTracking()
-                        .Include(fl => fl.Player)
-                        .Where(fl => fl.Player_idPlayer1 == target.idPlayer && fl.friendRequest == false)
+                        .Include(friendList => friendList.Player)
+                        .Where(friendList => friendList.Player_idPlayer1 == 
+                        targetId && friendList.friendRequest == false)
                         .ToListAsync();
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error SQL al obtener solicitudes de {targetNickname}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
                 }
                 catch (EntityCommandExecutionException cmdEx)
                 {
-                    Logger.Error($"[DB] Error EF al obtener solicitudes de {targetNickname}", cmdEx);
-                    throw;
+                    Logger.Error($"[EF-CRITICAL] Provider failed fetching requests.", cmdEx);
+                    throw new Exception("DataStore_Unavailable", cmdEx);
                 }
                 catch (TimeoutException timeEx)
                 {
-                    Logger.Error($"[DB] Timeout al obtener solicitudes de {targetNickname}", timeEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Timeout fetching requests.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general al obtener solicitudes de {targetNickname}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error fetching requests.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -148,24 +194,31 @@ namespace UnoLisServer.Data.Repositories
                 {
                     return await context.FriendList
                         .AsNoTracking() 
-                        .FirstOrDefaultAsync(fl =>
-                            (fl.Player_idPlayer == userId1 && fl.Player_idPlayer1 == userId2) ||
-                            (fl.Player_idPlayer1 == userId1 && fl.Player_idPlayer == userId2));
+                        .FirstOrDefaultAsync(friendList =>
+                            (friendList.Player_idPlayer == userId1 && friendList.Player_idPlayer1 == userId2) ||
+                            (friendList.Player_idPlayer1 == userId1 && friendList.Player_idPlayer == userId2));
                 }
                 catch (SqlException sqlEx)
                 {
-                    Logger.Error($"[DB] Error SQL buscando relación entre IDs {userId1} y {userId2}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
+                }
+                catch (EntityCommandExecutionException cmdEx)
+                {
+                    Logger.Error($"[EF-CRITICAL] Provider failed checking friendship " +
+                        $"between {userId1} and {userId2}.", cmdEx);
+                    throw new Exception("DataStore_Unavailable", cmdEx);
                 }
                 catch (TimeoutException timeEx)
                 {
-                    Logger.Error($"[DB] Timeout buscando relación entre IDs {userId1} y {userId2}", timeEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Timeout checking friendship between {userId1} and {userId2}.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[DB] Error general buscando relación entre IDs {userId1} y {userId2}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error checking friendship " +
+                        $"between {userId1} and {userId2}.", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -195,29 +248,37 @@ namespace UnoLisServer.Data.Repositories
                     transaction.Rollback();
                     var errorMessages = valEx.EntityValidationErrors
                         .SelectMany(x => x.ValidationErrors)
-                        .Select(x => $"Propiedad: {x.PropertyName} Error: {x.ErrorMessage}");
+                        .Select(x => $"Property: {x.PropertyName} Error: {x.ErrorMessage}");
                     var fullError = string.Join("; ", errorMessages);
 
-                    Logger.Error($"[DB] Error de validación al crear solicitud {requesterId}->{targetId}: {fullError}", valEx);
-                    throw new EntityException($"Error de validación de datos: {fullError}", valEx);
+                    Logger.Error($"[DATA-VALIDATION] Entity validation failed creating request" +
+                        $" {requesterId}->{targetId}: {fullError}", valEx); 
+                    throw new Exception("Invalid_Data_Format", valEx);
                 }
                 catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error de actualización (FK/Unique) al crear solicitud {requesterId}->{targetId}", dbEx);
-                    throw;
+                    Logger.Error($"[DATA-CONSTRAINT] Constraint violation creating request " +
+                        $"{requesterId}->{targetId}.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
                 }
                 catch (SqlException sqlEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error SQL crítico al crear solicitud {requesterId}->{targetId}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
+                }
+                catch (TimeoutException timeEx)
+                {
+                    transaction.Rollback();
+                    Logger.Warn($"[DATA-TIMEOUT] Transaction timed out creating request {requesterId}->{targetId}.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error general inesperado al crear solicitud", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error creating request {requesterId}->{targetId}", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -240,33 +301,32 @@ namespace UnoLisServer.Data.Repositories
                     }
                     else
                     {
-                        Logger.Warn($"[DB] Se intentó aceptar la solicitud {friendshipId} pero no existe.");
+                        Logger.Warn($"[DATA] Attempted to accept non-existent request ID {friendshipId}."); 
                         transaction.Rollback();
                     }
                 }
                 catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error de actualización al aceptar solicitud {friendshipId}", dbEx);
-                    throw;
+                    Logger.Error($"[DATA-CONSTRAINT] Update failed accepting request {friendshipId}.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
                 }
                 catch (SqlException sqlEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error SQL al aceptar solicitud {friendshipId}", sqlEx);
-                    throw;
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                 }
                 catch (TimeoutException timeEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Timeout al aceptar solicitud {friendshipId}", timeEx);
-                    throw;
+                    Logger.Warn($"[DATA-TIMEOUT] Transaction timed out accepting request {friendshipId}.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error general al aceptar solicitud {friendshipId}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error accepting request {friendshipId}", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }
@@ -289,27 +349,34 @@ namespace UnoLisServer.Data.Repositories
                     }
                     else
                     {
-                        Logger.Warn($"[DB] Se intentó eliminar la relación {friendshipId} pero no existe.");
+                        Logger.Warn($"[DATA] Attempted to remove non-existent friendship ID {friendshipId}.");
                         transaction.Rollback();
                     }
                 }
                 catch (DbUpdateException dbEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error de restricción al eliminar relación {friendshipId}", dbEx);
-                    throw;
+                    Logger.Error($"[DATA-CONSTRAINT] Failed to remove friendship {friendshipId}. Constraint " +
+                        $"violation.", dbEx);
+                    throw new Exception("Data_Conflict", dbEx);
                 }
                 catch (SqlException sqlEx)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error SQL al eliminar relación {friendshipId}", sqlEx);
+                    SqlErrorHandler.HandleAndThrow(sqlEx);
                     throw;
+                }
+                catch (TimeoutException timeEx)
+                {
+                    transaction.Rollback();
+                    Logger.Warn($"[DATA-TIMEOUT] Transaction timed out removing friendship {friendshipId}.");
+                    throw new Exception("Server_Busy", timeEx);
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Logger.Error($"[DB] Error general al eliminar relación {friendshipId}", ex);
-                    throw;
+                    Logger.Error($"[CRITICAL] Unexpected error removing friendship {friendshipId}", ex);
+                    throw new Exception("Server_Internal_Error", ex);
                 }
             }
         }

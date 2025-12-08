@@ -38,7 +38,11 @@ namespace UnoLisServer.Services
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
         }
 
@@ -51,43 +55,52 @@ namespace UnoLisServer.Services
 
             try
             {
+                if (_callback == null)
+                {
+                    Logger.Warn($"[FRIENDS] Cannot subscribe. Callback channel is null.");
+                    return;
+                }
+
                 SessionManager.AddSession(nickname, _callback);
-                Logger.Log($"[FRIENDS] Player {nickname} subscribed to updates.");
+                Logger.Log($"[FRIENDS] Player subscribed to updates.");
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[FRIENDS] Communication error subscribing {nickname}: {commEx.Message}");
+                Logger.Warn($"[WCF] Communication error subscribing: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[FRIENDS] Timeout subscribing {nickname}: {timeEx.Message}");
+                Logger.Warn($"[WCF] Timeout subscribing: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error subscribing {nickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error subscribing", ex);
             }
         }
 
         public void UnsubscribeFromFriendUpdates(string nickname)
         {
-            if (string.IsNullOrWhiteSpace(nickname)) return;
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
 
             try
             {
                 SessionManager.RemoveSession(nickname);
-                Logger.Log($"[FRIENDS] Player {nickname} unsubscribed.");
+                Logger.Log($"[FRIENDS] Player unsubscribed.");
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"[FRIENDS] Communication error unsubscribing {nickname}: {commEx.Message}");
+                Logger.Warn($"[FRIENDS] Communication error unsubscribing: {commEx.Message}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[FRIENDS] Timeout unsubscribing {nickname}: {timeEx.Message}");
+                Logger.Warn($"[FRIENDS] Timeout unsubscribing: {timeEx.Message}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Error unsubscribing {nickname}", ex);
+                Logger.Error($"[FRIENDS] Error unsubscribing", ex);
             }
         }
 
@@ -102,28 +115,28 @@ namespace UnoLisServer.Services
             {
                 var friendsEntities = await _friendRepository.GetFriendsEntitiesAsync(nickname);
 
-                var result = friendsEntities.Select(f => new FriendData
+                var result = friendsEntities.Select(friend => new FriendData
                 {
-                    FriendNickname = f.nickname,
-                    IsOnline = SessionManager.IsOnline(f.nickname),
+                    FriendNickname = friend.nickname,
+                    IsOnline = SessionManager.IsOnline(friend.nickname),
                     StatusMessage = "Friend"
                 }).ToList();
 
                 return result;
             }
-            catch (TimeoutException timeEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Warn($"[FRIENDS] DB Timeout fetching list for {nickname}: {timeEx.Message}");
+                Logger.Error($"[CRITICAL] Failed fetching friend list. Data Store unavailable.", ex);
                 return new List<FriendData>();
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "Server_Busy")
             {
-                Logger.Error($"[FRIENDS] SQL Error fetching list for {nickname}", sqlEx);
+                Logger.Warn($"[WARN] Timeout fetching friend list.");
                 return new List<FriendData>();
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected Error fetching list for {nickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error fetching friend list.", ex);
                 return new List<FriendData>();
             }
         }
@@ -139,26 +152,31 @@ namespace UnoLisServer.Services
             {
                 var requestEntities = await _friendRepository.GetPendingRequestsEntitiesAsync(nickname);
 
-                return requestEntities.Select(r => new FriendRequestData
+                return requestEntities.Select(request => new FriendRequestData
                 {
-                    RequesterNickname = r.Player.nickname,
+                    RequesterNickname = request.Player?.nickname ?? "Unknown",
                     TargetNickname = nickname,
-                    FriendListId = r.idFriendList
+                    FriendListId = request.idFriendList
                 }).ToList();
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[FRIENDS] Timeout getting pending requests for {nickname}: {timeEx.Message}");
+                Logger.Warn($"[FRIENDS] Timeout getting pending requests: {timeEx.Message}");
                 return new List<FriendRequestData>();
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Error($"[FRIENDS] SQL Error getting pending requests for {nickname}", sqlEx);
+                Logger.Error($"[CRITICAL] Failed fetching pending requests. Data Store unavailable.", ex);
+                return new List<FriendRequestData>();
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout fetching pending requests.");
                 return new List<FriendRequestData>();
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error getting pending requests for {nickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error fetching pending requests.", ex);
                 return new List<FriendRequestData>();
             }
         }
@@ -167,7 +185,7 @@ namespace UnoLisServer.Services
         {
             if (UserHelper.IsGuest(requesterNickname) || UserHelper.IsGuest(targetNickname))
             {
-                Logger.Warn($"Guest attempt to friend request: {requesterNickname} -> {targetNickname}");
+                Logger.Warn($"[FRIENDS] Guest attempt to friend request");
                 return FriendRequestResult.Failed;
             }
 
@@ -205,30 +223,37 @@ namespace UnoLisServer.Services
                 };
 
                 NotifyRequestReceived(requestData);
-                Logger.Log($"[FRIENDS] Request sent: {requesterNickname} -> {targetNickname}");
+                Logger.Log($"[FRIENDS] Request sent");
 
                 return FriendRequestResult.Success;
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[FRIENDS] Timeout sending request {requesterNickname}->{targetNickname}: {timeEx.Message}");
+                Logger.Warn($"[FRIENDS] Timeout sending request: {timeEx.Message}");
                 return FriendRequestResult.Failed;
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Error($"[FRIENDS] SQL Error sending request {requesterNickname}->{targetNickname}", sqlEx);
+                Logger.Error($"[CRITICAL] Failed sending friend request. DB Unavailable.", ex);
+                return FriendRequestResult.Failed; 
+            }
+            catch (Exception ex) when (ex.Message == "Data_Conflict")
+            {
+                Logger.Warn($"[DATA] Conflict creating friend request. Request likely exists.");
+                return FriendRequestResult.RequestAlreadySent;
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout sending friend request.");
                 return FriendRequestResult.Failed;
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error sending request {requesterNickname}->{targetNickname}", ex);
+                Logger.Error($"[CRITICAL] Unexpected error sending request", ex);
                 return FriendRequestResult.Failed;
             }
         }
 
-        /// <summary>
-        /// Auxiliar method to analyze existing relationship status.
-        /// </summary>
         private FriendRequestResult AnalyzeRelationshipStatus(FriendList existingRel, int requesterId)
         {
             if (existingRel == null)
@@ -251,6 +276,11 @@ namespace UnoLisServer.Services
 
         public async Task<bool> AcceptFriendRequestAsync(FriendRequestData request)
         {
+            if (request == null)
+            {
+                return false;
+            }
+
             try
             {
                 var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
@@ -265,7 +295,7 @@ namespace UnoLisServer.Services
 
                 if (friendRelation == null || friendRelation.friendRequest == true)
                 {
-                    Logger.Warn($"[FRIENDS] Attempt to accept invalid/existing request: {request.RequesterNickname}->{request.TargetNickname}");
+                    Logger.Warn($"[FRIENDS] Attempt to accept invalid/existing request");
                     return false;
                 }
 
@@ -279,20 +309,35 @@ namespace UnoLisServer.Services
                 Logger.Warn($"[FRIENDS] Timeout accepting request: {timeEx.Message}");
                 return false;
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Error($"[FRIENDS] SQL Error accepting request", sqlEx);
+                Logger.Error($"[CRITICAL] Accept request failed. Data Store unavailable.", ex);
+                return false;
+            }
+            catch (Exception ex) when (ex.Message == "Data_Conflict")
+            {
+                Logger.Warn($"[DATA] Conflict accepting request. It might have been modified concurrently.");
+                return false;
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout accepting request.");
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error accepting request", ex);
+                Logger.Error($"[CRITICAL] Unexpected error accepting request.", ex);
                 return false;
             }
         }
 
         public async Task<bool> RejectFriendRequestAsync(FriendRequestData request)
         {
+            if (request == null)
+            {
+                return false;
+            }
+
             try
             {
                 var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
@@ -307,13 +352,11 @@ namespace UnoLisServer.Services
 
                 if (friendRelation == null)
                 {
-                    Logger.Warn($"[FRIENDS] Cannot reject request {request.RequesterNickname}->{request.TargetNickname}: Relation not found.");
+                    Logger.Warn($"[FRIENDS] Cannot reject request: Relation not found.");
                     return false;
                 }
 
                 await _friendRepository.RemoveFriendshipEntryAsync(friendRelation.idFriendList);
-
-                Logger.Log($"[FRIENDS] Request rejected by {request.TargetNickname}");
                 return true;
             }
             catch (TimeoutException timeEx)
@@ -321,20 +364,30 @@ namespace UnoLisServer.Services
                 Logger.Warn($"[FRIENDS] Timeout rejecting request: {timeEx.Message}");
                 return false;
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Error($"[FRIENDS] SQL Error rejecting request", sqlEx);
+                Logger.Error($"[CRITICAL] Reject request failed. Data Store unavailable.", ex);
+                return false;
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout rejecting request.");
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error rejecting request", ex);
+                Logger.Error($"[CRITICAL] Unexpected error rejecting request.", ex);
                 return false;
             }
         }
 
         public async Task<bool> RemoveFriendAsync(FriendRequestData request)
         {
+            if (request == null)
+            {
+                return false;
+            }
+
             try
             {
                 var requesterPlayer = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
@@ -342,20 +395,22 @@ namespace UnoLisServer.Services
 
                 if (requesterPlayer == null || targetPlayer == null)
                 {
+                    Logger.Warn($"[FRIENDS] Remove failed: One of the users not found.");
                     return false;
                 }
 
-                var relation = await _friendRepository.GetFriendshipEntryAsync(requesterPlayer.idPlayer, targetPlayer.idPlayer);
+                var relation = await _friendRepository.GetFriendshipEntryAsync(requesterPlayer.idPlayer, 
+                    targetPlayer.idPlayer);
 
                 if (relation == null || relation.friendRequest != true)
                 {
-                    Logger.Warn($"[FRIENDS] Attempt to remove non-friend relationship: {request.RequesterNickname}<->{request.TargetNickname}");
+                    Logger.Warn($"[FRIENDS] Attempt to remove non-friend relationship");
                     return false;
                 }
 
                 await _friendRepository.RemoveFriendshipEntryAsync(relation.idFriendList);
                 await NotifyFriendshipUpdateAsync(request.RequesterNickname, request.TargetNickname);
-                Logger.Log($"[FRIENDS] Friendship removed: {request.RequesterNickname} and {request.TargetNickname}");
+                Logger.Log($"[FRIENDS] Friendship removed");
                 
                 return true;
             }
@@ -364,14 +419,19 @@ namespace UnoLisServer.Services
                 Logger.Warn($"[FRIENDS] Timeout removing friend: {timeEx.Message}");
                 return false;
             }
-            catch (SqlException sqlEx)
+            catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
-                Logger.Error($"[FRIENDS] SQL Error removing friend", sqlEx);
+                Logger.Error($"[CRITICAL] Remove friend failed. Data Store unavailable.", ex);
+                return false;
+            }
+            catch (Exception ex) when (ex.Message == "Server_Busy")
+            {
+                Logger.Warn($"[WARN] Timeout removing friend.");
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS] Unexpected error removing friend", ex);
+                Logger.Error($"[CRITICAL] Unexpected error removing friend.", ex);
                 return false;
             }
         }
@@ -381,7 +441,7 @@ namespace UnoLisServer.Services
             TryNotifyCallback(request.TargetNickname, callback =>
             {
                 callback.FriendRequestReceived(request);
-                Logger.Log($"[FRIENDS-NOTIFY] Notification sent to {request.TargetNickname}");
+                Logger.Log($"[FRIENDS-NOTIFY] Notification sent");
             });
         }
 
@@ -393,7 +453,10 @@ namespace UnoLisServer.Services
 
         private async Task NotifyUserOfListUpdateAsync(string nickname)
         {
-            if (string.IsNullOrWhiteSpace(nickname)) return;
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
 
             try
             {
@@ -401,7 +464,7 @@ namespace UnoLisServer.Services
 
                 if (updatedList == null)
                 {
-                    Logger.Warn($"[FRIENDS-NOTIFY] Aborted notification to {nickname}: Friends list retrieved is null.");
+                    Logger.Warn($"[FRIENDS-NOTIFY] Aborted notification. Friends list retrieved is null.");
                     return;
                 }
 
@@ -410,22 +473,21 @@ namespace UnoLisServer.Services
                     callback.FriendListUpdated(updatedList);
                 });
 
-                Logger.Log($"[FRIENDS-NOTIFY] List update successfully sent to {nickname}");
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"[FRIENDS-NOTIFY] Operation timed out for {nickname}: {timeEx.Message}");
+                Logger.Warn($"[FRIENDS-NOTIFY] Operation timed out: {timeEx.Message}");
             }
             catch (AggregateException aggEx)
             {
                 foreach (var inner in aggEx.InnerExceptions)
                 {
-                    Logger.Error($"[FRIENDS-NOTIFY] Async error for {nickname}: {inner.Message}", inner);
+                    Logger.Error($"[FRIENDS-NOTIFY] Async error: {inner.Message}", inner);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error($"[FRIENDS-NOTIFY] Critical error updating list for {nickname}", ex);
+                Logger.Error($"[FRIENDS-NOTIFY] Unexpected error updating list", ex);
             }
         }
 
@@ -453,17 +515,17 @@ namespace UnoLisServer.Services
             }
             catch (CommunicationException commEx)
             {
-                Logger.Warn($"Communication failed notifying {nickname}: {commEx.Message}");
+                Logger.Warn($"Communication failed notifying: {commEx.Message}");
                 SessionManager.RemoveSession(nickname);
             }
             catch (TimeoutException timeEx)
             {
-                Logger.Warn($"Timeout notifying {nickname}: {timeEx.Message}");
+                Logger.Warn($"Timeout notifying: {timeEx.Message}");
                 SessionManager.RemoveSession(nickname);
             }
             catch (Exception ex)
             {
-                Logger.Error($"Unexpected error notifying {nickname}", ex);
+                Logger.Error($"Unexpected error notifying", ex);
             }
         }
     }
