@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.ServiceModel;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;

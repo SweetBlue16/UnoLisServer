@@ -9,6 +9,7 @@ namespace UnoLisServer.Services.Validators
 {
     public static class ProfileEditValidator
     {
+        private const int ValidEmailPartCount = 2;
         private static readonly Regex _strongPasswordRegex = new Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&\-_])[A-Za-z\d@$!%*?&\-_]{8,16}$");
 
         public static void ValidateProfileFormats(ProfileData data)
@@ -33,14 +34,16 @@ namespace UnoLisServer.Services.Validators
         private static void ValidateEmail(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
+            {
                 throw new ValidationException(MessageCode.InvalidEmailFormat, "El email es requerido.");
+            }
 
             try
             {
                 var mailAddress = new MailAddress(email);
 
                 var parts = mailAddress.Host.Split('.');
-                if (parts.Length < 2)
+                if (parts.Length < ValidEmailPartCount)
                 {
                     throw new FormatException("El dominio debe tener al menos un punto.");
                 }

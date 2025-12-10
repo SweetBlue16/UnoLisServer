@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
@@ -15,13 +12,9 @@ namespace UnoLisServer.Services.ManagerInterfaces
     public interface ILobbyManager
     {
         Task<CreateMatchResponse> CreateLobbyAsync(MatchSettings settings);
-
         Task<JoinMatchResponse> JoinLobbyAsync(string lobbyCode, string nickname);
-
         Task<bool> SetLobbyBackgroundAsync(string lobbyCode, string backgroundName);
-
         LobbySettings GetLobbySettings(string lobbyCode); 
-
         void RegisterConnection(string lobbyCode, string nickname);
         void RemoveConnection(string lobbyCode, string nickname, ILobbyDuplexCallback cachedCallback = null);
         Task HandleReadyStatusAsync(string lobbyCode, string nickname, bool isReady);

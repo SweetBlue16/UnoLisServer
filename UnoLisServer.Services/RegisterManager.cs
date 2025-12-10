@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;

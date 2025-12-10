@@ -5,7 +5,6 @@ using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Common.Enums;
-using System.Data.SqlClient;
 using UnoLisServer.Services.Validators;
 using UnoLisServer.Common.Exceptions;
 
@@ -117,7 +116,10 @@ namespace UnoLisServer.Services
 
         private ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
         {
-            if (banInfo == null) return null;
+            if (banInfo == null)
+            {
+                return null;
+            }
 
             return new ResponseInfo<object>(
                 MessageCode.PlayerBanned,

@@ -541,7 +541,10 @@ namespace UnoLisServer.Services
                     break;
                 case CardValue.Reverse:
                     session.ReverseDirection();
-                    if (session.Players.Count == pairPlayers) skipNext = true;
+                    if (session.Players.Count == pairPlayers)
+                    {
+                        skipNext = true;
+                    }
                     break;
                 case CardValue.DrawTwo:
                     ExecuteDrawForNextPlayer(session, pairPlayers, lobbyCode);
@@ -906,20 +909,38 @@ namespace UnoLisServer.Services
             int quadPlayers = 4;
             if (totalPlayers == pairPlayers)
             {
-                if (rankIndex == 0) return 100;
+                if (rankIndex == 0)
+                {
+                    return 100;
+                }
                 return 0;
             }
             else if (totalPlayers == trioPlayers)
             {
-                if (rankIndex == 0) return 300;
-                if (rankIndex == 1) return 100;
+                if (rankIndex == 0)
+                {
+                    return 300;
+                }
+                if (rankIndex == 1)
+                {
+                    return 100;
+                }
                 return 0;
             }
             else if (totalPlayers == quadPlayers) 
             {
-                if (rankIndex == 0) return 500;
-                if (rankIndex == 1) return 300;
-                if (rankIndex == 2) return 200;
+                if (rankIndex == 0)
+                {
+                    return 500;
+                }
+                if (rankIndex == 1)
+                {
+                    return 300;
+                }
+                if (rankIndex == 2)
+                {
+                    return 200;
+                }
                 return 50;
             }
 

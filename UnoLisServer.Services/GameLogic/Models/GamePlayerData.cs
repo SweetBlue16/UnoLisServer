@@ -15,6 +15,7 @@ namespace UnoLisServer.Services.GameLogic.Models
         public GamePlayerData()
         {
         }
+
         public GamePlayerData(string nickname, string avatarName)
         {
             Nickname = nickname;

@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity.Core;
-using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
-using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
@@ -15,7 +10,6 @@ using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;
-using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
@@ -24,6 +18,7 @@ namespace UnoLisServer.Services
     {
         private readonly IProfileViewCallback _callback;
         private readonly IPlayerRepository _playerRepository;
+
         public ProfileViewManager() : this(new PlayerRepository())
         {
         }
@@ -178,7 +173,7 @@ namespace UnoLisServer.Services
                 TikTokUrl = null
             };
 
-            Logger.Log($"[PROFILE] Generated dummy profile for guest)");
+            Logger.Log($"[PROFILE] Generated dummy profile for guest.");
 
             return new ResponseInfo<ProfileData>(
                 MessageCode.ProfileDataRetrieved,

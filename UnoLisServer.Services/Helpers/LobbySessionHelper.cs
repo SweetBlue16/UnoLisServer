@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using UnoLisServer.Common.Helpers;
-using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Contracts.Models;
 
@@ -46,7 +45,10 @@ namespace UnoLisServer.Services.Helpers
 
         public bool LobbyExists(string code)
         {
-            lock (_lock) return _activeLobbies.ContainsKey(code);
+            lock (_lock)
+            {
+                return _activeLobbies.ContainsKey(code);
+            }
         }
 
         public void RemoveLobby(string code)

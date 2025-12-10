@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;

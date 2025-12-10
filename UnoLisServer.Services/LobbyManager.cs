@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Contracts.Models;
-using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services.Helpers;

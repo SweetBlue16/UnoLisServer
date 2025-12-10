@@ -6,6 +6,8 @@ namespace UnoLisServer.Services.Validators
 {
     public static class ChatValidator
     {
+        private const int MaxMessageLength = 255;
+
         public static void ValidateMessage(ChatMessageData data)
         {
             if (data == null)
@@ -23,7 +25,7 @@ namespace UnoLisServer.Services.Validators
                 throw new ValidationException(MessageCode.EmptyFields, "No se puede enviar un mensaje vacío.");
             }
 
-            if (data.Message.Length > 255)
+            if (data.Message.Length > MaxMessageLength)
             {
                 throw new ValidationException(MessageCode.OperationNotSupported, "El mensaje excede los 255 caracteres.");
             }

@@ -12,6 +12,8 @@ namespace UnoLisServer.Services.Validators
 {
     public static class LoginValidator
     {
+        private const int HoursInDay = 24;
+
         public static void ValidateCredentials(AuthCredentials credentials)
         {
             if (credentials == null ||
@@ -67,7 +69,7 @@ namespace UnoLisServer.Services.Validators
         private static BanInfo MapSanctionToBanInfo(Sanction sanction)
         {
             var remainingTime = sanction.sanctionEndDate.Value - DateTime.UtcNow;
-            var formattedTime = remainingTime.TotalHours >= 24
+            var formattedTime = remainingTime.TotalHours >= HoursInDay
                 ? $"{(int)remainingTime.TotalDays}d {remainingTime.Hours}h"
                 : $"{(int)remainingTime.TotalHours}h {remainingTime.Minutes}m";
 

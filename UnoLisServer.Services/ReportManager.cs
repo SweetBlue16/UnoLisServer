@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
 using System.ServiceModel;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;

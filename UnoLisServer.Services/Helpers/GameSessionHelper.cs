@@ -57,7 +57,6 @@ namespace UnoLisServer.Services.Helpers
             }
         }
 
-
         public void RegisterCallback(string lobbyCode, string nickname, IGameplayCallback callback)
         {
             lock (_lock)
@@ -111,7 +110,10 @@ namespace UnoLisServer.Services.Helpers
                 }
             }
 
-            if (targets == null) return;
+            if (targets == null)
+            {
+                return;
+            }
 
             foreach (var kvp in targets)
             {
@@ -152,7 +154,6 @@ namespace UnoLisServer.Services.Helpers
                 Logger.Error($"[GAME-BROADCAST] Critical error executing action in {lobbyCode}", ex);
                 Logger.Warn($"[GAME-SEND] Error sending to {nickname}: {ex.Message}");
                 HandleDisconnection(lobbyCode, nickname);
-                
             }
         }
 

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.ServiceModel;
-using UnoLisServer.Common.Enums;
-using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;

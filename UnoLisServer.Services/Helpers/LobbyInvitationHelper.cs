@@ -4,7 +4,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Helpers;
-using UnoLisServer.Contracts.Models;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;   
@@ -26,13 +25,17 @@ namespace UnoLisServer.Services.Helpers
             _playerRepository = playerRepo;
             _notificationSender = notificationSender;
         }
+
         public LobbyInvitationHelper() : this(new PlayerRepository(), NotificationSender.Instance)
         {
         }
 
         public async Task<bool> SendInvitationsAsync(string lobbyCode, string senderNickname, List<string> invitedNicknames)
         {
-            if (invitedNicknames == null || !invitedNicknames.Any()) return false;
+            if (invitedNicknames == null || !invitedNicknames.Any())
+            {
+                return false;
+            }
 
             try
             {
@@ -52,7 +55,9 @@ namespace UnoLisServer.Services.Helpers
             catch (AggregateException aggEx)
             {
                 foreach (var inner in aggEx.InnerExceptions)
+                {
                     Logger.Error($"[INVITATIONS] Async error: {inner.Message}", inner);
+                }
                 return false;
             }
             catch (TimeoutException timeEx)

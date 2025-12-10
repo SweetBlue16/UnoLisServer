@@ -39,7 +39,10 @@ namespace UnoLisServer.Services
 
         public void ConnectToLobby(string lobbyCode, string nickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname)) return;
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                return;
+            }
 
             lock (_lock)
             {

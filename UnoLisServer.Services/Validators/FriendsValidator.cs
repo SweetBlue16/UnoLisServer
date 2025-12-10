@@ -1,7 +1,4 @@
-﻿using UnoLisServer.Common.Exceptions;
-using UnoLisServer.Contracts.DTOs;
-
-namespace UnoLisServer.Services.Validators
+﻿namespace UnoLisServer.Services.Validators
 {
     public static class FriendsValidator
     {

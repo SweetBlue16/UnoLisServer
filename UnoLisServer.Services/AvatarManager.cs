@@ -80,7 +80,9 @@ namespace UnoLisServer.Services
             try
             {
                 if (_callback != null && responseInfo != null)
+                {
                     ResponseHelper.SendResponse(_callback.AvatarsDataReceived, responseInfo);
+                }
             }
             catch (Exception sendEx)
             {
@@ -149,7 +151,9 @@ namespace UnoLisServer.Services
             try
             {
                 if (_callback != null && responseInfo != null)
+                {
                     ResponseHelper.SendResponse(_callback.AvatarUpdateResponse, responseInfo);
+                }
             }
             catch (Exception sendEx)
             {

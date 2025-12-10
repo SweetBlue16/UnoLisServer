@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
 using UnoLisServer.Data.RepositoryInterfaces;
-using UnoLisServer.Services.Providers;
 using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services

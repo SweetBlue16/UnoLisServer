@@ -70,7 +70,9 @@ namespace UnoLisServer.Services
         public static ISessionCallback GetSession(string nickname)
         {
             if (string.IsNullOrWhiteSpace(nickname))
+            {
                 throw new ArgumentNullException(nameof(nickname));
+            }
 
             lock (_lock)
             {

@@ -6,6 +6,7 @@ namespace UnoLisServer.Services.Providers
     {
         IChatCallback GetCallback();
     }
+
     /// <summary>
     ///  Manages the retrieval of the WCF chat callback channel, isolated for easier testing.
     ///  </summary>

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
@@ -11,6 +10,8 @@ namespace UnoLisServer.Services.Validators
 {
     public class ReportValidator
     {
+        private const int ReportCooldownHours = 24;
+
         public bool ValidateRequest(Player reporter, Player reported, IReportCallback callback)
         {
             if (reported == null || reporter == null)
@@ -29,7 +30,7 @@ namespace UnoLisServer.Services.Validators
 
         public bool CheckReportFrequency(int reportedId, int reporterId, IReportCallback callback)
         {
-            var cutoff = DateTime.UtcNow.AddHours(-24);
+            var cutoff = DateTime.UtcNow.AddHours(-ReportCooldownHours);
 
             var reportRepository = new ReportRepository(() => new UNOContext());
             bool exists = reportRepository.HasRecentReport(reporterId, reportedId);
