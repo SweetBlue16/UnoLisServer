@@ -39,7 +39,7 @@ namespace UnoLisServer.Data.Repositories
         {
             if (string.IsNullOrWhiteSpace(nickname))
             {
-                return null;
+                return new Player();
             }
 
             using (var context = _contextFactory())
@@ -79,7 +79,7 @@ namespace UnoLisServer.Data.Repositories
 
         public async Task UpdatePlayerProfileAsync(ProfileData data)
         {
-            if(data == null)
+            if (data == null)
             {
                 throw new ArgumentNullException(nameof(data), "Profile data cannot be null.");
             }
@@ -266,7 +266,7 @@ namespace UnoLisServer.Data.Repositories
         {
             if (string.IsNullOrWhiteSpace(nickname))
             {
-                return null;
+                return new List<PlayerAvatar>();
             }
 
             using (var context = _contextFactory())
@@ -281,7 +281,7 @@ namespace UnoLisServer.Data.Repositories
 
                     if (player == null)
                     {
-                        return null;
+                        throw new ValidationException(MessageCode.PlayerNotFound, $"Player not found.");
                     }
 
                     var unlockedAvatarIds = new HashSet<int>(await context.AvatarsUnlocked
@@ -312,6 +312,10 @@ namespace UnoLisServer.Data.Repositories
                     }
 
                     return resultList;
+                }
+                catch (ValidationException)
+                {
+                    throw;
                 }
                 catch (SqlException sqlEx)
                 {
@@ -435,7 +439,7 @@ namespace UnoLisServer.Data.Repositories
         {
             if (string.IsNullOrWhiteSpace(nickname))
             {
-                return null;
+                return new Player();
             }
 
             using (var context = _contextFactory())

@@ -39,7 +39,7 @@ namespace UnoLisServer.Services.Helpers
         {
             lock (_lock)
             {
-                return _activeGames.TryGetValue(lobbyCode, out var game) ? game : null;
+                return _activeGames.TryGetValue(lobbyCode, out var game) ? game : GameSession.Empty;
             }
         }
 

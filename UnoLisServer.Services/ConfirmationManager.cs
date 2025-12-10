@@ -63,7 +63,7 @@ namespace UnoLisServer.Services
                 }
 
                 var pendingData = _pendingRegistrationHelper.GetAndRemovePendingRegistration(email);
-                if (pendingData == null)
+                if (string.IsNullOrWhiteSpace(pendingData.Nickname))
                 {
                     throw new ValidationException(MessageCode.RegistrationDataLost, "Registration session expired. " +
                         "Please register again.");

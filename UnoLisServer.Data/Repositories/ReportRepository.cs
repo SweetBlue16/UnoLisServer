@@ -6,6 +6,7 @@ namespace UnoLisServer.Data.Repositories
 {
     public class ReportRepository : IReportRepository
     {
+        private const int HoursBetweenReports = 24;
         private readonly Func<UNOContext> _contextFactory;
 
         public ReportRepository() : this(() => new UNOContext())
@@ -29,7 +30,7 @@ namespace UnoLisServer.Data.Repositories
         {
             using (var context = _contextFactory())
             {
-                var cutoff = DateTime.UtcNow.AddHours(-24);
+                var cutoff = DateTime.UtcNow.AddHours(-HoursBetweenReports);
                 return context.Report.Any(r =>
                     r.ReporterPlayer_idPlayer == reporterId &&
                     r.ReportedPlayer_idPlayer == reportedId &&

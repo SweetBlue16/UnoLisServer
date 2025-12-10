@@ -27,7 +27,7 @@ namespace UnoLisServer.Data.Repositories
         {
             if (string.IsNullOrWhiteSpace(nickname))
             {
-                return null;
+                return new Player();
             }
 
             using (var context = _contextFactory())

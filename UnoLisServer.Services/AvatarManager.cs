@@ -36,7 +36,7 @@ namespace UnoLisServer.Services
             {
                 var avatars = await _playerRepository.GetPlayerAvatarsAsync(nickname);
 
-                if (avatars == null)
+                if (avatars == null || avatars.Count == 0)
                 {
                     throw new ValidationException(MessageCode.PlayerNotFound, "Player not found.");
                 }
@@ -98,7 +98,7 @@ namespace UnoLisServer.Services
             {
                 var unlockedAvatars = await _playerRepository.GetPlayerAvatarsAsync(safeNickname);
 
-                if (unlockedAvatars == null)
+                if (unlockedAvatars == null || unlockedAvatars.Count == 0)
                 {
                     throw new ValidationException(MessageCode.PlayerNotFound, "Player not found.");
                 }

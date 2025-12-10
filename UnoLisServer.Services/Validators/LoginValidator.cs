@@ -32,7 +32,7 @@ namespace UnoLisServer.Services.Validators
                 var account = context.Account
                     .Include("Player")
                     .FirstOrDefault(a => a.Player.nickname == credentials.Nickname);
-                if (account == null)
+                if (account.idAccount <= 0)
                 {
                     throw new ValidationException(MessageCode.PlayerNotFound,
                         $"No se encontró al jugador {credentials.Nickname}.");
@@ -63,7 +63,7 @@ namespace UnoLisServer.Services.Validators
             {
                 return MapSanctionToBanInfo(activeSanction);
             }
-            return null;
+            return new BanInfo();
         }
 
         private static BanInfo MapSanctionToBanInfo(Sanction sanction)

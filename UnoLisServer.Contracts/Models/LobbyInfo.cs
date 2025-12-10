@@ -28,6 +28,8 @@ namespace UnoLisServer.Contracts.Models
             SelectedBackgroundVideo = "default_video.mp4";
         }
 
+        public LobbyInfo() { }
+
         /// <summary>
         /// Attempts to add a player to this lobby.
         /// </summary>

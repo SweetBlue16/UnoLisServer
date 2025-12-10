@@ -30,7 +30,7 @@ namespace UnoLisServer.Services.Helpers
         private readonly Dictionary<string, List<ChatMessageData>> _chatHistory = new Dictionary<string, List<ChatMessageData>>();
 
         private readonly object _syncLock = new object();
-        private const int MAX_HISTORY_MESSAGES = 50;
+        private const int MaxHistoryMessages = 50;
 
         private ChatSessionHelper() { }
 
@@ -83,7 +83,7 @@ namespace UnoLisServer.Services.Helpers
                 var history = _chatHistory[channelId];
                 history.Add(message);
 
-                if (history.Count > MAX_HISTORY_MESSAGES)
+                if (history.Count > MaxHistoryMessages)
                 {
                     history.RemoveAt(0);
                 }

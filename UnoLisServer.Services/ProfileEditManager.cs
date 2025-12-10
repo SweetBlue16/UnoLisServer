@@ -39,7 +39,7 @@ namespace UnoLisServer.Services
                 ProfileEditValidator.ValidateProfileFormats(data);
 
                 var currentPlayer = await _playerRepository.GetPlayerProfileByNicknameAsync(userNickname);
-                if (currentPlayer == null)
+                if (currentPlayer.idPlayer == 0)
                 {
                     throw new ValidationException(MessageCode.PlayerNotFound, "Player not found.");
                 }

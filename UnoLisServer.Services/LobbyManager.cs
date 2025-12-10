@@ -103,7 +103,7 @@ namespace UnoLisServer.Services
                 LobbyValidator.ValidateJoinRequest(lobbyCode, nickname);
 
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
-                if (lobby == null)
+                if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     Logger.Warn($"[LOBBY] Join attempt failed: Lobby {lobbyCode} not found.");
                     return new JoinMatchResponse { Success = false, Message = "Lobby not found." };
@@ -162,7 +162,7 @@ namespace UnoLisServer.Services
             try
             {
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
-                if (lobby != null)
+                if (lobby != null && !string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     lobby.SelectedBackgroundVideo = backgroundName;
                     return Task.FromResult(true);
@@ -185,7 +185,7 @@ namespace UnoLisServer.Services
             try
             {
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
-                if (lobby != null)
+                if (lobby != null && !string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     return new LobbySettings
                     {
@@ -255,7 +255,7 @@ namespace UnoLisServer.Services
                 _sessionHelper.RegisterCallback(lobbyCode, nickname, lobbyCallback);
 
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
-                if (lobby == null)
+                if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     Logger.Warn($"[LOBBY] Player registered connection but lobby {lobbyCode} not found.");
                     return;
@@ -341,7 +341,7 @@ namespace UnoLisServer.Services
             {
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
 
-                if (lobby == null)
+                if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     Logger.Warn($"[LOBBY] Attempted to remove but lobby {lobbyCode} does not exist.");
                     return;
@@ -378,7 +378,7 @@ namespace UnoLisServer.Services
             try
             {
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
-                if (lobby == null)
+                if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     Logger.Warn($"[LOBBY] Ready status ignored. Lobby {lobbyCode} not found.");
                     return;
@@ -427,10 +427,10 @@ namespace UnoLisServer.Services
 
             bool isValidToStart = false;
             List<string> playerNicks = null;
-
+            
             lock (lobby.LobbyLock)
             {
-                if (_sessionHelper.GetLobby(lobbyCode) != null && lobby.Players.Count >= 2)
+                if (!string.IsNullOrWhiteSpace(_sessionHelper.GetLobby(lobbyCode).LobbyCode) && lobby.Players.Count >= 2)
                 {
                     if (lobby.Players.All(player => player.IsReady))
                     {

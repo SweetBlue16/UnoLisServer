@@ -34,7 +34,7 @@ namespace UnoLisServer.Services
                 LoginValidator.AuthenticatePlayer(credentials);
 
                 var banInfo = LoginValidator.IsPlayerBanned(nickname);
-                if (banInfo != null)
+                if (!string.IsNullOrWhiteSpace(banInfo.FormattedTimeRemaining))
                 {
                     Logger.Log($"[AUTH] Login denied for banned user.");
                     response = CreateBanResponse(banInfo);
@@ -116,9 +116,9 @@ namespace UnoLisServer.Services
 
         private ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
         {
-            if (banInfo == null)
+            if (string.IsNullOrWhiteSpace(banInfo.FormattedTimeRemaining))
             {
-                return null;
+                return new ResponseInfo<object>(MessageCode.PlayerNotFound);
             }
 
             return new ResponseInfo<object>(

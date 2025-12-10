@@ -100,7 +100,7 @@ namespace UnoLisServer.Services
         {
             var player = await _playerRepository.GetPlayerProfileByNicknameAsync(userNickname);
 
-            if (player == null)
+            if (player.idPlayer == 0)
             {
                 return new ResponseInfo<ProfileData>(MessageCode.PlayerNotFound, false,
                     "Player profile not found.", null

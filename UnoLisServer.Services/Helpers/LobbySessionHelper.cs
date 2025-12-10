@@ -39,7 +39,7 @@ namespace UnoLisServer.Services.Helpers
         {
             lock (_lock)
             {
-                return _activeLobbies.TryGetValue(code, out var lobby) ? lobby : null;
+                return _activeLobbies.TryGetValue(code, out var lobby) ? lobby : new LobbyInfo();
             }
         }
 

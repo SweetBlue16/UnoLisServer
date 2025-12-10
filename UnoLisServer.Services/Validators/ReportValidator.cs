@@ -14,7 +14,7 @@ namespace UnoLisServer.Services.Validators
 
         public bool ValidateRequest(Player reporter, Player reported, IReportCallback callback)
         {
-            if (reported == null || reporter == null)
+            if (reported.idPlayer == 0 || reporter.idPlayer == 0)
             {
                 SendError(callback, MessageCode.PlayerNotFound, $"[WARNING] Jugador {reported.nickname} o {reporter.nickname} no encontrado.");
                 return false;

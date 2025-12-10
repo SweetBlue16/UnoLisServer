@@ -100,13 +100,13 @@ namespace UnoLisServer.Services
                 var callback = OperationContext.Current.GetCallbackChannel<IGameplayCallback>();
                 var session = _sessionHelper.GetGame(lobbyCode);
 
-                if (session != null)
+                if (session != GameSession.Empty)
                 {
                     lock (session.GameLock)
                     {
                         var player = session.GetPlayer(nickname);
 
-                        if (player == null)
+                        if (player == null || string.IsNullOrWhiteSpace(player.Nickname))
                         {
                             Logger.Warn($"[GAME] Player not found in session logic {lobbyCode}");
                             return;
@@ -123,7 +123,7 @@ namespace UnoLisServer.Services
                             lock (session.GameLock)
                             {
                                 var playerRef = session.GetPlayer(nickname);
-                                if (playerRef != null)
+                                if (playerRef != null || !string.IsNullOrWhiteSpace(playerRef.Nickname))
                                 {
                                     SendInitialStateToPlayer(callback, session, playerRef);
                                 }
@@ -188,7 +188,7 @@ namespace UnoLisServer.Services
             try
             {
                 var session = _sessionHelper.GetGame(context.LobbyCode);
-                if (session == null) return;
+                if (session == null || session == GameSession.Empty) return;
 
                 bool isUnoRisk = false;
                 Card cardPlayed = null;
@@ -216,7 +216,6 @@ namespace UnoLisServer.Services
                     int emptyHand = 0;
                     if (player.Hand.Count == emptyHand)
                     {
-
                         _ = HandleWinCondition(session, player);
                         return;
                     }
@@ -259,7 +258,7 @@ namespace UnoLisServer.Services
                 lock (session.GameLock)
                 {
                     var player = session.GetPlayer(nickname);
-                    if (player == null)
+                    if (player == null || string.IsNullOrWhiteSpace(player.Nickname))
                     {
                         Logger.Warn($"[GAME] UNO Risk check aborted. Player left the session.");
                         AdvanceTurnLogic(session, cardPlayed, session.LobbyCode);
@@ -309,7 +308,7 @@ namespace UnoLisServer.Services
             try
             {
                 var session = _sessionHelper.GetGame(lobbyCode);
-                if (session == null)
+                if (session == null || session == GameSession.Empty)
                 {
                     return;
                 }
@@ -317,7 +316,7 @@ namespace UnoLisServer.Services
                 lock (session.GameLock)
                 {
                     var playerToRemove = session.GetPlayer(nickname);
-                    if (playerToRemove == null)
+                    if (playerToRemove == null || string.IsNullOrWhiteSpace(playerToRemove.Nickname))
                     {
                         return;
                     }
@@ -407,7 +406,7 @@ namespace UnoLisServer.Services
             }
 
             var session = _sessionHelper.GetGame(lobbyCode);
-            if (session == null)
+            if (session == null || session == GameSession.Empty)
             {
                 return;
             }
@@ -572,13 +571,13 @@ namespace UnoLisServer.Services
             try
             {
                 var session = _sessionHelper.GetGame(lobbyCode);
-                if (session == null)
+                if (session == null || session == GameSession.Empty)
                 {
                     return;
                 }
 
                 var player = session.GetPlayer(nickname);
-                if (player == null)
+                if (player == null || string.IsNullOrWhiteSpace(player.Nickname))
                 {
                     Logger.Warn($"[GAME] NotifyPlay skipped. Player not found in session.");
                     return;
@@ -621,7 +620,7 @@ namespace UnoLisServer.Services
         private void ProcessCardMove(GameSession session, Card card, PlayCardContext context)
         {
             var player = session.GetPlayer(context.Nickname);
-            if (player == null)
+            if (player == null || string.IsNullOrWhiteSpace(player.Nickname))
             {
                 return;
             }
@@ -804,7 +803,7 @@ namespace UnoLisServer.Services
 
         private async Task HandleWinCondition(GameSession session, GamePlayerData winner)
         {
-            if (session == null)
+            if (session == null || session == GameSession.Empty)
             {
                 return;
             }
@@ -957,7 +956,7 @@ namespace UnoLisServer.Services
             try
             {
                 var session = _sessionHelper.GetGame(lobbyCode);
-                if (session == null)
+                if (session == null || session == GameSession.Empty)
                 {
                     return Task.CompletedTask;
                 }
@@ -1019,7 +1018,7 @@ namespace UnoLisServer.Services
             try
             {
                 var session = _sessionHelper.GetGame(lobbyCode);
-                if (session == null)
+                if (session == null || session == GameSession.Empty)
                 {
                     return Task.CompletedTask;
                 }
@@ -1064,7 +1063,7 @@ namespace UnoLisServer.Services
                 Logger.Log($"[GAME] Time expired for {nickname} in {lobbyCode}. Applying penalty.");
 
                 var session = _sessionHelper.GetGame(lobbyCode);
-                if (session == null) return;
+                if (session == null || session == GameSession.Empty) return;
 
                 await DrawCardAsync(lobbyCode, nickname);
 

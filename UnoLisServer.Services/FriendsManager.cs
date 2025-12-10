@@ -199,7 +199,7 @@ namespace UnoLisServer.Services
                 var requester = await _friendRepository.GetPlayerByNicknameAsync(requesterNickname);
                 var target = await _friendRepository.GetPlayerByNicknameAsync(targetNickname);
 
-                if (requester == null || target == null)
+                if (requester.idPlayer == 0 || target.idPlayer == 0)
                 {
                     return FriendRequestResult.UserNotFound;
                 }
@@ -284,7 +284,7 @@ namespace UnoLisServer.Services
                 var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
                 var target = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
 
-                if (requester == null || target == null)
+                if (requester.idPlayer == 0 || target.idPlayer == 0)
                 {
                     return false;
                 }
@@ -341,7 +341,7 @@ namespace UnoLisServer.Services
                 var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
                 var target = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
 
-                if (requester == null || target == null)
+                if (requester.idPlayer == 0 || target.idPlayer == 0)
                 {
                     return false;
                 }
@@ -391,7 +391,7 @@ namespace UnoLisServer.Services
                 var requesterPlayer = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
                 var targetPlayer = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
 
-                if (requesterPlayer == null || targetPlayer == null)
+                if (requesterPlayer.idPlayer == 0 || targetPlayer.idPlayer == 0)
                 {
                     Logger.Warn($"[FRIENDS] Remove failed: One of the users not found.");
                     return false;
@@ -460,7 +460,7 @@ namespace UnoLisServer.Services
             {
                 var updatedList = await GetFriendsListAsync(nickname);
 
-                if (updatedList == null)
+                if (updatedList == null || updatedList.Count == 0)
                 {
                     Logger.Warn($"[FRIENDS-NOTIFY] Aborted notification. Friends list retrieved is null.");
                     return;

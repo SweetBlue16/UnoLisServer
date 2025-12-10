@@ -12,6 +12,7 @@ namespace UnoLisServer.Services.GameLogic
     /// </summary>
     public class GameSession : IDisposable
     {
+        public static readonly GameSession Empty = new GameSession();
         public string LobbyCode { get; }
 
         public DeckManager Deck { get; }
@@ -42,6 +43,8 @@ namespace UnoLisServer.Services.GameLogic
             _turnTimer.AutoReset = false; 
             _turnTimer.Elapsed += TurnTimer_Elapsed;
         }
+
+        private GameSession() { }
 
         public void StartGame()
         {
