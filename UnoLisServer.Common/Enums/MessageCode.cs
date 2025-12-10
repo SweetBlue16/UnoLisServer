@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace UnoLisServer.Common.Enums
+﻿namespace UnoLisServer.Common.Enums
 {
     public enum MessageCode
     {

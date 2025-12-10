@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace UnoLisServer.Common.Helpers
@@ -12,6 +10,7 @@ namespace UnoLisServer.Common.Helpers
         Task SendPasswordResetEmailAsync(string email, string code);
         Task SendMatchInvitationAsync(string email, string inviterNickname, string lobbyCode);
     }
+
     public class NotificationSender : INotificationSender
     {
         private readonly IEmailSender _sender;

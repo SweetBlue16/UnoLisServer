@@ -1,7 +1,6 @@
 ﻿using System;
 using UnoLisServer.Common.Models;
 
-
 namespace UnoLisServer.Common.Helpers
 {
     public static class ResponseHelper

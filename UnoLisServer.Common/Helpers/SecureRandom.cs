@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 
 namespace UnoLisServer.Common.Helpers
 {
@@ -14,9 +11,14 @@ namespace UnoLisServer.Common.Helpers
         public static int Next(int minValue, int maxValue)
         {
             if (minValue > maxValue)
+            {
                 throw new ArgumentOutOfRangeException("minValue");
+            }
 
-            if (minValue == maxValue) return minValue;
+            if (minValue == maxValue)
+            {
+                return minValue;
+            }
 
             long diff = maxValue - minValue;
             byte[] uint32Buffer = new byte[4];
@@ -35,6 +37,7 @@ namespace UnoLisServer.Common.Helpers
                 }
             }
         }
+
         public static string GetRandomString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
