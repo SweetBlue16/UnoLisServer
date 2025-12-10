@@ -48,10 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\EnviromentConfig.cs" />
-    <Compile Include="Constants\Constants.cs" />
-    <Compile Include="Constants\Endpoints.cs" />
     <Compile Include="Enums\CodeType.cs" />
-    <Compile Include="Enums\ConnectionState.cs" />
     <Compile Include="Enums\ItemType.cs" />
     <Compile Include="Enums\MessageCode.cs" />
     <Compile Include="Exceptions\ValidationException.cs" />
