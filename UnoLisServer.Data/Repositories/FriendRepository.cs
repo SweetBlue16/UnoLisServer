@@ -7,11 +7,7 @@ using System.Data.Entity.Validation;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using UnoLisServer.Common.Enums;
-using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;
-using UnoLisServer.Contracts.DTOs;
-using UnoLisServer.Data;
 using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Data.Repositories

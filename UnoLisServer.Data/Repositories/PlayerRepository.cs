@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core;
@@ -7,14 +6,12 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation; 
 using System.Data.SqlClient; 
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Enums; 
 using UnoLisServer.Common.Exceptions; 
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
-using UnoLisServer.Data;
 using UnoLisServer.Data.Factories;
 using UnoLisServer.Data.RepositoryInterfaces;
 
@@ -177,8 +174,6 @@ namespace UnoLisServer.Data.Repositories
             }
         }
 
-        
-
         public async Task<bool> IsNicknameTakenAsync(string nickname)
         {
             if (string.IsNullOrWhiteSpace(nickname))
@@ -266,8 +261,6 @@ namespace UnoLisServer.Data.Repositories
 
             await SavePlayerGraphAsync(newPlayer);
         }
-
-        
 
         public async Task<List<PlayerAvatar>> GetPlayerAvatarsAsync(string nickname)
         {
