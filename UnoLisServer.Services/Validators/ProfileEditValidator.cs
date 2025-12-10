@@ -31,7 +31,7 @@ namespace UnoLisServer.Services.Validators
             ValidateSocialMediaLink(data.TikTokUrl, "tiktok.com", "TikTok");
         }
 
-        private static void ValidateEmail(string email)
+        public static void ValidateEmail(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
             {

@@ -9,6 +9,9 @@ namespace UnoLisServer.Contracts.Interfaces
     {
         [OperationContract(IsOneWay = true)]
         void UpdateProfileData(ProfileData data);
+
+        [OperationContract(IsOneWay = true)]
+        void RequestEmailChangeVerification(string nickname, string newEmail);
     }
 
     [ServiceContract]
@@ -16,5 +19,8 @@ namespace UnoLisServer.Contracts.Interfaces
     {
         [OperationContract (IsOneWay = true)]
         void ProfileUpdateResponse(ServiceResponse<ProfileData> response);
+
+        [OperationContract (IsOneWay = true)]
+        void EmailChangeVerificationCodeSentResponse(ServiceResponse<object> response);
     }
 }
