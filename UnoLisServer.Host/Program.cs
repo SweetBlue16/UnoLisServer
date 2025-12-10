@@ -12,7 +12,6 @@ namespace UnoLisServer.Host
         {
             Console.Title = "UNO LIS - WCF Server";
 
-
             Logger.Log("Iniciando servidor UNO LIS...");
             Logger.Log($"Conexión configurada para servidor: {Environment.MachineName}");
 
@@ -119,7 +118,9 @@ namespace UnoLisServer.Host
                 try
                 {
                     if (host.State == CommunicationState.Opened)
+                    {
                         host.Close();
+                    }
                 }
                 catch
                 {
@@ -141,6 +142,7 @@ namespace UnoLisServer.Host
             Console.WriteLine($"   {ex.GetType().Name}: {ex.Message}\n");
             Console.ResetColor();
         }
+
         private static void AbortHost(ServiceHost host)
         {
             if (host.State == CommunicationState.Faulted)
