@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ServiceModel;
 using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Contracts.Interfaces
@@ -20,6 +15,7 @@ namespace UnoLisServer.Contracts.Interfaces
         [OperationContract]
         void SetReadyStatus(string lobbyCode, string nickname, bool isReady);
     }
+
     [ServiceContract]
     public interface ILobbyDuplexCallback
     {

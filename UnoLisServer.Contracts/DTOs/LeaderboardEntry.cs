@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-namespace UnoLisServer.Contracts.DTOs
+﻿namespace UnoLisServer.Contracts.DTOs
 {
     public class LeaderboardEntry
     {

@@ -1,6 +1,4 @@
-﻿using UnoLisServer.Contracts.DTOs;
-
-namespace UnoLisServer.Contracts.DTOs // <--- Faltaba esto
+﻿namespace UnoLisServer.Contracts.DTOs
 {
     public class PlayCardContext
     {

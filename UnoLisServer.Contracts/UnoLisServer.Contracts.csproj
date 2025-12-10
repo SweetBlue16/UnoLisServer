@@ -76,8 +76,6 @@
     <Compile Include="Enums\CardColor.cs" />
     <Compile Include="Enums\CardValue.cs" />
     <Compile Include="Enums\FriendRequestResult.cs" />
-    <Compile Include="Enums\NotificationType.cs" />
-    <Compile Include="Enums\PlayerStatus.cs" />
     <Compile Include="Enums\RarityType.cs" />
     <Compile Include="Interfaces\IAvatarManager.cs" />
     <Compile Include="Interfaces\IChatManager.cs" />
