@@ -31,7 +31,8 @@ namespace UnoLisServer.Common.Helpers
                     pendingRegistrations.Remove(email);
                     return data;
                 }
-                return new PendingRegistration();
+
+                return null;
             }
         }
 

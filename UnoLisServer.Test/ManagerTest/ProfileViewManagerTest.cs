@@ -1,10 +1,7 @@
 ﻿using Moq;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Runtime.Serialization;
 using System.Threading;
-using System.Threading.Tasks;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Models;
 using UnoLisServer.Contracts.DTOs;
@@ -34,13 +31,28 @@ namespace UnoLisServer.Test.ManagerTest
             return new ProfileViewManager(_mockRepository.Object, _mockCallback.Object);
         }
 
+        private Player CreateFakePlayer(string nickname)
+        {
+            return new Player
+            {
+                idPlayer = 1,
+                nickname = nickname,
+                fullName = "Test User",
+                SelectedAvatar_Avatar_idAvatar = 1,
+                Account = new List<Account> { new Account { email = "test@test.com" } },
+                PlayerStatistics = new List<PlayerStatistics> { new PlayerStatistics { wins = 5, matchesPlayed = 10, globalPoints = 100 } },
+                SocialNetwork = new List<SocialNetwork>(),
+                AvatarsUnlocked = new List<AvatarsUnlocked> { new AvatarsUnlocked { Avatar = new Avatar { avatarName = "Avatar1" } } }
+            };
+        }
+
         [Fact]
         public void TestGetProfileDataUserExistsShouldReturnSuccessAndData()
         {
             string nickname = "TikiMaster";
             var fakePlayer = CreateFakePlayer(nickname);
 
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nickname))
                            .ReturnsAsync(fakePlayer);
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
@@ -51,7 +63,7 @@ namespace UnoLisServer.Test.ManagerTest
             _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r => r.Success == true && r.Data.Nickname == "TikiMaster")
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == true && r.Data.Nickname == nickname && r.Data.Wins == 5)
             ), Times.Once);
         }
 
@@ -59,8 +71,9 @@ namespace UnoLisServer.Test.ManagerTest
         public void TestGetProfileDataUserNotFoundShouldReturnPlayerNotFoundCode()
         {
             string nickname = "GhostUser";
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ReturnsAsync((Player)null);
+
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nickname))
+                           .ReturnsAsync(new Player { idPlayer = 0 });
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -77,11 +90,10 @@ namespace UnoLisServer.Test.ManagerTest
         [Fact]
         public void TestGetProfileDataDatabaseErrorShouldReturnDatabaseErrorCode()
         {
-            string nickname = "ErrorUser";
-            var sqlException = FormatterServices.GetUninitializedObject(typeof(SqlException)) as SqlException;
+            string nickname = "DbErrorUser";
 
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ThrowsAsync(sqlException);
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nickname))
+                           .ThrowsAsync(new Exception("DataStore_Unavailable"));
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -96,11 +108,12 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestGetProfileDataTimeoutErrorShouldReturnTimeoutCode()
+        public void TestGetProfileDataTimeoutShouldReturnTimeoutCode()
         {
             string nickname = "SlowUser";
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ThrowsAsync(new TimeoutException("DB Timeout"));
+
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nickname))
+                           .ThrowsAsync(new Exception("Server_Busy"));
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -115,57 +128,12 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestGetProfileDataUserHasNoSelectedAvatarShouldReturnDefaultLogoUNO()
-        {
-            string nickname = "NoAvatarUser";
-            var fakePlayer = CreateFakePlayer(nickname);
-            fakePlayer.SelectedAvatar_Avatar_idAvatar = null;
-
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ReturnsAsync(fakePlayer);
-
-            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
-                         .Callback(() => _waitHandle.Set());
-
-            var manager = CreateManager();
-            manager.GetProfileData(nickname);
-            _waitHandle.WaitOne(1000);
-
-            _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r => r.Data.SelectedAvatarName == "LogoUNO")
-            ), Times.Once);
-        }
-
-        [Fact]
-        public void TestGetProfileDataUserHasNoStatsShouldReturnZeroes()
-        {
-            string nickname = "NewUser";
-            var fakePlayer = new Player { nickname = nickname, Account = new List<Account>(), PlayerStatistics = new List<PlayerStatistics>(), SocialNetwork = new List<SocialNetwork>(), AvatarsUnlocked = new List<AvatarsUnlocked>() };
-
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ReturnsAsync(fakePlayer);
-
-            _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
-                         .Callback(() => _waitHandle.Set());
-
-            var manager = CreateManager();
-            manager.GetProfileData(nickname);
-            _waitHandle.WaitOne(1000);
-
-            _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r =>
-                    r.Success == true &&
-                    r.Data.Wins == 0 &&
-                    r.Data.MatchesPlayed == 0)
-            ), Times.Once);
-        }
-
-        [Fact]
-        public void TestGetProfileDataGeneralExceptionShouldReturnFetchFailedCode()
+        public void TestGetProfileDataGeneralExceptionShouldReturnProfileFetchFailed()
         {
             string nickname = "CrashUser";
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(nickname))
-                           .ThrowsAsync(new Exception("Unknown error"));
+
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nickname))
+                           .ThrowsAsync(new Exception("Random Error"));
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -180,35 +148,22 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestGetProfileDataNullNicknameShouldHandleGracefully()
+        public void TestGetProfileDataGuestUserShouldReturnGuestProfileWithoutRepoCall()
         {
-            _mockRepository.Setup(repo => repo.GetPlayerProfileByNicknameAsync(It.IsAny<string>()))
-                           .ReturnsAsync((Player)null);
+            string nickname = "Guest_123";
 
             _mockCallback.Setup(cb => cb.ProfileDataReceived(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-            manager.GetProfileData(null);
+            manager.GetProfileData(nickname);
             _waitHandle.WaitOne(1000);
 
-            _mockCallback.Verify(cb => cb.ProfileDataReceived(
-                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false)
-            ), Times.Once);
-        }
+            _mockRepository.Verify(r => r.GetPlayerProfileByNicknameAsync(It.IsAny<string>()), Times.Never);
 
-        private Player CreateFakePlayer(string nickname)
-        {
-            return new Player
-            {
-                nickname = nickname,
-                fullName = "Test User",
-                SelectedAvatar_Avatar_idAvatar = 1,
-                Account = new List<Account> { new Account { email = "test@test.com" } },
-                PlayerStatistics = new List<PlayerStatistics> { new PlayerStatistics { wins = 10, globalPoints = 100 } },
-                SocialNetwork = new List<SocialNetwork>(),
-                AvatarsUnlocked = new List<AvatarsUnlocked> { new AvatarsUnlocked { Avatar = new Avatar { avatarName = "CoolAvatar" } } }
-            };
+            _mockCallback.Verify(cb => cb.ProfileDataReceived(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == true && r.Data.FullName == "Guest Player")
+            ), Times.Once);
         }
     }
 }

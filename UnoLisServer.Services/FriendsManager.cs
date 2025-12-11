@@ -181,49 +181,47 @@ namespace UnoLisServer.Services
 
         public async Task<FriendRequestResult> SendFriendRequestAsync(string requesterNickname, string targetNickname)
         {
-            if (UserHelper.IsGuest(requesterNickname) || UserHelper.IsGuest(targetNickname))
+            if (string.IsNullOrWhiteSpace(requesterNickname) || string.IsNullOrWhiteSpace(targetNickname))
             {
-                Logger.Warn($"[FRIENDS] Guest attempt to friend request");
+
+            }
+
+            if (IsGuestAction(requesterNickname, targetNickname))
+            {
                 return FriendRequestResult.Failed;
+            }
+
+            if (requesterNickname.Equals(targetNickname, StringComparison.OrdinalIgnoreCase))
+            {
+                return FriendRequestResult.CannotAddSelf;
             }
 
             try
             {
                 FriendsValidator.ValidateNicknames(requesterNickname, targetNickname);
 
-                if (requesterNickname.Equals(targetNickname, StringComparison.OrdinalIgnoreCase))
-                {
-                    return FriendRequestResult.CannotAddSelf;
-                }
+                var (requester, target) = await GetPlayersAsync(requesterNickname, targetNickname);
 
-                var requester = await _friendRepository.GetPlayerByNicknameAsync(requesterNickname);
-                var target = await _friendRepository.GetPlayerByNicknameAsync(targetNickname);
-
-                if (requester.idPlayer == 0 || target.idPlayer == 0)
+                if (IsInvalidPlayer(requester)|| IsInvalidPlayer(target))
                 {
                     return FriendRequestResult.UserNotFound;
                 }
 
-                var existingRel = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
-                var statusCheck = AnalyzeRelationshipStatus(existingRel, requester.idPlayer);
-
-                if (statusCheck != FriendRequestResult.Success)
+                var relationshipStatus = await CheckExistingRelationshipAsync(requester.idPlayer, target.idPlayer);
+                if (relationshipStatus != FriendRequestResult.Success)
                 {
-                    return statusCheck;
+                    return relationshipStatus;
                 }
 
-                var newRequest = await _friendRepository.CreateFriendRequestAsync(requester.idPlayer, target.idPlayer);
-                var requestData = new FriendRequestData
-                {
-                    RequesterNickname = requesterNickname,
-                    TargetNickname = targetNickname,
-                    FriendListId = newRequest.idFriendList
-                };
+                await CreateAndNotifyRequestAsync(requester, target);
 
-                NotifyRequestReceived(requestData);
-                Logger.Log($"[FRIENDS] Request sent");
-
+                Logger.Log($"[FRIENDS] Request sent successfully from {requesterNickname} to {targetNickname}");
                 return FriendRequestResult.Success;
+            }
+            catch (ArgumentException argEx)
+            {
+                Logger.Warn($"[FRIENDS] Invalid request arguments: {argEx.Message}");
+                return FriendRequestResult.Failed;
             }
             catch (TimeoutException timeEx)
             {
@@ -233,7 +231,7 @@ namespace UnoLisServer.Services
             catch (Exception ex) when (ex.Message == "DataStore_Unavailable")
             {
                 Logger.Error($"[CRITICAL] Failed sending friend request. DB Unavailable.", ex);
-                return FriendRequestResult.Failed; 
+                return FriendRequestResult.Failed;
             }
             catch (Exception ex) when (ex.Message == "Data_Conflict")
             {
@@ -249,6 +247,61 @@ namespace UnoLisServer.Services
             {
                 Logger.Error($"[CRITICAL] Unexpected error sending request", ex);
                 return FriendRequestResult.Failed;
+            }
+        }
+
+        private bool IsGuestAction(string requester, string target)
+        {
+            if (requester == null || target == null)
+            {
+                return false;
+            }
+
+            if (UserHelper.IsGuest(requester) || UserHelper.IsGuest(target))
+            {
+                Logger.Warn($"[FRIENDS] Guest attempt to friend request");
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsInvalidPlayer(Player player)
+        {
+            return player == null || player.idPlayer == 0;
+        }
+
+        private async Task<(Player requester, Player target)> GetPlayersAsync(string reqNick, string targetNick)
+        {
+            var requester = await _friendRepository.GetPlayerByNicknameAsync(reqNick);
+            var target = await _friendRepository.GetPlayerByNicknameAsync(targetNick);
+
+            return (requester, target);
+        }
+
+        private async Task<FriendRequestResult> CheckExistingRelationshipAsync(int requesterId, int targetId)
+        {
+            var existingRel = await _friendRepository.GetFriendshipEntryAsync(requesterId, targetId);
+            return AnalyzeRelationshipStatus(existingRel, requesterId);
+        }
+
+        private async Task CreateAndNotifyRequestAsync(Player requester, Player target)
+        {
+            var newRequest = await _friendRepository.CreateFriendRequestAsync(requester.idPlayer, target.idPlayer);
+
+            var requestData = new FriendRequestData
+            {
+                RequesterNickname = requester.nickname,
+                TargetNickname = target.nickname,
+                FriendListId = newRequest.idFriendList
+            };
+
+            try
+            {
+                NotifyRequestReceived(requestData);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[FRIENDS-NOTIFY] Could not send real-time notification: {ex.Message}");
             }
         }
 
@@ -281,24 +334,23 @@ namespace UnoLisServer.Services
 
             try
             {
-                var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
-                var target = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
+                var (requester, target) = await GetPlayersAsync(request.RequesterNickname, request.TargetNickname);
 
-                if (requester.idPlayer == 0 || target.idPlayer == 0)
+                if (IsInvalidPlayer(requester) || IsInvalidPlayer(target))
                 {
                     return false;
                 }
 
-                var friendRelation = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
+                var relation = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
 
-                if (friendRelation == null || friendRelation.friendRequest == true)
+                if (!IsValidRequestToAccept(relation))
                 {
-                    Logger.Warn($"[FRIENDS] Attempt to accept invalid/existing request");
+                    Logger.Warn($"[FRIENDS] Attempt to accept invalid/existing request between two players.");
                     return false;
                 }
 
-                await _friendRepository.AcceptFriendRequestAsync(friendRelation.idFriendList);
-                await NotifyFriendshipUpdateAsync(request.RequesterNickname, request.TargetNickname);
+                await ConfirmAndNotifyAcceptance(relation.idFriendList, request.RequesterNickname, 
+                    request.TargetNickname);
 
                 return true;
             }
@@ -338,23 +390,22 @@ namespace UnoLisServer.Services
 
             try
             {
-                var requester = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
-                var target = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
+                var (requester, target) = await GetPlayersAsync(request.RequesterNickname, request.TargetNickname);
 
-                if (requester.idPlayer == 0 || target.idPlayer == 0)
+                if (IsInvalidPlayer(requester) || IsInvalidPlayer(target))
                 {
                     return false;
                 }
 
-                var friendRelation = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
+                var relation = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
 
-                if (friendRelation == null)
+                if (relation == null)
                 {
                     Logger.Warn($"[FRIENDS] Cannot reject request: Relation not found.");
                     return false;
                 }
 
-                await _friendRepository.RemoveFriendshipEntryAsync(friendRelation.idFriendList);
+                await _friendRepository.RemoveFriendshipEntryAsync(relation.idFriendList);
                 return true;
             }
             catch (TimeoutException timeEx)
@@ -379,6 +430,27 @@ namespace UnoLisServer.Services
             }
         }
 
+        private bool IsValidRequestToAccept(FriendList relation)
+        {
+            if (relation == null)
+            {
+                return false;
+            }
+
+            if (relation.friendRequest == true)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task ConfirmAndNotifyAcceptance(int relationId, string requesterNick, string targetNick)
+        {
+            await _friendRepository.AcceptFriendRequestAsync(relationId);
+            await NotifyFriendshipUpdateAsync(requesterNick, targetNick);
+        }
+
         public async Task<bool> RemoveFriendAsync(FriendRequestData request)
         {
             if (request == null)
@@ -388,28 +460,25 @@ namespace UnoLisServer.Services
 
             try
             {
-                var requesterPlayer = await _friendRepository.GetPlayerByNicknameAsync(request.RequesterNickname);
-                var targetPlayer = await _friendRepository.GetPlayerByNicknameAsync(request.TargetNickname);
+                var (requester, target) = await GetPlayersAsync(request.RequesterNickname, request.TargetNickname);
 
-                if (requesterPlayer.idPlayer == 0 || targetPlayer.idPlayer == 0)
+                if (IsInvalidPlayer(requester) || IsInvalidPlayer(target))
                 {
                     Logger.Warn($"[FRIENDS] Remove failed: One of the users not found.");
                     return false;
                 }
 
-                var relation = await _friendRepository.GetFriendshipEntryAsync(requesterPlayer.idPlayer, 
-                    targetPlayer.idPlayer);
+                var relation = await _friendRepository.GetFriendshipEntryAsync(requester.idPlayer, target.idPlayer);
 
-                if (relation == null || relation.friendRequest != true)
+                if (!IsActiveFriendship(relation))
                 {
-                    Logger.Warn($"[FRIENDS] Attempt to remove non-friend relationship");
+                    Logger.Warn($"[FRIENDS] Attempt to remove non-friend relationship or relation not found.");
                     return false;
                 }
 
-                await _friendRepository.RemoveFriendshipEntryAsync(relation.idFriendList);
-                await NotifyFriendshipUpdateAsync(request.RequesterNickname, request.TargetNickname);
-                Logger.Log($"[FRIENDS] Friendship removed");
-                
+                await ExecuteRemovalAndNotify(relation.idFriendList, request.RequesterNickname, 
+                    request.TargetNickname);
+
                 return true;
             }
             catch (TimeoutException timeEx)
@@ -432,6 +501,22 @@ namespace UnoLisServer.Services
                 Logger.Error($"[CRITICAL] Unexpected error removing friend.", ex);
                 return false;
             }
+        }
+
+        private bool IsActiveFriendship(FriendList relation)
+        {
+            if (relation == null)
+            {
+                return false;
+            }
+
+            return relation.friendRequest == true;
+        }
+
+        private async Task ExecuteRemovalAndNotify(int relationId, string requesterNick, string targetNick)
+        {
+            await _friendRepository.RemoveFriendshipEntryAsync(relationId);
+            await NotifyFriendshipUpdateAsync(requesterNick, targetNick);
         }
 
         private static void NotifyRequestReceived(FriendRequestData request)

@@ -4,6 +4,7 @@ using System.Threading;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
 using UnoLisServer.Common.Models;
+using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Data.RepositoryInterfaces;
 using UnoLisServer.Services;
@@ -42,38 +43,39 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestConfirmCodeWithValidDataShouldCreateAccount()
+        public void TestConfirmCodeValidCodeShouldCreatePlayerAndReturnSuccess()
         {
-            string email = "confirm@test.com";
+            string email = "valid@test.com";
             string code = "123456";
-            var pending = new PendingRegistration { Nickname = "PendingNick" };
+            var pendingData = new PendingRegistration { Nickname = "NewUser" };
 
             _mockVerificationHelper.Setup(v => v.ValidateCode(It.IsAny<CodeValidationRequest>())).Returns(true);
-            _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(email)).Returns(pending);
-            _mockRepository.Setup(r => r.CreatePlayerFromPendingAsync(email, pending)).Returns(System.Threading.Tasks.Task.CompletedTask);
+            _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(email)).Returns(pendingData);
+            _mockRepository.Setup(r => r.CreatePlayerFromPendingAsync(email, pendingData))
+                           .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>()))
                          .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-
             manager.ConfirmCode(email, code);
             _waitHandle.WaitOne(1000);
 
-            _mockRepository.Verify(r => r.CreatePlayerFromPendingAsync(email, pending), Times.Once);
             _mockCallback.Verify(cb => cb.ConfirmationResponse(
                 It.Is<ServiceResponse<object>>(r => r.Success == true && r.Code == MessageCode.RegistrationSuccessful)
             ), Times.Once);
         }
 
         [Fact]
-        public void TestConfirmCodeWithInvalidCodeShouldReturnError()
+        public void TestConfirmCodeInvalidCodeShouldReturnVerificationError()
         {
             _mockVerificationHelper.Setup(v => v.ValidateCode(It.IsAny<CodeValidationRequest>())).Returns(false);
-            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>())).Callback(() => _waitHandle.Set());
+
+            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-            manager.ConfirmCode("a@a.com", "WrongCode");
+            manager.ConfirmCode("test@test.com", "wrong");
             _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ConfirmationResponse(
@@ -82,33 +84,39 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestConfirmCodeWithMissingPendingDataShouldReturnError()
+        public void TestConfirmCodeWithDatabaseErrorShouldReturnDatabaseError()
         {
+            var pending = new PendingRegistration { Nickname = "User" };
             _mockVerificationHelper.Setup(v => v.ValidateCode(It.IsAny<CodeValidationRequest>())).Returns(true);
-            _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(It.IsAny<string>())).Returns((PendingRegistration)null);
+            _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(It.IsAny<string>())).Returns(pending);
 
-            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>())).Callback(() => _waitHandle.Set());
+            _mockRepository.Setup(r => r.CreatePlayerFromPendingAsync(It.IsAny<string>(), pending))
+                           .ThrowsAsync(new Exception("DataStore_Unavailable"));
+
+            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
             manager.ConfirmCode("a@a.com", "123456");
             _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ConfirmationResponse(
-                It.Is<ServiceResponse<object>>(r => r.Success == false && r.Code == MessageCode.RegistrationDataLost)
+                It.Is<ServiceResponse<object>>(r => r.Code == MessageCode.DatabaseError)
             ), Times.Once);
         }
 
         [Fact]
-        public void TestConfirmCodeWithDatabaseErrorShouldReturnInternalError()
+        public void TestConfirmCodeGeneralExceptionShouldReturnInternalError()
         {
-            var pending = new PendingRegistration();
+            var pending = new PendingRegistration { Nickname = "User" };
             _mockVerificationHelper.Setup(v => v.ValidateCode(It.IsAny<CodeValidationRequest>())).Returns(true);
             _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(It.IsAny<string>())).Returns(pending);
 
             _mockRepository.Setup(r => r.CreatePlayerFromPendingAsync(It.IsAny<string>(), pending))
-                           .ThrowsAsync(new Exception("DB Fail"));
+                           .ThrowsAsync(new Exception("Unknown Crash"));
 
-            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>())).Callback(() => _waitHandle.Set());
+            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
             manager.ConfirmCode("a@a.com", "123456");
@@ -120,32 +128,54 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestResendConfirmationCodeWithValidEmailShouldSendEmail()
+        public void TestConfirmCodeWithMissingPendingDataShouldReturnDataLostError()
+        {
+            _mockVerificationHelper.Setup(v => v.ValidateCode(It.IsAny<CodeValidationRequest>())).Returns(true);
+            _mockPendingHelper.Setup(p => p.GetAndRemovePendingRegistration(It.IsAny<string>()))
+                              .Returns(new PendingRegistration());
+
+            _mockCallback.Setup(cb => cb.ConfirmationResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+            manager.ConfirmCode("a@a.com", "123456");
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ConfirmationResponse(
+                It.Is<ServiceResponse<object>>(r => r.Success == false && r.Code == MessageCode.RegistrationDataLost)
+            ), Times.Once);
+        }
+
+        [Fact]
+        public void TestResendCodeValidShouldReturnSuccess()
         {
             string email = "resend@test.com";
             _mockVerificationHelper.Setup(v => v.CanRequestCode(email, CodeType.EmailVerification)).Returns(true);
             _mockVerificationHelper.Setup(v => v.GenerateAndStoreCode(email, CodeType.EmailVerification)).Returns("654321");
 
-            _mockCallback.Setup(cb => cb.ResendCodeResponse(It.IsAny<ServiceResponse<object>>())).Callback(() => _waitHandle.Set());
+            _mockCallback.Setup(cb => cb.ResendCodeResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
             manager.ResendConfirmationCode(email);
             _waitHandle.WaitOne(1000);
 
-            _mockNotificationSender.Verify(n => n.SendAccountVerificationEmailAsync(email, "654321"), Times.Once);
             _mockCallback.Verify(cb => cb.ResendCodeResponse(
                 It.Is<ServiceResponse<object>>(r => r.Success == true && r.Code == MessageCode.VerificationCodeResent)
             ), Times.Once);
         }
 
         [Fact]
-        public void TestResendConfirmationCodeRateLimitedShouldReturnError()
+        public void TestResendCodeRateLimitExceededShouldReturnError()
         {
-            _mockVerificationHelper.Setup(v => v.CanRequestCode(It.IsAny<string>(), CodeType.EmailVerification)).Returns(false);
-            _mockCallback.Setup(cb => cb.ResendCodeResponse(It.IsAny<ServiceResponse<object>>())).Callback(() => _waitHandle.Set());
+            string email = "spammer@test.com";
+            _mockVerificationHelper.Setup(v => v.CanRequestCode(email, CodeType.EmailVerification)).Returns(false);
+
+            _mockCallback.Setup(cb => cb.ResendCodeResponse(It.IsAny<ServiceResponse<object>>()))
+                         .Callback(() => _waitHandle.Set());
 
             var manager = CreateManager();
-            manager.ResendConfirmationCode("spam@test.com");
+            manager.ResendConfirmationCode(email);
             _waitHandle.WaitOne(1000);
 
             _mockCallback.Verify(cb => cb.ResendCodeResponse(

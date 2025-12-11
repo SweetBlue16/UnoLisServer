@@ -25,14 +25,14 @@ namespace UnoLisServer.Services
         private const int UnoPenaltyDelayMs = 3000;
         private const int PenaltyCardCount = 2;
         private const int MinPlayersToContinue = 2;
-        private readonly GameSessionHelper _sessionHelper;
+        private readonly IGameSessionHelper _sessionHelper;
         private readonly IPlayerRepository _playerRepository;
 
         public GameManager() : this(GameSessionHelper.Instance, new PlayerRepository())
         {
         }
 
-        public GameManager(GameSessionHelper sessionHelper, IPlayerRepository playerRepo)
+        public GameManager(IGameSessionHelper sessionHelper, IPlayerRepository playerRepo)
         {
             _sessionHelper = sessionHelper ?? throw new ArgumentNullException(nameof(sessionHelper));
             _playerRepository = playerRepo ?? throw new ArgumentNullException(nameof(playerRepo));

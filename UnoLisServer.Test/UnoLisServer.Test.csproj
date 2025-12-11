@@ -123,9 +123,11 @@
     <Compile Include="ManagerTest\ChatManagerTest.cs" />
     <Compile Include="ManagerTest\ConfirmationManagerTest.cs" />
     <Compile Include="ManagerTest\FriendsManagerTest.cs" />
+    <Compile Include="ManagerTest\GameManagerTest.cs" />
     <Compile Include="ManagerTest\LeaderboardsManagerTest.cs" />
     <Compile Include="ManagerTest\LobbyDuplexManagerTest.cs" />
     <Compile Include="ManagerTest\LobbyManagerTest.cs" />
+    <Compile Include="ManagerTest\LoginManagerTest.cs" />
     <Compile Include="ManagerTest\MatchmakingManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />

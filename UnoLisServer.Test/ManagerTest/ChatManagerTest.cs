@@ -52,12 +52,16 @@ namespace UnoLisServer.Test
         public void TestSendMessageValidMessageValidatesSavesAndBroadcasts()
         {
             var msg = new ChatMessageData { Nickname = "User", Message = "Hello World", ChannelId = "Lobby1" };
-
             var client1 = new Mock<IChatCallback>();
+            client1.As<ICommunicationObject>().Setup(c => c.State).Returns(CommunicationState.Opened);
+
             var client2 = new Mock<IChatCallback>();
+            client2.As<ICommunicationObject>().Setup(c => c.State).Returns(CommunicationState.Opened);
+
             var activeClients = new List<IChatCallback> { client1.Object, client2.Object };
 
             _mockSessionHelper.Setup(x => x.GetActiveClients()).Returns(activeClients);
+
             _manager.SendMessage(msg);
 
             _mockSessionHelper.Verify(x => x.AddToHistory("Lobby1", msg), Times.Once);
@@ -81,17 +85,19 @@ namespace UnoLisServer.Test
         public void TestSendMessageWhenOneClientFailsOtherClientsStillReceiveMessage()
         {
             var msg = new ChatMessageData { Nickname = "User", Message = "Hi" };
-
-            var clientOk = new Mock<IChatCallback>();
             var clientFail = new Mock<IChatCallback>();
+            clientFail.As<ICommunicationObject>().Setup(c => c.State).Returns(CommunicationState.Opened);
 
             clientFail.Setup(x => x.MessageReceived(It.IsAny<ChatMessageData>()))
                       .Throws(new CommunicationException("Disconnected"));
 
+            var clientOk = new Mock<IChatCallback>();
+            clientOk.As<ICommunicationObject>().Setup(c => c.State).Returns(CommunicationState.Opened);
+
             var activeClients = new List<IChatCallback> { clientFail.Object, clientOk.Object };
             _mockSessionHelper.Setup(x => x.GetActiveClients()).Returns(activeClients);
-            _manager.SendMessage(msg);
 
+            _manager.SendMessage(msg);
 
             clientOk.Verify(x => x.MessageReceived(msg), Times.Once);
         }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Contracts.DTOs;
@@ -27,6 +28,11 @@ namespace UnoLisServer.Test
             _mockRepo = new Mock<IFriendRepository>();
             _mockCallback = new Mock<IFriendsCallback>();
 
+            _mockCallback.As<IContextChannel>()
+                .Setup(x => x.State)
+                .Returns(CommunicationState.Opened);
+
+
             _manager = new FriendsManager(_mockRepo.Object, _mockCallback.Object);
         }
 
@@ -46,10 +52,11 @@ namespace UnoLisServer.Test
             _mockRepo.Setup(r => r.CreateFriendRequestAsync(1, 2))
                 .ReturnsAsync(new FriendList { idFriendList = 100, Player_idPlayer = 1, Player_idPlayer1 = 2 });
 
+            _mockCallback.Setup(cb => cb.FriendRequestReceived(It.IsAny<FriendRequestData>()));
+
             var result = await _manager.SendFriendRequestAsync(p1, p2);
 
             Assert.Equal(FriendRequestResult.Success, result);
-
             _mockRepo.Verify(r => r.CreateFriendRequestAsync(1, 2), Times.Once);
         }
 

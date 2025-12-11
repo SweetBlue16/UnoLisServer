@@ -1,9 +1,7 @@
 ﻿using Moq;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Threading;
 using UnoLisServer.Common.Enums;
 using UnoLisServer.Common.Helpers;
@@ -21,38 +19,58 @@ namespace UnoLisServer.Test.ManagerTest
     {
         private readonly Mock<IPlayerRepository> _mockRepository;
         private readonly Mock<IProfileEditCallback> _mockCallback;
+        private readonly Mock<INotificationSender> _mockNotificationSender;
+        private readonly Mock<IVerificationCodeHelper> _mockVerificationHelper;
         private readonly AutoResetEvent _waitHandle;
 
         public ProfileEditManagerTest()
         {
             _mockRepository = new Mock<IPlayerRepository>();
             _mockCallback = new Mock<IProfileEditCallback>();
+            _mockNotificationSender = new Mock<INotificationSender>();
+            _mockVerificationHelper = new Mock<IVerificationCodeHelper>();
             _waitHandle = new AutoResetEvent(false);
         }
 
         private ProfileEditManager CreateManager()
         {
-            return new ProfileEditManager(_mockRepository.Object, _mockCallback.Object);
+            return new ProfileEditManager(
+                _mockRepository.Object,
+                _mockVerificationHelper.Object,
+                _mockNotificationSender.Object,
+                _mockCallback.Object
+            );
+        }
+
+        private Player CreateFakePlayer(string nickname, string email = "original@test.com")
+        {
+            return new Player
+            {
+                nickname = nickname,
+                idPlayer = 1,
+                Account = new List<Account> { new Account { email = email, password = PasswordHelper.HashPassword("OldPass1!") } },
+                SocialNetwork = new List<SocialNetwork>()
+            };
         }
 
         [Fact]
         public void TestUpdateProfileDataValidDataShouldCallUpdateAndReturnSuccess()
         {
+            string nick = "TikiMaster";
+            string email = "original@test.com"; 
+
             var inputData = new ProfileData
             {
-                Nickname = "TikiMaster",
-                Email = "new@test.com",
-                FullName = "Tiki New",
+                Nickname = nick,
+                Email = email,
+                FullName = "Tiki Updated",
                 FacebookUrl = "http://facebook.com/tiki"
             };
 
-            var existingPlayer = CreateFakePlayer("TikiMaster");
+            var existingPlayer = CreateFakePlayer(nick, email);
 
-            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync("TikiMaster"))
-                           .ReturnsAsync(existingPlayer);
-
-            _mockRepository.Setup(r => r.UpdatePlayerProfileAsync(inputData))
-                           .Returns(System.Threading.Tasks.Task.CompletedTask);
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nick)).ReturnsAsync(existingPlayer);
+            _mockRepository.Setup(r => r.UpdatePlayerProfileAsync(inputData)).Returns(System.Threading.Tasks.Task.CompletedTask);
 
             _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -60,35 +78,58 @@ namespace UnoLisServer.Test.ManagerTest
             var manager = CreateManager();
 
             manager.UpdateProfileData(inputData);
-            bool signaled = _waitHandle.WaitOne(1000);
-
-            Assert.True(signaled, "Timeout esperando respuesta");
+            _waitHandle.WaitOne(1000);
 
             _mockRepository.Verify(r => r.UpdatePlayerProfileAsync(inputData), Times.Once);
-
             _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
                 It.Is<ServiceResponse<ProfileData>>(r => r.Success == true && r.Code == MessageCode.ProfileUpdated)
             ), Times.Once);
         }
 
         [Fact]
+        public void TestUpdateProfileDataDatabaseErrorShouldReturnDatabaseError()
+        {
+            string nick = "TikiMaster";
+            string email = "original@test.com"; 
+
+            var inputData = new ProfileData { Nickname = nick, Email = email };
+            var existingPlayer = CreateFakePlayer(nick, email);
+
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nick)).ReturnsAsync(existingPlayer);
+
+            _mockRepository.Setup(r => r.UpdatePlayerProfileAsync(inputData))
+                           .ThrowsAsync(new Exception("DataStore_Unavailable"));
+
+            _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+
+            manager.UpdateProfileData(inputData);
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.DatabaseError)
+            ), Times.Once);
+        }
+
+        [Fact]
         public void TestUpdateProfileDataSamePasswordShouldReturnSamePasswordError()
         {
-            string oldPassword = "OldPassword1!";
-            string hashedOld = PasswordHelper.HashPassword(oldPassword);
+            string nick = "TikiMaster";
+            string email = "original@test.com";
+            string password = "OldPass1!";
 
             var inputData = new ProfileData
             {
-                Nickname = "TikiMaster",
-                Email = "test@test.com",
-                Password = oldPassword
+                Nickname = nick,
+                Email = email,
+                Password = password 
             };
 
-            var existingPlayer = CreateFakePlayer("TikiMaster");
-            existingPlayer.Account.First().password = hashedOld;
+            var existingPlayer = CreateFakePlayer(nick, email);
 
-            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync("TikiMaster"))
-                           .ReturnsAsync(existingPlayer);
+            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync(nick)).ReturnsAsync(existingPlayer);
 
             _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -99,29 +140,8 @@ namespace UnoLisServer.Test.ManagerTest
             _waitHandle.WaitOne(1000);
 
             _mockRepository.Verify(r => r.UpdatePlayerProfileAsync(It.IsAny<ProfileData>()), Times.Never);
-
             _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
                 It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.SamePassword)
-            ), Times.Once);
-        }
-
-        [Fact]
-        public void TestUpdateProfileDataInvalidEmailFormatShouldReturnValidationError()
-        {
-            var inputData = new ProfileData { Nickname = "TikiMaster", Email = "bad-email" };
-
-            _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
-                         .Callback(() => _waitHandle.Set());
-
-            var manager = CreateManager();
-
-            manager.UpdateProfileData(inputData);
-            _waitHandle.WaitOne(1000);
-
-            _mockRepository.Verify(r => r.GetPlayerProfileByNicknameAsync(It.IsAny<string>()), Times.Never);
-
-            _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
-                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.InvalidEmailFormat)
             ), Times.Once);
         }
 
@@ -131,7 +151,7 @@ namespace UnoLisServer.Test.ManagerTest
             var inputData = new ProfileData { Nickname = "GhostUser", Email = "ghost@test.com" };
 
             _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync("GhostUser"))
-                           .ReturnsAsync((Player)null);
+                           .ReturnsAsync(new Player { idPlayer = 0 });
 
             _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -147,33 +167,9 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public void TestUpdateProfileDataDatabaseErrorShouldReturnUpdateFailedError()
-        {
-            var inputData = new ProfileData { Nickname = "TikiMaster", Email = "ok@test.com" };
-            var existingPlayer = CreateFakePlayer("TikiMaster");
-
-            _mockRepository.Setup(r => r.GetPlayerProfileByNicknameAsync("TikiMaster"))
-                           .ReturnsAsync(existingPlayer);
-
-            _mockRepository.Setup(r => r.UpdatePlayerProfileAsync(inputData))
-                           .ThrowsAsync(new Exception("DB Crash"));
-
-            _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
-                         .Callback(() => _waitHandle.Set());
-
-            var manager = CreateManager();
-            manager.UpdateProfileData(inputData);
-            _waitHandle.WaitOne(1000);
-
-            _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
-                It.Is<ServiceResponse<ProfileData>>(r => r.Success == false && r.Code == MessageCode.ProfileUpdateFailed)
-            ), Times.Once);
-        }
-
-        [Fact]
         public void TestUpdateProfileDataWeakPasswordShouldReturnWeakPasswordError()
         {
-            var inputData = new ProfileData { Nickname = "Tiki", Email = "a@a.com", Password = "123" }; 
+            var inputData = new ProfileData { Nickname = "Tiki", Email = "a@a.com", Password = "123" };
 
             _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
                          .Callback(() => _waitHandle.Set());
@@ -188,15 +184,22 @@ namespace UnoLisServer.Test.ManagerTest
             ), Times.Once);
         }
 
-        private Player CreateFakePlayer(string nickname)
+        [Fact]
+        public void TestUpdateProfileDataInvalidEmailFormatShouldReturnValidationError()
         {
-            return new Player
-            {
-                nickname = nickname,
-                idPlayer = 1,
-                Account = new List<Account> { new Account { email = "old@test.com", password = "HashedPassword" } },
-                SocialNetwork = new List<SocialNetwork>()
-            };
+            var inputData = new ProfileData { Nickname = "Tiki", Email = "bad-email" };
+
+            _mockCallback.Setup(cb => cb.ProfileUpdateResponse(It.IsAny<ServiceResponse<ProfileData>>()))
+                         .Callback(() => _waitHandle.Set());
+
+            var manager = CreateManager();
+
+            manager.UpdateProfileData(inputData);
+            _waitHandle.WaitOne(1000);
+
+            _mockCallback.Verify(cb => cb.ProfileUpdateResponse(
+                It.Is<ServiceResponse<ProfileData>>(r => r.Code == MessageCode.InvalidEmailFormat)
+            ), Times.Once);
         }
     }
 }

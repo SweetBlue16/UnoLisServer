@@ -182,12 +182,12 @@ namespace UnoLisServer.Services
                     }
                     catch (TimeoutException)
                     {
-                        Logger.Log($"[WARN] Tiempo de espera agotado al notificar a {nickname} sobre su baneo. Eliminando de la lista de suscriptores.");
+                        Logger.Log($"[WARN] Tiempo de espera agotado al notificar baneo. Eliminando de la lista de suscriptores.");
                         _suscribers.Remove(nickname);
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log($"[ERROR] Error al notificar a {nickname} sobre su baneo: {ex.Message}. Eliminando de la lista de suscriptores.");
+                        Logger.Log($"[ERROR] Error al notificar baneo: {ex.Message}. Eliminando de la lista de suscriptores.");
                         _suscribers.Remove(nickname);
                     }
                 }

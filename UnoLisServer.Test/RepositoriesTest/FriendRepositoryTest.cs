@@ -28,45 +28,37 @@ namespace UnoLisServer.Test
         {
             using (var context = GetContext())
             {
-                // 1. Limpieza Rápida (Respetando FKs)
                 context.Database.ExecuteSqlCommand("DELETE FROM [dbo].[Account]");
                 context.Database.ExecuteSqlCommand("DELETE FROM [dbo].[FriendList]");
                 context.Database.ExecuteSqlCommand("DELETE FROM [dbo].[Player]");
 
-                // 2. Crear Jugadores SIN IDs forzados (SQL los generará)
-                // Nota: fullName corto para evitar el error de validación (Max 45 chars)
                 var pAlpha = new Player { nickname = "Alpha", fullName = "Alpha User", revoCoins = 0 };
                 var pBeta = new Player { nickname = "Beta", fullName = "Beta User", revoCoins = 0 };
                 var pGamma = new Player { nickname = "Gamma", fullName = "Gamma User", revoCoins = 0 };
                 var pDelta = new Player { nickname = "Delta", fullName = "Delta User", revoCoins = 0 };
 
-                // 3. Vincular Cuentas
                 pAlpha.Account.Add(new Account { email = "a@test.com", password = "pass" });
                 pBeta.Account.Add(new Account { email = "b@test.com", password = "pass" });
                 pGamma.Account.Add(new Account { email = "g@test.com", password = "pass" });
                 pDelta.Account.Add(new Account { email = "d@test.com", password = "pass" });
 
-                // 4. Agregar al Contexto
                 context.Player.Add(pAlpha);
                 context.Player.Add(pBeta);
                 context.Player.Add(pGamma);
                 context.Player.Add(pDelta);
 
-                // 5. GUARDAR: Aquí SQL genera los IDs y EF actualiza los objetos
                 context.SaveChanges();
 
-                // 6. CAPTURAR los IDs reales para usarlos en el resto del test
                 _idAlpha = pAlpha.idPlayer;
                 _idBeta = pBeta.idPlayer;
                 _idGamma = pGamma.idPlayer;
                 _idDelta = pDelta.idPlayer;
 
-                // 7. Crear Relaciones usando los IDs reales
-                // Alpha -> Beta (Amigos)
-                context.FriendList.Add(new FriendList { Player_idPlayer = _idAlpha, Player_idPlayer1 = _idBeta, friendRequest = true });
+                context.FriendList.Add(new FriendList { Player_idPlayer = _idAlpha, Player_idPlayer1 = _idBeta, 
+                    friendRequest = true });
 
-                // Gamma -> Alpha (Pendiente)
-                context.FriendList.Add(new FriendList { Player_idPlayer = _idGamma, Player_idPlayer1 = _idAlpha, friendRequest = false });
+                context.FriendList.Add(new FriendList { Player_idPlayer = _idGamma, Player_idPlayer1 = _idAlpha,
+                    friendRequest = false });
 
                 context.SaveChanges();
             }
@@ -140,7 +132,6 @@ namespace UnoLisServer.Test
         public async Task GetFriendshipEntry_FoundByIds_OrderDoesNotMatter()
         {
             var repo = CreateRepo();
-            // Usamos las variables privadas, NO constantes
             var rel1 = await repo.GetFriendshipEntryAsync(_idAlpha, _idBeta);
             Assert.NotNull(rel1);
 
@@ -161,7 +152,7 @@ namespace UnoLisServer.Test
         public async Task CreateFriendRequest_ValidUsers_InsertsPendingRequest()
         {
             var repo = CreateRepo();
-            var newReq = await repo.CreateFriendRequestAsync(_idAlpha, _idDelta); // Alpha invita a Delta
+            var newReq = await repo.CreateFriendRequestAsync(_idAlpha, _idDelta); 
 
             using (var ctx = GetContext())
             {
@@ -174,11 +165,12 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreateFriendRequest_DuplicateRequest_ThrowsDbUpdateException()
+        public async Task CreateFriendRequest_DuplicateRequest_ThrowsDataConflictException()
         {
             var repo = CreateRepo();
-            // Usamos un número absurdo para garantizar fallo de FK
-            await Assert.ThrowsAsync<DbUpdateException>(() => repo.CreateFriendRequestAsync(_idAlpha, 9999999));
+            var ex = await Assert.ThrowsAsync<Exception>(() => repo.CreateFriendRequestAsync(_idAlpha, 9999999));
+
+            Assert.Equal("Data_Conflict", ex.Message);
         }
 
         [Fact]
@@ -188,8 +180,8 @@ namespace UnoLisServer.Test
             int reqId;
             using (var ctx = GetContext())
             {
-                // Buscamos la solicitud Gamma->Alpha usando los IDs dinámicos
-                reqId = ctx.FriendList.First(f => f.Player_idPlayer == _idGamma && f.Player_idPlayer1 == _idAlpha).idFriendList;
+                reqId = ctx.FriendList.First(f => f.Player_idPlayer == _idGamma && f.Player_idPlayer1 == 
+                _idAlpha).idFriendList;
             }
 
             await repo.AcceptFriendRequestAsync(reqId);

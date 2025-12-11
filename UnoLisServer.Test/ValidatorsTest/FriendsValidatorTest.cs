@@ -26,7 +26,7 @@ namespace UnoLisServer.Test
             var ex = Assert.Throws<ArgumentException>(() =>
                 FriendsValidator.ValidateNicknames(invalidNick, validTarget));
 
-            Assert.Contains("no pueden estar vacíos", ex.Message);
+            Assert.Contains("can not be empty", ex.Message);
         }
 
         [Theory]
@@ -40,7 +40,7 @@ namespace UnoLisServer.Test
             var ex = Assert.Throws<ArgumentException>(() =>
                 FriendsValidator.ValidateNicknames(validRequester, invalidNick));
 
-            Assert.Contains("no pueden estar vacíos", ex.Message);
+            Assert.Contains("can not be empty", ex.Message);
         }
 
         [Fact]

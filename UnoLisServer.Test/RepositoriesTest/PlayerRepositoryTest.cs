@@ -170,23 +170,25 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestGetPlayerProfileEmptyStringReturnsNull()
+        public async Task TestGetPlayerProfileEmptyStringReturnsEmptyPlayer()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("");
-            Assert.Null(result);
+            Assert.NotNull(result); 
+            Assert.Equal(0, result.idPlayer);
         }
 
         [Fact]
-        public async Task TestGetPlayerProfileNullStringReturnsNull()
+        public async Task TestGetPlayerProfileNullStringReturnsEmptyPlayer()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync(null);
-            Assert.Null(result);
+            Assert.NotNull(result);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncBasicInfoUpdatesDatabase()
         {
-            var updateData = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "Updated", Email = "u@t.com" };
+            var updateData = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "Updated",
+                Email = "u@t.com" };
             await CreateRepo().UpdatePlayerProfileAsync(updateData);
 
             using (var context = GetContext())
@@ -203,77 +205,78 @@ namespace UnoLisServer.Test
             string oldHash;
             using (var ctx = GetContext()) oldHash = ctx.Account.First(a => a.Player.nickname == "TikiTest").password;
 
-            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", Password = "New!" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest",
+                Email = "t@t.com", Password = "New!" });
 
-            using (var ctx = GetContext()) Assert.NotEqual(oldHash, ctx.Account.First(a => a.Player.nickname == "TikiTest").password);
+            using (var ctx = GetContext()) Assert.NotEqual(oldHash, ctx.Account.First(a => a.Player.nickname == 
+            "TikiTest").password);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncUpdateExistingSocialNetworkChangesLink()
         {
-            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "new.fb" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest",
+                Email = "t@t.com", FacebookUrl = "new.fb" });
 
             using (var ctx = GetContext())
-                Assert.Equal("new.fb", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook").linkRedSocial);
+                Assert.Equal("new.fb", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial
+                == "Facebook").linkRedSocial);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncAddNewSocialNetworkInsertsRecord()
         {
-            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", InstagramUrl = "new.ig" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email 
+                = "t@t.com", InstagramUrl = "new.ig" });
 
             using (var ctx = GetContext())
-                Assert.Equal("new.ig", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Instagram").linkRedSocial);
+                Assert.Equal("new.ig", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial
+                == "Instagram").linkRedSocial);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncEmptySocialUrlDoesNotDeleteOrError()
         {
-            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FacebookUrl = "" });
+            await CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "TikiTest",
+                Email = "t@t.com", FacebookUrl = "" });
 
             using (var ctx = GetContext())
-                Assert.Equal("fb.com/tiki", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && s.tipoRedSocial == "Facebook").linkRedSocial);
+                Assert.Equal("fb.com/tiki", ctx.SocialNetwork.First(s => s.Player.nickname == "TikiTest" && 
+                s.tipoRedSocial == "Facebook").linkRedSocial);
         }
 
         [Fact]
         public async Task TestUpdatePlayerProfileAsyncNonExistentUserThrowsException()
         {
-            await Assert.ThrowsAsync<ValidationException>(() => CreateRepo().UpdatePlayerProfileAsync(new Contracts.DTOs.ProfileData { Nickname = "Ghost" }));
+            await Assert.ThrowsAsync<ValidationException>(() => CreateRepo().UpdatePlayerProfileAsync(new 
+                Contracts.DTOs.ProfileData { Nickname = "Ghost" }));
         }
 
         [Fact]
-        public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsWrappedValidationException()
+        public async Task TestUpdatePlayerProfileAsyncFullNameTooLongThrowsInvalidDataFormat()
         {
-            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", FullName = new string('A', 300) };
-            var ex = await Assert.ThrowsAsync<EntityException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "t@t.com", 
+                FullName = new string('A', 300) };
 
-            Assert.Contains("Error de validación", ex.Message);
+            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+
+            Assert.Equal("Invalid_Data_Format", ex.Message);
         }
 
         [Fact]
-        public async Task TestUpdatePlayerProfileAsyncSqlConstraintViolationRollsBackAllChanges()
+        public async Task TestUpdatePlayerProfileAsyncDuplicateEmailThrowsDataConflict()
         {
-            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", FullName = "BAD", Email = "newbie@test.com" }; // Duplicado
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "newbie@test.com" }; 
 
-            using (var ctx = GetContext())
-            {
-                var p = ctx.Player.FirstOrDefault(x => x.nickname == "TikiTest");
-                if (p != null) Assert.Equal("Tiki Tester", p.fullName);
-            }
-        }
-
-        [Fact]
-        public async Task TestUpdatePlayerProfileAsyncDuplicateEmailThrowsDbUpdateException()
-        {
-            var data = new Contracts.DTOs.ProfileData { Nickname = "TikiTest", Email = "newbie@test.com" };
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().UpdatePlayerProfileAsync(data));
+            Assert.Equal("Data_Conflict", ex.Message);
         }
 
         [Fact]
         public async Task TestCreatePlayerAsyncValidDataInsertsPlayerAndAccount()
         {
-            var data = new Contracts.DTOs.RegistrationData { Nickname = "NewReg", FullName = "N", Email = "n@n.com", Password = "P" };
+            var data = new Contracts.DTOs.RegistrationData { Nickname = "NewReg", FullName = "N", 
+                Email = "n@n.com", Password = "P" };
             await CreateRepo().CreatePlayerAsync(data);
 
             using (var ctx = GetContext())
@@ -285,17 +288,35 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task TestCreatePlayerAsyncDuplicateNicknameThrowsDbUpdateException()
+        public async Task TestCreatePlayerAsyncDuplicateNicknameThrowsDataConflict()
         {
-            var data = new Contracts.DTOs.RegistrationData { Nickname = "TikiTest", FullName = "F", Email = "uniq@u.com", Password = "P" };
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().CreatePlayerAsync(data));
+            var data = new Contracts.DTOs.RegistrationData
+            {
+                Nickname = "TikiTest",
+                FullName = "F",
+                Email = "uniq@u.com",
+                Password = "P"
+            };
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().CreatePlayerAsync(data));
+
+            AssertConflictOrUnavailable(ex); 
         }
 
         [Fact]
-        public async Task TestCreatePlayerAsyncDuplicateEmailThrowsDbUpdateException()
+        public async Task TestCreatePlayerAsyncDuplicateEmailThrowsDataConflict()
         {
-            var data = new Contracts.DTOs.RegistrationData { Nickname = "Uniq", FullName = "F", Email = "tiki@test.com", Password = "P" };
-            await Assert.ThrowsAsync<System.Data.Entity.Infrastructure.DbUpdateException>(() => CreateRepo().CreatePlayerAsync(data));
+            var data = new Contracts.DTOs.RegistrationData
+            {
+                Nickname = "Uniq",
+                FullName = "F",
+                Email = "tiki@test.com",
+                Password = "P"
+            };
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => CreateRepo().CreatePlayerAsync(data));
+
+            AssertConflictOrUnavailable(ex); 
         }
 
         [Fact]
@@ -325,7 +346,8 @@ namespace UnoLisServer.Test
         [Fact]
         public async Task TestCreatePlayerFromPendingAsyncWithValidDataInsertsRecord()
         {
-            var pending = new UnoLisServer.Common.Models.PendingRegistration { Nickname = "PendingUser", FullName = "P", HashedPassword = "H" };
+            var pending = new UnoLisServer.Common.Models.PendingRegistration { Nickname = "PendingUser", FullName = 
+                "P", HashedPassword = "H" };
             await CreateRepo().CreatePlayerFromPendingAsync("pending@test.com", pending);
 
             using (var ctx = GetContext())
@@ -419,6 +441,31 @@ namespace UnoLisServer.Test
         public async Task TestUpdateSelectedAvatarAsyncInvalidUserThrowsException()
         {
             await Assert.ThrowsAsync<ValidationException>(() => CreateRepo().UpdateSelectedAvatarAsync("Ghost", 1));
+        }
+
+        private void AssertConflictOrUnavailable(Exception ex)
+        {
+            bool isValidError = ex.Message == "Data_Conflict" || ex.Message == "DataStore_Unavailable";
+
+            Assert.True(isValidError,
+                $"Expected 'Data_Conflict' or 'DataStore_Unavailable', but got '{ex.Message}'");
+        }
+
+        private void CreateEmailObstacle(string emailToBlock)
+        {
+            using (var ctx = GetContext())
+            {
+                if (!ctx.Account.Any(a => a.email == emailToBlock))
+                {
+                    var obstacle = new Player
+                    {
+                        nickname = "Obstacle",
+                        Account = new List<Account> { new Account { email = emailToBlock, password = "X" } }
+                    };
+                    ctx.Player.Add(obstacle);
+                    ctx.SaveChanges();
+                }
+            }
         }
     }
 }

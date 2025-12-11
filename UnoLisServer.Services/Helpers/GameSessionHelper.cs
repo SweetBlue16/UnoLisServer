@@ -8,7 +8,23 @@ using UnoLisServer.Services.GameLogic;
 
 namespace UnoLisServer.Services.Helpers
 {
-    public class GameSessionHelper
+    public interface IGameSessionHelper
+    {
+        event Action<string, string> OnPlayerDisconnected;
+
+        void CreateGame(string lobbyCode, GameSession session);
+        GameSession GetGame(string lobbyCode);
+        void RemoveGame(string lobbyCode);
+        void UpdateCallback(string lobbyCode, string nickname, IGameplayCallback callback);
+
+        void SendToPlayer(string lobbyCode, string nickname, Action<IGameplayCallback> action);
+        void BroadcastToGame(string lobbyCode, Action<IGameplayCallback> action);
+    }
+
+    /// <summary>
+    /// helper class to manage active game sessions and their associated callbacks.
+    /// </summary>
+    public class GameSessionHelper: IGameSessionHelper
     {
         public event Action<string, string> OnPlayerDisconnected;
         private static readonly Lazy<GameSessionHelper> _instance =
