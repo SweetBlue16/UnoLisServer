@@ -576,6 +576,11 @@ namespace UnoLisServer.Services
 
         private static void TryNotifyCallback(string nickname, Action<IFriendsCallback> action)
         {
+            if (!SessionManager.IsOnline(nickname))
+            {
+                return;
+            }
+            
             var callback = SessionManager.GetSession(nickname) as IFriendsCallback;
 
             if (callback == null)
