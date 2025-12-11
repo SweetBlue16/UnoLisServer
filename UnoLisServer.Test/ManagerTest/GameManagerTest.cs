@@ -44,7 +44,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public async Task TestPlayCard_SessionEmpty_ShouldReturnWithoutAction()
+        public async Task TestPlayCardSessionEmptyShouldReturnWithoutAction()
         {
             _mockSessionHelper.Setup(s => s.GetGame(It.IsAny<string>())).Returns(GameSession.Empty);
             var manager = CreateManager();
@@ -58,7 +58,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public async Task TestPlayCard_NotPlayerTurn_ShouldNotExecuteMove()
+        public async Task TestPlayCardNotPlayerTurnShouldNotExecuteMove()
         {
             var player1 = new GamePlayerData
             {
@@ -81,7 +81,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public async Task TestPlayCard_ValidMove_ShouldRemoveCardFromHand()
+        public async Task TestPlayCardValidMoveShouldRemoveCardFromHand()
         {
             var cardToPlay = new Card { Id = "10", Color = CardColor.Blue, Value = CardValue.One };
             var player1 = new GamePlayerData { Nickname = "P1", Hand = new List<Card> { cardToPlay } };
@@ -100,7 +100,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public async Task TestPlayCard_ValidMove_ShouldBroadcastPlay()
+        public async Task TestPlayCardValidMoveShouldBroadcastPlay()
         {
             var cardToPlay = new Card { Id = "10", Color = CardColor.Blue, Value = CardValue.One };
             var player1 = new GamePlayerData
@@ -126,7 +126,7 @@ namespace UnoLisServer.Test.ManagerTest
         }
 
         [Fact]
-        public async Task TestPlayCard_WinCondition_ShouldTriggerMatchEnd()
+        public async Task TestPlayCardWinConditionShouldTriggerMatchEnd()
         {
             var cardToPlay = new Card { Id = "99", Color = CardColor.Green, Value = CardValue.Nine };
             var player1 = new GamePlayerData { Nickname = "Winner", Hand = new List<Card> { cardToPlay } };

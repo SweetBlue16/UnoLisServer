@@ -21,7 +21,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void AddLobby_NewCode_StoresLobby()
+        public void TestAddLobbyNewCodeStoresLobby()
         {
             string code = Guid.NewGuid().ToString();
             var lobby = new LobbyInfo(code, new MatchSettings());
@@ -33,7 +33,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void AddLobby_DuplicateCode_DoesNotOverwriteOrThrow()
+        public void TestAddLobbyDuplicateCodeDoesNotOverwriteOrThrow()
         {
             string code = Guid.NewGuid().ToString();
             var lobby1 = new LobbyInfo(code, new MatchSettings());
@@ -46,7 +46,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void RemoveLobby_ExistingCode_RemovesIt()
+        public void TestRemoveLobbyExistingCodeRemovesIt()
         {
             string code = Guid.NewGuid().ToString();
             _helper.AddLobby(code, new LobbyInfo(code, new MatchSettings()));
@@ -58,7 +58,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void BroadcastToLobby_NoClients_DoesNotThrow()
+        public void TestBroadcastToLobbyNoClientsDoesNotThrow()
         {
             string code = Guid.NewGuid().ToString();
             _helper.AddLobby(code, new LobbyInfo(code, new MatchSettings()));
@@ -70,7 +70,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void BroadcastToLobby_LobbyDoesNotExist_DoesNotThrow()
+        public void TestBroadcastToLobbyLobbyDoesNotExistDoesNotThrow()
         {
             var exception = Record.Exception(() =>
                 _helper.BroadcastToLobby("GHOST_CODE", cb => cb.GameStarted()));

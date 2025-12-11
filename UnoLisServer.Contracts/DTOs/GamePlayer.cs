@@ -13,5 +13,8 @@ namespace UnoLisServer.Contracts.DTOs
 
         [DataMember]
         public int CardCount { get; set; }
+
+        [DataMember]
+        public bool IsConnected { get; set; } = true;
     }
 }

@@ -20,7 +20,7 @@ namespace UnoLisServer.Services
     /// <summary>
     /// Class for managing game logic and sessions during gameplay
     /// </summary>
-    public class GameManager : IGameManager
+    public class GameManager : IGameManager 
     {
         private const int UnoPenaltyDelayMs = 3000;
         private const int PenaltyCardCount = 2;
@@ -220,36 +220,75 @@ namespace UnoLisServer.Services
             lock (session.GameLock)
             {
                 var player = session.GetPlayer(nickname);
-                if (player == null)
+
+                if (player == null || !player.IsConnected)
                 {
                     return;
                 }
 
                 player.IsConnected = false;
+                Logger.Log($"[GAME] Player {nickname} marked as disconnected.");
 
-                int connectedCount = session.Players.Count(matchPlayer => matchPlayer.IsConnected);
-                if (connectedCount < MinPlayersToContinue)
+                int connectedCount = session.Players.Count(p => p.IsConnected);
+                if (connectedCount < 2)
                 {
                     EndGameByDefault(session);
                     return;
                 }
 
+                BroadcastPlayerList(session);
+
                 if (session.GetCurrentPlayer().Nickname == nickname)
                 {
                     session.NextTurn(); 
-
                     BroadcastTurnChange(session, lobbyCode);
                 }
-
-                _sessionHelper.BroadcastToGame(lobbyCode,
-                    callback => callback.GameMessage($"Player has disconnected."));
-
+                else
+                {
+                    _sessionHelper.BroadcastToGame(lobbyCode,
+                        cb => cb.GameMessage($"{nickname} lost connection."));
+                }
             }
         }
 
+        private void BroadcastPlayerList(GameSession session)
+        {
+            try
+            {
+                var activePlayers = session.Players.Select(player => new GamePlayer
+                {
+                    Nickname = player.Nickname,
+                    CardCount = player.Hand.Count,
+                    AvatarName = player.AvatarName,
+                    IsConnected = player.IsConnected
+                }).ToList();
+
+                _sessionHelper.BroadcastToGame(session.LobbyCode,
+                    callback => callback.ReceivePlayerList(activePlayers));
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Error saving default win (Communication): {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout saving default win: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[GAME] Error updating player list UI", ex);
+            }
+        }
+
+
         private void EndGameByDefault(GameSession session)
         {
-            var winner = session.Players.FirstOrDefault();
+            var winner = session.Players.FirstOrDefault(player => player.IsConnected);
+
+            if (winner == null)
+            {
+                winner = session.Players.FirstOrDefault();
+            }
 
             if (winner != null)
             {
