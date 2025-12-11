@@ -148,6 +148,7 @@
         PlayerLimitReached = 6027,
         InvalidGameSettings = 6028,
         PlayerReportFailed = 6029,
-        ItemAlreadyOwned = 6030
+        ItemAlreadyOwned = 6030,
+        VictoryByForfeit = 6031
     }
 }

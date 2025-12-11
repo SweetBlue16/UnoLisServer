@@ -6,7 +6,7 @@
         {
             if (string.IsNullOrWhiteSpace(nick1) || string.IsNullOrWhiteSpace(nick2))
             {
-                throw new System.ArgumentException("Los nicknames no pueden estar vacíos.");
+                throw new System.ArgumentException("Nicknames can not be empty.");
             }
         }
     }

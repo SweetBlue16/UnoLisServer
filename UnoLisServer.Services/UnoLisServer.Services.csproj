@@ -63,6 +63,7 @@
     <Compile Include="GameLogic\DeckManager.cs" />
     <Compile Include="GameLogic\GameSession.cs" />
     <Compile Include="GameLogic\Models\GamePlayerData.cs" />
+    <Compile Include="GameLogic\Models\ItemUsageContext.cs" />
     <Compile Include="GameManager.cs" />
     <Compile Include="GameplayManager.cs" />
     <Compile Include="Helpers\ChatSessionHelper.cs" />

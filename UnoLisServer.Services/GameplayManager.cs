@@ -6,6 +6,7 @@ using UnoLisServer.Common.Helpers;
 using UnoLisServer.Contracts.DTOs;
 using UnoLisServer.Contracts.Interfaces;
 using UnoLisServer.Services.ManagerInterfaces;
+using UnoLisServer.Services.GameLogic.Models;
 
 namespace UnoLisServer.Services
 {
@@ -30,9 +31,9 @@ namespace UnoLisServer.Services
 
         public void PlayCard(PlayCardData data)
         {
-            if (data == null || string.IsNullOrWhiteSpace(data.LobbyCode))
+            if (IsInvalidPlayCardData(data))
             {
-                Logger.Warn("[GAMEPLAY] Received invalid PlayCard data (null or empty lobby).");
+                Logger.Warn("[GAMEPLAY] Received invalid PlayCard data.");
                 return;
             }
 
@@ -70,7 +71,7 @@ namespace UnoLisServer.Services
 
         public void DrawCard(string lobbyCode, string nickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            if (IsInvalidInput(lobbyCode, nickname))
             {
                 Logger.Warn("[GAMEPLAY] DrawCard called with invalid parameters.");
                 return;
@@ -99,7 +100,7 @@ namespace UnoLisServer.Services
 
         public void ConnectToGame(string lobbyCode, string nickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            if (IsInvalidInput(lobbyCode, nickname))
             {
                 Logger.Warn("[GAMEPLAY] ConnectToGame failed. Invalid parameters.");
                 return;
@@ -129,8 +130,9 @@ namespace UnoLisServer.Services
 
         public void SayUnoAsync(string lobbyCode, string nickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            if (IsInvalidInput(lobbyCode, nickname))
             {
+                Logger.Warn("[GAMEPLAY] SayUnoAsync failed. Invalid parameters.");
                 return;
             }
 
@@ -157,8 +159,9 @@ namespace UnoLisServer.Services
 
         public void DisconnectPlayer(string lobbyCode, string nickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            if (IsInvalidInput(lobbyCode, nickname))
             {
+                Logger.Warn("[GAMEPLAY] DisconnectPlayer failed. Invalid parameters.");
                 return;
             }
 
@@ -179,9 +182,9 @@ namespace UnoLisServer.Services
 
         public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
         {
-            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            if (IsInvalidInput(lobbyCode, nickname))
             {
-                Logger.Warn("[GAMEPLAY] UseItem failed. Missing parameters.");
+                Logger.Warn("[GAMEPLAY] UseItem failed. Invalid parameters.");
                 return;
             }
 
@@ -189,9 +192,8 @@ namespace UnoLisServer.Services
             {
                 try
                 {
-                    _gameManager.UseItem(lobbyCode, nickname, itemType, targetNickname);
-
-                    Logger.Log($"[GAMEPLAY] {nickname} used item {itemType}");
+                    var context = new ItemUsageContext(lobbyCode, nickname, itemType, targetNickname);
+                    _gameManager.UseItem(context);
                 }
                 catch (InvalidOperationException ruleEx)
                 {
@@ -206,6 +208,21 @@ namespace UnoLisServer.Services
                     Logger.Error($"[CRITICAL] Unexpected error using item {itemType}", ex);
                 }
             });
+        }
+
+        private bool IsInvalidInput(string lobbyCode, string nickname)
+        {
+            if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
+            {
+                Logger.Warn("[GAMEPLAY] Invalid parameters received (null or empty).");
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsInvalidPlayCardData(PlayCardData data)
+        {
+            return data == null || string.IsNullOrWhiteSpace(data.LobbyCode);
         }
     }
 }
