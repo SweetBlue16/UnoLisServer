@@ -250,7 +250,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private bool IsGuestAction(string requester, string target)
+        private static bool IsGuestAction(string requester, string target)
         {
             if (requester == null || target == null)
             {
@@ -265,7 +265,7 @@ namespace UnoLisServer.Services
             return false;
         }
 
-        private bool IsInvalidPlayer(Player player)
+        private static bool IsInvalidPlayer(Player player)
         {
             return player == null || player.idPlayer == 0;
         }
@@ -305,7 +305,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private FriendRequestResult AnalyzeRelationshipStatus(FriendList existingRel, int requesterId)
+        private static FriendRequestResult AnalyzeRelationshipStatus(FriendList existingRel, int requesterId)
         {
             if (existingRel == null)
             {
@@ -430,7 +430,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private bool IsValidRequestToAccept(FriendList relation)
+        private static bool IsValidRequestToAccept(FriendList relation)
         {
             if (relation == null)
             {
@@ -503,7 +503,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private bool IsActiveFriendship(FriendList relation)
+        private static bool IsActiveFriendship(FriendList relation)
         {
             if (relation == null)
             {

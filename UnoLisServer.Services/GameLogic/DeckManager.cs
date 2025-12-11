@@ -9,7 +9,7 @@ namespace UnoLisServer.Services.GameLogic
     public class DeckManager
     {
         private Queue<Card> _drawPile;
-        private Stack<Card> _discardPile;
+        private readonly Stack<Card> _discardPile;
 
         public DeckManager()
         {
@@ -93,7 +93,7 @@ namespace UnoLisServer.Services.GameLogic
             Logger.Log("Deck recycled and reshuffled.");
         }
 
-        private Queue<Card> Shuffle(List<Card> cards)
+        private static Queue<Card> Shuffle(List<Card> cards)
         {
             int n = cards.Count;
             while (n > 1)
@@ -108,7 +108,7 @@ namespace UnoLisServer.Services.GameLogic
             return new Queue<Card>(cards);
         }
 
-        private bool IsWildCard(Contracts.Enums.CardValue value)
+        private static bool IsWildCard(Contracts.Enums.CardValue value)
         {
             return value == Contracts.Enums.CardValue.Wild ||
                    value == Contracts.Enums.CardValue.WildDrawFour ||

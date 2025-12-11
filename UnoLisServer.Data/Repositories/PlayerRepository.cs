@@ -634,7 +634,7 @@ namespace UnoLisServer.Data.Repositories
             }
         }
 
-        private int CalculateAndApplyCoins(Player player, int pointsEarned)
+        private static int CalculateAndApplyCoins(Player player, int pointsEarned)
         {
             double coinPercentage = 0.10;
             int coins = (int)(pointsEarned * coinPercentage);
@@ -664,7 +664,7 @@ namespace UnoLisServer.Data.Repositories
             return stats;
         }
 
-        private void ApplyMatchLogicToStats(PlayerStatistics stats, bool isWinner, int pointsEarned)
+        private static void ApplyMatchLogicToStats(PlayerStatistics stats, bool isWinner, int pointsEarned)
         {
             if (stats == null)
             {
