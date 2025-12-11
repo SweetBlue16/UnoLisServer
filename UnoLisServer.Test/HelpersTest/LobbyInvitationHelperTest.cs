@@ -27,7 +27,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_ValidUsersWithEmails_ReturnsTrueAndSends()
+        public async Task TestSendInvitationsValidUsersWithEmailsReturnsTrueAndSends()
         {
             string code = "LOBBY";
             string sender = "Host";
@@ -47,7 +47,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_NullOrEmptyList_ReturnsFalseImmediately()
+        public async Task TestSendInvitationsNullOrEmptyListReturnsFalseImmediately()
         {
             Assert.False(await _helper.SendInvitationsAsync("Code", "Host", null));
             Assert.False(await _helper.SendInvitationsAsync("Code", "Host", new List<string>()));
@@ -56,7 +56,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_UsersNotFoundOrNoEmail_ReturnsFalseAndNoSends()
+        public async Task TestSendInvitationsUsersNotFoundOrNoEmailReturnsFalseAndNoSends()
         {
             var nicks = new List<string> { "Ghost", "NoEmailUser" };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync("Ghost")).ReturnsAsync((Player)null);
@@ -69,7 +69,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_RepositoryThrowsException_ReturnsFalse()
+        public async Task TestSendInvitationsRepositoryThrowsExceptionReturnsFalse()
         {
             var nicks = new List<string> { "User1" };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync(It.IsAny<string>()))
@@ -80,7 +80,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_SenderThrowsException_ReturnsFalse()
+        public async Task TestSendInvitationsSenderThrowsExceptionReturnsFalse()
         {
             var nicks = new List<string> { "User1" };
             SetupMockPlayer("User1", "valid@test.com");
@@ -103,7 +103,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task SendInvitations_RepositoryTimeout_ReturnsFalse()
+        public async Task TestSendInvitationsRepositoryTimeoutReturnsFalse()
         {
             var nicks = new List<string> { "User1" };
             _mockRepo.Setup(r => r.GetPlayerWithDetailsAsync(It.IsAny<string>()))

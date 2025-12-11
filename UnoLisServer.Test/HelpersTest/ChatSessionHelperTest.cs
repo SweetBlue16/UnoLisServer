@@ -9,7 +9,7 @@ namespace UnoLisServer.Test
     public class ChatSessionHelperTest
     {
         [Fact]
-        public void TestChatHistory_CircularBuffer_KeepsOnlyMaxMessages()
+        public void TestChatHistoryCircularBuffer_KeepsOnlyMaxMessages()
         {
             var helper = ChatSessionHelper.Instance;
             string channel = "TestChannel_Buffer";
@@ -31,7 +31,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public void TestChatHistory_DifferentChannels_DoNotMix()
+        public void TestChatHistoryDifferentChannels_DoNotMix()
         {
             var helper = ChatSessionHelper.Instance;
             helper.AddToHistory("LobbyA", new ChatMessageData { Message = "MessageA" });

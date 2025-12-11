@@ -74,21 +74,42 @@ namespace UnoLisServer.Services.GameLogic
         {
             lock (GameLock)
             {
+                if (Players.Count(player => player.IsConnected) < 2)
+                {
+                    return;
+                }
+
+                int attempts = 0;
+                int maxPlayers = Players.Count;
+
+                do
+                {
+                    if (IsClockwise)
+                    {
+                        CurrentTurnIndex = (CurrentTurnIndex + 1) % Players.Count;
+                    }
+                    else
+                    {
+                        CurrentTurnIndex = (CurrentTurnIndex - 1 + Players.Count) % Players.Count;
+                    }
+
+                    attempts++;
+
+                    if (attempts > maxPlayers) return;
+
+               
+                } while (!Players[CurrentTurnIndex].IsConnected);
+
+            
                 var currentPlayer = GetCurrentPlayer();
                 currentPlayer.HasDrawnThisTurn = false;
 
-                if (IsClockwise)
-                {
-                    CurrentTurnIndex = (CurrentTurnIndex + 1) % Players.Count;
-                }
-                else
-                {
-                    CurrentTurnIndex = (CurrentTurnIndex - 1 + Players.Count) % Players.Count;
-                }
-
                 StartTurnTimer();
+
             }
         }
+
+
 
         public void ReverseDirection()
         {

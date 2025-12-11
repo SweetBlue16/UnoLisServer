@@ -219,24 +219,31 @@ namespace UnoLisServer.Services
 
             lock (session.GameLock)
             {
-                var playerToRemove = session.GetPlayer(nickname);
-
-                if (playerToRemove == null)
+                var player = session.GetPlayer(nickname);
+                if (player == null)
                 {
                     return;
                 }
 
-                session.Players.Remove(playerToRemove);
-                Logger.Log($"[GAME] Removed Player from session logic.");
+                player.IsConnected = false;
 
-                if (session.Players.Count < MinPlayersToContinue)
+                int connectedCount = session.Players.Count(matchPlayer => matchPlayer.IsConnected);
+                if (connectedCount < MinPlayersToContinue)
                 {
                     EndGameByDefault(session);
+                    return;
                 }
-                else
+
+                if (session.GetCurrentPlayer().Nickname == nickname)
                 {
-                    ContinueGameAfterDisconnect(session, lobbyCode);
+                    session.NextTurn(); 
+
+                    BroadcastTurnChange(session, lobbyCode);
                 }
+
+                _sessionHelper.BroadcastToGame(lobbyCode,
+                    callback => callback.GameMessage($"Player has disconnected."));
+
             }
         }
 
@@ -1227,6 +1234,7 @@ namespace UnoLisServer.Services
             }
         }
 
+        
         private void BroadcastShoutedUnoSafe(string lobbyCode, string nickname)
         {
             try

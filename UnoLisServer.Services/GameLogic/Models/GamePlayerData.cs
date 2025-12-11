@@ -12,6 +12,8 @@ namespace UnoLisServer.Services.GameLogic.Models
         public bool HasSaidUno { get; set; }
         public bool HasDrawnThisTurn { get; set; }
 
+        public bool IsConnected { get; set; } = true;
+
         public GamePlayerData()
         {
         }
