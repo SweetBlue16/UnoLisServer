@@ -34,7 +34,7 @@ namespace UnoLisServer.Services
                 LoginValidator.AuthenticatePlayer(credentials);
 
                 var banInfo = LoginValidator.IsPlayerBanned(nickname);
-                if (!string.IsNullOrWhiteSpace(banInfo.FormattedTimeRemaining))
+                if (!string.IsNullOrWhiteSpace(banInfo.FormattedTimeRemaining) && banInfo != null)
                 {
                     Logger.Log($"[AUTH] Login denied for banned user.");
                     response = CreateBanResponse(banInfo);
