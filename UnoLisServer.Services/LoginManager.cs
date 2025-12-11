@@ -114,7 +114,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
+        private static ResponseInfo<object> CreateBanResponse(BanInfo banInfo)
         {
             if (string.IsNullOrWhiteSpace(banInfo.FormattedTimeRemaining))
             {

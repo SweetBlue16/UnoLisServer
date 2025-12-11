@@ -43,7 +43,7 @@ namespace UnoLisServer.Services.Validators
             return true;
         }
 
-        private void SendError(IReportCallback callback, MessageCode code, string message)
+        private static void SendError(IReportCallback callback, MessageCode code, string message)
         {
             var response = new ResponseInfo<object>(
                 code,

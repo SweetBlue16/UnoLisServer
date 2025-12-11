@@ -455,12 +455,12 @@ namespace UnoLisServer.Services
             BroadcastGameMessage(session.LobbyCode, msg);
         }
 
-        private bool ValidateTurn(GameSession session, GamePlayerData player)
+        private static bool ValidateTurn(GameSession session, GamePlayerData player)
         {
             return session.GetCurrentPlayer().Nickname == player.Nickname;
         }
 
-        private bool IsUnoPenaltyApplicable(GamePlayerData player)
+        private static bool IsUnoPenaltyApplicable(GamePlayerData player)
         {
             return player.Hand.Count == 1 && !player.HasSaidUno;
         }
@@ -599,14 +599,14 @@ namespace UnoLisServer.Services
             }
         }
 
-        private bool IsInvalidItemContext(ItemUsageContext context)
+        private static bool IsInvalidItemContext(ItemUsageContext context)
         {
             return context == null ||
                    string.IsNullOrWhiteSpace(context.LobbyCode) ||
                    string.IsNullOrWhiteSpace(context.ActorNickname);
         }
 
-        private bool CanUseItem(GameSession session, GamePlayerData player, ItemType itemType)
+        private static bool CanUseItem(GameSession session, GamePlayerData player, ItemType itemType)
         {
             if (player == null || session.GetCurrentPlayer().Nickname != player.Nickname)
             {
@@ -763,7 +763,7 @@ namespace UnoLisServer.Services
             skipNext = true;
         }
 
-        private void HandleReverseCard(GameSession session, ref bool skipNext)
+        private static void HandleReverseCard(GameSession session, ref bool skipNext)
         {
             session.ReverseDirection();
             if (session.Players.Count == 2)
@@ -822,7 +822,7 @@ namespace UnoLisServer.Services
             }
         }
 
-        private GamePlayerData GetNextPlayer(GameSession session)
+        private static GamePlayerData GetNextPlayer(GameSession session)
         {
             int step = 1;
             int victimIndex;
@@ -937,7 +937,7 @@ namespace UnoLisServer.Services
             return results;
         }
 
-        private List<GamePlayerData> GetRankedPlayers(GameSession session, GamePlayerData winner)
+        private static List<GamePlayerData> GetRankedPlayers(GameSession session, GamePlayerData winner)
         {
             if (session == null || winner == null)
             {
@@ -950,7 +950,7 @@ namespace UnoLisServer.Services
                 .ToList();
         }
 
-        private int CalculatePoints(int totalPlayers, int rankIndex)
+        private static int CalculatePoints(int totalPlayers, int rankIndex)
         {
             var scoreTable = new Dictionary<int, int[]>
             {

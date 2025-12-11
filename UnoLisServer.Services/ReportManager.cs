@@ -138,7 +138,7 @@ namespace UnoLisServer.Services
             _reportRepository.SaveReport(report);
         }
 
-        private void NotifySuccess(IReportCallback callback, string reportedNickname)
+        private static void NotifySuccess(IReportCallback callback, string reportedNickname)
         {
             var response = new ResponseInfo<object>(
                 MessageCode.ReportSubmitted,
@@ -148,7 +148,7 @@ namespace UnoLisServer.Services
             ResponseHelper.SendResponse(callback.ReportPlayerResponse, response);
         }
 
-        private void NotifyError(IReportCallback callback, MessageCode code, string logMessage)
+        private static void NotifyError(IReportCallback callback, MessageCode code, string logMessage)
         {
             var response = new ResponseInfo<object>(
                 code,
@@ -158,7 +158,7 @@ namespace UnoLisServer.Services
             ResponseHelper.SendResponse(callback.ReportPlayerResponse, response);
         }
 
-        private void NotifyBannedPlayer(string nickname, BanInfo banInfo)
+        private static void NotifyBannedPlayer(string nickname, BanInfo banInfo)
         {
             lock (_lock)
             {
