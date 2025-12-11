@@ -1,12 +1,13 @@
-﻿using UnoLisServer.Common.Exceptions;
-using UnoLisServer.Contracts.DTOs;
-using UnoLisServer.Common.Enums;
-using UnoLisServer.Data;
+﻿using System;
 using System.Linq;
+using System.Runtime.Remoting.Contexts;
+using UnoLisServer.Common.Enums;
+using UnoLisServer.Common.Exceptions;
 using UnoLisServer.Common.Helpers;
-using UnoLisServer.Data.RepositoryInterfaces;
+using UnoLisServer.Contracts.DTOs;
+using UnoLisServer.Data;
 using UnoLisServer.Data.Repositories;
-using System;
+using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Services.Validators
 {
@@ -27,29 +28,32 @@ namespace UnoLisServer.Services.Validators
 
         public static void AuthenticatePlayer(AuthCredentials credentials)
         {
-            using (var context = new UNOContext())
+            IPlayerRepository playerRepository = new PlayerRepository();
+            var player = playerRepository.GetPlayerWithDetailsAsync(credentials.Nickname).Result;
+            if (player == null || player.idPlayer == 0)
             {
-                var account = context.Account
-                    .Include("Player")
-                    .FirstOrDefault(a => a.Player.nickname == credentials.Nickname);
-                if (account.idAccount <= 0)
-                {
-                    throw new ValidationException(MessageCode.PlayerNotFound,
-                        $"No se encontró al jugador {credentials.Nickname}.");
-                }
+                throw new ValidationException(MessageCode.PlayerNotFound,
+                    $"No se encontró al jugador {credentials.Nickname}.");
+            }
 
-                bool isPasswordValid = PasswordHelper.VerifyPassword(credentials.Password, account.password);
-                if (!isPasswordValid)
-                {
-                    throw new ValidationException(MessageCode.InvalidCredentials,
-                        $"Credenciales inválidas para {credentials.Nickname}");
-                }
+            var account = player.Account.FirstOrDefault();
+            if (account == null || account.idAccount == 0)
+            {
+                throw new ValidationException(MessageCode.PlayerNotFound,
+                    $"No se encontró la cuenta para el jugador {credentials.Nickname}.");
+            }
 
-                if (SessionManager.IsOnline(account.Player.nickname))
-                {
-                    throw new ValidationException(MessageCode.DuplicateSession,
-                        $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
-                }
+            bool isPasswordValid = PasswordHelper.VerifyPassword(credentials.Password, account.password);
+            if (!isPasswordValid)
+            {
+                throw new ValidationException(MessageCode.InvalidCredentials,
+                    $"Credenciales inválidas para {credentials.Nickname}");
+            }
+
+            if (SessionManager.IsOnline(account.Player.nickname))
+            {
+                throw new ValidationException(MessageCode.DuplicateSession,
+                    $"El jugador {credentials.Nickname} ya tiene una sesión activa.");
             }
         }
 
@@ -57,9 +61,16 @@ namespace UnoLisServer.Services.Validators
         {
             ISanctionRepository sanctionRepository = new SanctionRepository();
             IPlayerRepository playerRepository = new PlayerRepository();
+
             var player = playerRepository.GetPlayerWithDetailsAsync(nickname).Result;
+            if (player == null || player.idPlayer == 0)
+            {
+                throw new ValidationException(MessageCode.PlayerNotFound,
+                    $"No se encontró al jugador {nickname}.");
+            }
+
             var activeSanction = sanctionRepository.GetActiveSanction(player.idPlayer);
-            if (activeSanction != null)
+            if (activeSanction != null && activeSanction.idSanction > 0)
             {
                 return MapSanctionToBanInfo(activeSanction);
             }

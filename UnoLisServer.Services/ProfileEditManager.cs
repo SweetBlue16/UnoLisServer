@@ -47,8 +47,8 @@ namespace UnoLisServer.Services
             try
             {
                 ProfileEditValidator.ValidateEmail(newEmail);
-                var existingAccount = await _playerRepository.GetPlayerProfileByNicknameAsync(nickname);
-                if (existingAccount.idPlayer > 0)
+                bool existingEmail = await _playerRepository.IsEmailRegisteredAsync(newEmail);
+                if (existingEmail)
                 {
                     throw new ValidationException(MessageCode.EmailAlreadyRegistered, "Email is already in use.");
                 }
@@ -161,8 +161,8 @@ namespace UnoLisServer.Services
                             "invalid or has expired.");
                     }
 
-                    var duplicateAccount = await _playerRepository.GetPlayerProfileByNicknameAsync(data.Nickname);
-                    if (duplicateAccount.idPlayer > 0)
+                    bool duplicateAccount = await _playerRepository.IsEmailRegisteredAsync(data.Email);
+                    if (duplicateAccount)
                     {
                         throw new ValidationException(MessageCode.EmailAlreadyRegistered, "Email is already in use.");
                     }
