@@ -8,8 +8,7 @@ namespace UnoLisServer.Host
     internal static class ConfigInitializer
     {
         /// <summary>
-        /// Construye y aplica la cadena de conexión de Entity Framework UNOContext
-        /// usando las variables de entorno locales del sistema.
+        /// Builds and applies connection string to the application configuration
         /// </summary>
         public static void ApplyDatabaseConnectionFromEnv()
         {

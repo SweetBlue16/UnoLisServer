@@ -7,6 +7,9 @@ using UnoLisServer.Common.Enums;
 
 namespace UnoLisServer.Services.GameLogic.Models
 {
+    /// <summary>
+    /// Object to abstract item parameters when used in game logic.
+    /// </summary>
     public class ItemUsageContext
     {
         public string LobbyCode { get; set; }

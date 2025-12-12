@@ -13,6 +13,9 @@ using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage logic for avatar wise
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class AvatarManager : IAvatarManager
     {

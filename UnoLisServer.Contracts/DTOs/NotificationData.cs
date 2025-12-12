@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Notification data transfer object
+    /// </summary>
     public class NotificationData
     {
         public string Nickname { get; set; }

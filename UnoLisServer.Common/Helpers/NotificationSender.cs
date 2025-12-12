@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace UnoLisServer.Common.Helpers
 {
+    /// <summary>
+    /// Class that contains methods to send various notification emails to users.
+    /// </summary>
     public interface INotificationSender
     {
         Task SendAccountVerificationEmailAsync(string email, string code);

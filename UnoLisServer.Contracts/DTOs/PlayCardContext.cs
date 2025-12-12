@@ -1,5 +1,8 @@
 ﻿namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Context for playing a card in the game
+    /// </summary>
     public class PlayCardContext
     {
         public string LobbyCode { get; set; }

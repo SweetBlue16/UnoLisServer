@@ -15,6 +15,9 @@ using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Manages logic for reporting a player
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ReportManager : IReportManager
     {

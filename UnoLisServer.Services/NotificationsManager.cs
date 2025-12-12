@@ -6,6 +6,9 @@ using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class responsible for managing notifications to clients via WCF callbacks.
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class NotificationsManager : INotificationsManager
     {

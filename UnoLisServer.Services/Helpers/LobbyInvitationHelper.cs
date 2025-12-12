@@ -43,7 +43,7 @@ namespace UnoLisServer.Services.Helpers
 
                 if (!emailsToSend.Any())
                 {
-                    Logger.Warn($"[INVITATIONS] No valid emails found for lobby {lobbyCode} from {senderNickname}");
+                    Logger.Warn($"[INVITATIONS] No valid emails found for lobby {lobbyCode}");
                     return false;
                 }
 

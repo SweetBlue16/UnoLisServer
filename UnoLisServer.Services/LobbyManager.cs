@@ -15,6 +15,9 @@ using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Logic for Lobby acting as an orchestor
+    /// </summary>
     public class LobbyManager : ILobbyManager
     {
         private readonly LobbySessionHelper _sessionHelper;

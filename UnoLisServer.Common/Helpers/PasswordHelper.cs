@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 
 namespace UnoLisServer.Common.Helpers
 {
+    /// <summary>
+    /// Class that provides methods for hashing and verifying passwords.
+    /// </summary>
     public static class PasswordHelper
     {
         public static string HashPassword(string password)

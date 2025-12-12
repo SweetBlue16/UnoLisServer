@@ -13,6 +13,9 @@ using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage logic for viewing profile
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ProfileViewManager : IProfileViewManager
     {

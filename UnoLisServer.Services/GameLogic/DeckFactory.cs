@@ -5,6 +5,9 @@ using UnoLisServer.Contracts.Enums;
 
 namespace UnoLisServer.Services.GameLogic
 {
+    /// <summary>
+    /// Factory class to create a standard UNO deck of cards.
+    /// </summary>
     public static class DeckFactory
     {
         public static Queue<Card> CreateFullDeck()

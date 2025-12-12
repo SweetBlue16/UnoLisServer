@@ -3,6 +3,9 @@ using UnoLisServer.Contracts.Enums;
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Object for game logic
+    /// </summary>
     [DataContract]
     public class Card
     {

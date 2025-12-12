@@ -13,6 +13,9 @@ using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Managing logic for friends
+    /// </summary>
     [ServiceBehavior(
         InstanceContextMode = InstanceContextMode.PerSession,
         ConcurrencyMode = ConcurrencyMode.Reentrant)]

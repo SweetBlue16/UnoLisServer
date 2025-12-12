@@ -12,6 +12,9 @@ using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Data.Repositories
 {
+    /// <summary>
+    /// Repository for managing friend relationships and requests to the Database.
+    /// </summary>
     public class FriendRepository : IFriendRepository
     {
         private readonly Func<UNOContext> _contextFactory;

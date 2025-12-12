@@ -3,6 +3,9 @@ using System.Data.SqlClient;
 
 namespace UnoLisServer.Common.Helpers
 {
+    /// <summary>
+    /// Class that provides methods to handle SQL errors and log them appropriately.
+    /// </summary>
     public static class SqlErrorHandler
     {
         public static void HandleAndThrow(SqlException sqlEx)
@@ -41,7 +44,8 @@ namespace UnoLisServer.Common.Helpers
                     break;
                 case 2601:
                 case 2627:
-                    logMessage = $"[SQL-DUPLICATE] Unique constraint violation / Duplicate Key (Error {sqlEx.Number}).";
+                    logMessage = $"[SQL-DUPLICATE] Unique constraint violation / Duplicate Key " +
+                        $"(Error {sqlEx.Number}).";
                     break;
 
                 default:

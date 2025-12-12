@@ -10,6 +10,9 @@ using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage logic for login
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class LoginManager : ILoginManager
     {
@@ -110,7 +113,7 @@ namespace UnoLisServer.Services
             }
             catch (Exception sendEx)
             {
-                Logger.Error($"[WCF-FATAL] Failed to send login response.", sendEx);
+                Logger.Error($"[WCF-ERROR] Failed to send login response.", sendEx);
             }
         }
 

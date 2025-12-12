@@ -15,9 +15,6 @@ namespace UnoLisServer.Contracts.Models
         public List<LobbyPlayerData> Players { get; set; }
         public string SelectedBackgroundVideo { get; set; }
 
-        /// <summary>
-        /// Lock object for thread-safe operations on this specific lobby instance.
-        /// </summary>
         public readonly object LobbyLock = new object();
 
         public LobbyInfo(string lobbyCode, MatchSettings settings)
@@ -30,9 +27,6 @@ namespace UnoLisServer.Contracts.Models
 
         public LobbyInfo() { }
 
-        /// <summary>
-        /// Attempts to add a player to this lobby.
-        /// </summary>
         public bool AddPlayer(string nickname, string avatarName)
         {
             lock (LobbyLock)
@@ -59,9 +53,6 @@ namespace UnoLisServer.Contracts.Models
             }
         }
 
-        /// <summary>
-        /// Removes a player from this lobby.
-        /// </summary>
         public void RemovePlayer(string nickname)
         {
             lock (LobbyLock)

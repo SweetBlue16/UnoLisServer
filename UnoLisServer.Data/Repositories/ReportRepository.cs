@@ -4,6 +4,9 @@ using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Data.Repositories
 {
+    /// <summary>
+    /// Repository to save reports made by players.
+    /// </summary>
     public class ReportRepository : IReportRepository
     {
         private const int HoursBetweenReports = 24;

@@ -11,6 +11,9 @@ using UnoLisServer.Services.Validators;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Managing logic to confirmate information or codes
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ConfirmationManager : IConfirmationManager
     {

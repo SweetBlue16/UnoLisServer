@@ -4,6 +4,9 @@ using System.Security.Cryptography;
 
 namespace UnoLisServer.Common.Helpers
 {
+    /// <summary>
+    /// Class that provides methods to generate secure random numbers and strings.
+    /// </summary>
     public static class SecureRandom
     {
         private static readonly RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();

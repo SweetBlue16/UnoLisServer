@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Information needed to show a friend list
+    /// </summary>
     [DataContract]
     public class FriendData
     {

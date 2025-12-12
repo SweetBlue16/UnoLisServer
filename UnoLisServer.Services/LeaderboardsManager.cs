@@ -14,6 +14,9 @@ using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage logic for leaderboards
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class LeaderboardsManager : ILeaderboardsManager
     {

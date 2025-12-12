@@ -4,7 +4,7 @@ namespace UnoLisServer.Contracts.DTOs
 {
     /// <summary>
     /// Data Transfer Object sent by the client when creating a match.
-    /// It contains the game rules and the host's identity.
+    /// It contains the capacity and the host's identity.
     /// </summary>
     [DataContract]
     public class MatchSettings

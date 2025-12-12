@@ -4,6 +4,10 @@ using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Services.GameLogic.Models
 {
+    /// <summary>
+    /// Represents the state and attributes of a player in a game session, including identity, hand, status flags, and
+    /// inventory.
+    /// </summary>
     public class GamePlayerData
     {
         public string Nickname { get; set; }

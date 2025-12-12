@@ -6,6 +6,9 @@ using UnoLisServer.Data;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage shop
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class ShopManager : IShopManager
     {
@@ -21,12 +24,12 @@ namespace UnoLisServer.Services
         public void GetShopItems()
         {
             var items = _context.LootBoxType
-                .Select(i => new ShopItem
+                .Select(lootBoxType => new ShopItem
                 {
-                    BoxId = i.idLootBoxType,
-                    Name = i.boxName,
-                    Price = i.price,
-                    Description = i.description
+                    BoxId = lootBoxType.idLootBoxType,
+                    Name = lootBoxType.boxName,
+                    Price = lootBoxType.price,
+                    Description = lootBoxType.description
                 }).ToList();
 
             _callback.ShopItemsReceived(items);

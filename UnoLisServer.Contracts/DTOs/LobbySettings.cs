@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Settings required previous to navigate to lobby
+    /// </summary>
     [DataContract]
     public class LobbySettings
     {

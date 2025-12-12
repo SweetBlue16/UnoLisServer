@@ -3,6 +3,9 @@ using System.Runtime.Serialization;
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Information needed for a ban
+    /// </summary>
     [DataContract]
     public class BanInfo
     {

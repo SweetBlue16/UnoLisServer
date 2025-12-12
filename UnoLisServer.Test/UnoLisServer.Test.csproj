@@ -127,7 +127,6 @@
     <Compile Include="ManagerTest\LeaderboardsManagerTest.cs" />
     <Compile Include="ManagerTest\LobbyDuplexManagerTest.cs" />
     <Compile Include="ManagerTest\LobbyManagerTest.cs" />
-    <Compile Include="ManagerTest\LoginManagerTest.cs" />
     <Compile Include="ManagerTest\MatchmakingManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileEditManagerTest.cs" />
     <Compile Include="ManagerTest\ProfileViewManagerTest.cs" />

@@ -9,6 +9,9 @@ using UnoLisServer.Common.Exceptions;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class to manage logic for Login out
+    /// </summary>
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession, ConcurrencyMode = ConcurrencyMode.Reentrant)]
     public class LogoutManager : ILogoutManager
     {

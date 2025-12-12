@@ -72,9 +72,10 @@ namespace UnoLisServer.Services.GameLogic
         }
         public void NextTurn()
         {
+            int minPlayers = 2;
             lock (GameLock)
             {
-                if (Players.Count(player => player.IsConnected) < 2)
+                if (Players.Count(player => player.IsConnected) < minPlayers)
                 {
                     return;
                 }

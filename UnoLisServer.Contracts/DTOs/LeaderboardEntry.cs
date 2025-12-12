@@ -1,5 +1,8 @@
 ﻿namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Object to classify players in leaderboards
+    /// </summary>
     public class LeaderboardEntry
     {
         public int Rank { get; set; }

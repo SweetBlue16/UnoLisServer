@@ -6,8 +6,14 @@ using UnoLisServer.Contracts.DTOs;
 
 namespace UnoLisServer.Services.GameLogic
 {
+    /// <summary>
+    /// Manages the draw and discard piles for a deck of cards, providing operations to draw, discard, and recycle cards
+    /// as needed.
+    /// </summary>
     public class DeckManager
     {
+        private readonly int emptyDeck = 0;
+        private readonly int lastCard = 1;
         private Queue<Card> _drawPile;
         private readonly Stack<Card> _discardPile;
 
@@ -20,14 +26,14 @@ namespace UnoLisServer.Services.GameLogic
 
         public Card DrawCard()
         {
-            if (_drawPile.Count == 0)
+            if (_drawPile.Count == emptyDeck)
             {
                 RecycleDiscardPile();
             }
 
-            if (_drawPile.Count == 0)
+            if (_drawPile.Count == emptyDeck)
             {
-                throw new InvalidOperationException("El mazo y la pila de descarte están agotados. No se puede continuar.");
+                throw new InvalidOperationException("Deck and discard pile out.");
             }
 
             return _drawPile.Dequeue();
@@ -38,12 +44,12 @@ namespace UnoLisServer.Services.GameLogic
             var cards = new List<Card>();
             for (int i = 0; i < count; i++)
             {
-                if (_drawPile.Count == 0)
+                if (_drawPile.Count == emptyDeck)
                 {
                     RecycleDiscardPile();
                 }
 
-                if (_drawPile.Count > 0)
+                if (_drawPile.Count > emptyDeck)
                 {
                     cards.Add(_drawPile.Dequeue());
                 }
@@ -65,9 +71,14 @@ namespace UnoLisServer.Services.GameLogic
             _discardPile.Push(card);
         }
 
+
+        /// <summary>
+        /// Returning null is accepted here to handle throws
+        /// </summary>
+        /// <returns></returns>
         public Card PeekTopCard()
         {
-            return _discardPile.Count > 0 ? _discardPile.Peek() : null;
+            return _discardPile.Count > emptyDeck ? _discardPile.Peek() : null;
         }
 
         public Card StartDiscardPile()
@@ -79,7 +90,8 @@ namespace UnoLisServer.Services.GameLogic
 
         private void RecycleDiscardPile()
         {
-            if (_discardPile.Count <= 1)
+            
+            if (_discardPile.Count <= lastCard)
             {
                 return;
             }

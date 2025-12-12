@@ -5,6 +5,9 @@ using UnoLisServer.Common.Models;
 
 namespace UnoLisServer.Common.Helpers
 {
+    /// <summary>
+    /// Class that manages verification codes for various purposes (e.g., account verification, password reset).
+    /// </summary>
     public interface IVerificationCodeHelper
     {
         string GenerateAndStoreCode(string identifier, CodeType type);

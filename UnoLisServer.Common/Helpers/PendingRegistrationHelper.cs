@@ -10,6 +10,9 @@ namespace UnoLisServer.Common.Helpers
         PendingRegistration GetAndRemovePendingRegistration(string email);
     }
 
+    /// <summary>
+    /// Class that manages pending user registrations in memory.
+    /// </summary>
     public class PendingRegistrationHelper : IPendingRegistrationHelper
     {
         private static readonly Lazy<PendingRegistrationHelper> _instance =

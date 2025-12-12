@@ -3,6 +3,9 @@ using System.Runtime.Serialization;
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Object for messages in chat
+    /// </summary>
     public class ChatMessageData
     {
         [DataMember]

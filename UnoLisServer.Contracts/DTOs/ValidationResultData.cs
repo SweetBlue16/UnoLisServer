@@ -2,6 +2,7 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    //Object used to return the result of a friend request validation
     [DataContract]
     public class ValidationResultData
     {

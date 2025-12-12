@@ -9,11 +9,9 @@ using Xunit;
 
 namespace UnoLisServer.Test
 {
-    // Este atributo es VITAL para evitar Deadlocks. Obliga a correr secuencialmente.
     [Collection("DatabaseTests")]
     public class FriendRepositoryTest : UnoLisTestBase
     {
-        // Variables dinámicas para guardar los IDs reales que genere SQL Server
         private int _idAlpha;
         private int _idBeta;
         private int _idGamma;
@@ -70,7 +68,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsEntities_AsRequester_ReturnsTargetFriend()
+        public async Task TestGetFriendsEntitiesAsRequesterReturnsTargetFriend()
         {
             var repo = CreateRepo();
             var friends = await repo.GetFriendsEntitiesAsync("Alpha");
@@ -79,7 +77,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsEntities_AsTarget_ReturnsRequesterFriend()
+        public async Task TestGetFriendsEntitiesAsTargetReturnsRequesterFriend()
         {
             var repo = CreateRepo();
             var friends = await repo.GetFriendsEntitiesAsync("Beta");
@@ -88,7 +86,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsEntities_PendingRequest_IsNotInFriendsList()
+        public async Task TestGetFriendsEntitiesPendingRequestIsNotInFriendsList()
         {
             var repo = CreateRepo();
             var friends = await repo.GetFriendsEntitiesAsync("Alpha");
@@ -96,7 +94,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendsEntities_NonExistentUser_ReturnsEmptyList()
+        public async Task TestGetFriendsEntitiesNonExistentUserReturnsEmptyList()
         {
             var repo = CreateRepo();
             var result = await repo.GetFriendsEntitiesAsync("GhostUser");
@@ -104,7 +102,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPendingRequests_ReturnsIncomingRequestsOnly()
+        public async Task TestGetPendingRequestsReturnsIncomingRequestsOnly()
         {
             var repo = CreateRepo();
             var requests = await repo.GetPendingRequestsEntitiesAsync("Alpha");
@@ -113,7 +111,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPendingRequests_OutgoingRequestsAreNotShown()
+        public async Task TestGetPendingRequestsOutgoingRequestsAreNotShown()
         {
             var repo = CreateRepo();
             var requests = await repo.GetPendingRequestsEntitiesAsync("Gamma");
@@ -121,7 +119,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetPendingRequests_ConfirmedFriendsAreNotShown()
+        public async Task TestGetPendingRequestsConfirmedFriendsAreNotShown()
         {
             var repo = CreateRepo();
             var requests = await repo.GetPendingRequestsEntitiesAsync("Beta");
@@ -129,7 +127,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendshipEntry_FoundByIds_OrderDoesNotMatter()
+        public async Task TestGetFriendshipEntryFoundByIdsOrderDoesNotMatter()
         {
             var repo = CreateRepo();
             var rel1 = await repo.GetFriendshipEntryAsync(_idAlpha, _idBeta);
@@ -141,7 +139,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task GetFriendshipEntry_NoRelationship_ReturnsNull()
+        public async Task TestGetFriendshipEntryNoRelationshipReturnsNull()
         {
             var repo = CreateRepo();
             var rel = await repo.GetFriendshipEntryAsync(_idAlpha, _idDelta);
@@ -149,7 +147,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreateFriendRequest_ValidUsers_InsertsPendingRequest()
+        public async Task TestCreateFriendRequestValidUsersInsertsPendingRequest()
         {
             var repo = CreateRepo();
             var newReq = await repo.CreateFriendRequestAsync(_idAlpha, _idDelta); 
@@ -165,7 +163,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task CreateFriendRequest_DuplicateRequest_ThrowsDataConflictException()
+        public async Task TestCreateFriendRequestDuplicateRequestThrowsDataConflictException()
         {
             var repo = CreateRepo();
             var ex = await Assert.ThrowsAsync<Exception>(() => repo.CreateFriendRequestAsync(_idAlpha, 9999999));
@@ -174,7 +172,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task AcceptFriendRequest_ValidId_UpdatesStatusToTrue()
+        public async Task TestAcceptFriendRequestValidIdUpdatesStatusToTrue()
         {
             var repo = CreateRepo();
             int reqId;
@@ -194,14 +192,14 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RemoveFriendshipEntry_ValidId_DeletesRecord()
+        public async Task TestRemoveFriendshipEntryValidIdDeletesRecord()
         {
             var repo = CreateRepo();
             int relId;
             using (var ctx = GetContext())
             {
-                // Buscamos Alpha<->Beta
-                relId = ctx.FriendList.First(f => f.Player_idPlayer == _idAlpha && f.Player_idPlayer1 == _idBeta).idFriendList;
+                relId = ctx.FriendList.First(f => f.Player_idPlayer == _idAlpha && 
+                f.Player_idPlayer1 == _idBeta).idFriendList;
             }
 
             await repo.RemoveFriendshipEntryAsync(relId);
@@ -214,7 +212,7 @@ namespace UnoLisServer.Test
         }
 
         [Fact]
-        public async Task RemoveFriendshipEntry_NonExistentId_DoesNotThrow()
+        public async Task TestRemoveFriendshipEntryNonExistentIdDoesNotThrow()
         {
             var repo = CreateRepo();
             await repo.RemoveFriendshipEntryAsync(9999999);

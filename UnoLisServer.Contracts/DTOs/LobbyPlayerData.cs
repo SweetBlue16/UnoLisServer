@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Information to show players in lobby 
+    /// </summary>
     [DataContract]
     public class LobbyPlayerData
     {

@@ -14,8 +14,10 @@ namespace UnoLisServer.Common.Helpers
     {
         public async Task SendEmailAsync(string recipientEmail, string subject, string body)
         {
-            var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? ConfigurationManager.AppSettings["SmtpUser"];
-            var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS") ?? ConfigurationManager.AppSettings["SmtpPass"];
+            var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? 
+                ConfigurationManager.AppSettings["SmtpUser"];
+            var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS") ?? 
+                ConfigurationManager.AppSettings["SmtpPass"];
             var smtpHost = ConfigurationManager.AppSettings["SmtpHost"];
             var smtpPort = int.Parse(ConfigurationManager.AppSettings["SmtpPort"]);
 

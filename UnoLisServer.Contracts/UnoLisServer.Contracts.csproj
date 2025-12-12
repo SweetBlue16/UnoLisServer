@@ -51,7 +51,6 @@
     <Compile Include="DTOs\Card.cs" />
     <Compile Include="DTOs\ChatMessageData.cs" />
     <Compile Include="DTOs\CreateMatchResponse.cs" />
-    <Compile Include="DTOs\CreateRequest.cs" />
     <Compile Include="DTOs\FriendData.cs" />
     <Compile Include="DTOs\FriendRequestData.cs" />
     <Compile Include="DTOs\GamePlayer.cs" />
@@ -60,7 +59,6 @@
     <Compile Include="DTOs\LobbyPlayerData.cs" />
     <Compile Include="DTOs\LobbySettings.cs" />
     <Compile Include="DTOs\MatchSettings.cs" />
-    <Compile Include="DTOs\NetworkUpdateData.cs" />
     <Compile Include="DTOs\NotificationData.cs" />
     <Compile Include="DTOs\NotificationType.cs" />
     <Compile Include="DTOs\PlayCardContext.cs" />

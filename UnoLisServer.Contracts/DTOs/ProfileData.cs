@@ -1,5 +1,8 @@
 ﻿namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Represents user profile data object
+    /// </summary>
     public class ProfileData
     {
         public string Nickname { get; set; }

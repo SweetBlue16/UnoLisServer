@@ -1,5 +1,8 @@
 ﻿namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Item available in the shop
+    /// </summary>
     public class ShopItem
     {
         public int BoxId { get; set; }

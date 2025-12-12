@@ -7,6 +7,10 @@ using UnoLisServer.Services.ManagerInterfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Manages duplex client connections and state for lobby-based communication sessions using Windows Communication
+    /// Foundation (WCF).
+    /// </summary>
     [ServiceBehavior(
         InstanceContextMode = InstanceContextMode.PerSession, 
         ConcurrencyMode = ConcurrencyMode.Reentrant)]

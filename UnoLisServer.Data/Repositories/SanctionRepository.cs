@@ -4,6 +4,10 @@ using UnoLisServer.Data.RepositoryInterfaces;
 
 namespace UnoLisServer.Data.Repositories
 {
+    /// <summary>
+    /// Provides methods for managing sanctions in the data store, including adding new sanctions and retrieving active
+    /// sanctions for players.
+    /// </summary>
     public class SanctionRepository : ISanctionRepository
     {
         private readonly Func<UNOContext> _contextFactory;

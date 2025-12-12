@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Match result data 
+    /// </summary>
     [DataContract]
     public class ResultData
     {

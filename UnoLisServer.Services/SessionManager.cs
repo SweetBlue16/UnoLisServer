@@ -6,6 +6,9 @@ using UnoLisServer.Contracts.Interfaces;
 
 namespace UnoLisServer.Services
 {
+    /// <summary>
+    /// Class tht handles the current session
+    /// </summary>
     public static class SessionManager
     {
         private static readonly Dictionary<string, ISessionCallback> _activeSessions =

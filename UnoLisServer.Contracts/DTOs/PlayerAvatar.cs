@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Represents a player avatar, including its identity, descriptive information, rarity, and selection status.
+    /// </summary>
     [DataContract]
     public class PlayerAvatar
     {

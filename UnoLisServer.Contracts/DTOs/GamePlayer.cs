@@ -2,6 +2,9 @@
 
 namespace UnoLisServer.Contracts.DTOs
 {
+    /// <summary>
+    /// Object to handle player in match
+    /// </summary>
     [DataContract]
     public class GamePlayer
     {
