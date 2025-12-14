@@ -111,7 +111,6 @@ namespace UnoLisServer.Test
         public async Task TestGetPlayerProfileUserExistsReturnsBasicInfoAndAccount()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
-            Assert.NotNull(result);
             Assert.Equal("TikiTest", result.nickname);
             Assert.Equal("tiki@test.com", result.Account.First().email);
         }
@@ -120,7 +119,6 @@ namespace UnoLisServer.Test
         public async Task TestGetPlayerProfileUserExistsReturnsStatsAndSocials()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
-            Assert.NotNull(result);
             Assert.Equal(5, result.PlayerStatistics.First().wins);
             Assert.Equal("Facebook", result.SocialNetwork.First().tipoRedSocial);
         }
@@ -129,7 +127,6 @@ namespace UnoLisServer.Test
         public async Task TestGetPlayerProfileUserExistsReturnsNestedAvatars()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("TikiTest");
-            Assert.NotNull(result);
             Assert.Equal("Default", result.AvatarsUnlocked.First().Avatar.avatarName);
         }
 
@@ -144,7 +141,6 @@ namespace UnoLisServer.Test
         public async Task TestGetPlayerProfileNewUserWithNoStatsReturnsEmptyListsButNotNull()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("Newbie");
-            Assert.NotNull(result);
             Assert.True(result.PlayerStatistics == null || result.PlayerStatistics.Count == 0);
         }
 
@@ -173,7 +169,6 @@ namespace UnoLisServer.Test
         public async Task TestGetPlayerProfileEmptyStringReturnsEmptyPlayer()
         {
             var result = await CreateRepo().GetPlayerProfileByNicknameAsync("");
-            Assert.NotNull(result); 
             Assert.Equal(0, result.idPlayer);
         }
 
@@ -282,7 +277,6 @@ namespace UnoLisServer.Test
             using (var ctx = GetContext())
             {
                 var p = ctx.Player.Include("Account").FirstOrDefault(x => x.nickname == "NewReg");
-                Assert.NotNull(p);
                 Assert.Equal("n@n.com", p.Account.First().email);
             }
         }
@@ -353,7 +347,6 @@ namespace UnoLisServer.Test
             using (var ctx = GetContext())
             {
                 var p = ctx.Player.Include("AvatarsUnlocked").FirstOrDefault(x => x.nickname == "PendingUser");
-                Assert.NotNull(p);
                 Assert.Equal(3, p.AvatarsUnlocked.Count);
             }
         }
@@ -363,7 +356,6 @@ namespace UnoLisServer.Test
         {
             var avatars = await CreateRepo().GetPlayerAvatarsAsync("TikiTest");
 
-            Assert.NotNull(avatars);
             Assert.True(avatars.Count >= 3);
 
             var defaultAvatar = avatars.First(a => a.AvatarId == 1);
@@ -404,7 +396,6 @@ namespace UnoLisServer.Test
 
             var result = await repo.GetTopPlayersByGlobalScoreAsync(2);
 
-            Assert.NotNull(result);
             Assert.Equal(2, result.Count);
 
             Assert.Equal("HighScore", result[0].Player.nickname);
@@ -449,23 +440,6 @@ namespace UnoLisServer.Test
 
             Assert.True(isValidError,
                 $"Expected 'Data_Conflict' or 'DataStore_Unavailable', but got '{ex.Message}'");
-        }
-
-        private void CreateEmailObstacle(string emailToBlock)
-        {
-            using (var ctx = GetContext())
-            {
-                if (!ctx.Account.Any(a => a.email == emailToBlock))
-                {
-                    var obstacle = new Player
-                    {
-                        nickname = "Obstacle",
-                        Account = new List<Account> { new Account { email = emailToBlock, password = "X" } }
-                    };
-                    ctx.Player.Add(obstacle);
-                    ctx.SaveChanges();
-                }
-            }
         }
     }
 }

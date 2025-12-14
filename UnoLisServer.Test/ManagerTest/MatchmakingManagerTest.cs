@@ -91,7 +91,6 @@ namespace UnoLisServer.Test
                              .Returns((LobbySettings)null);
 
             var result = await _manager.GetLobbySettingsAsync("CODE");
-            Assert.NotNull(result);
             Assert.Null(result.BackgroundVideoName); 
         }
     }

@@ -1294,6 +1294,8 @@ namespace UnoLisServer.Services
             }
         }
 
+
+
         private bool IsInvalidInput(string lobbyCode, string nickname)
         {
             if (string.IsNullOrWhiteSpace(lobbyCode) || string.IsNullOrWhiteSpace(nickname))
@@ -1302,6 +1304,12 @@ namespace UnoLisServer.Services
                 return true;
             }
             return false;
+        }
+
+        public void LeaveGame(string lobbyCode, string nickname)
+        {
+            Logger.Log($"[GAME] Player clicked Leave Game.");
+            HandlePlayerLeft(lobbyCode, nickname);
         }
     }
 }

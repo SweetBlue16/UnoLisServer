@@ -21,7 +21,6 @@ namespace UnoLisServer.Test.HelpersTest
             string email = "gen@test.com";
             string code = _helper.GenerateAndStoreCode(email, CodeType.EmailVerification);
 
-            Assert.NotNull(code);
             Assert.Equal(6, code.Length);
             Assert.True(int.TryParse(code, out _));
         }

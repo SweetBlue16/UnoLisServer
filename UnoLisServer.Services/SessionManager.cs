@@ -26,7 +26,7 @@ namespace UnoLisServer.Services
             {
                 if (_activeSessions.ContainsKey(nickname))
                 {
-                    Logger.Warn($"[SESSION] Duplicate login detected for '{nickname}'. Closing old session.");
+                    Logger.Warn($"[SESSION] Duplicate login detected for Player. Closing old session.");
                     var oldCallback = _activeSessions[nickname];
 
                     _activeSessions.Remove(nickname);
@@ -35,7 +35,7 @@ namespace UnoLisServer.Services
                 }
 
                 _activeSessions.Add(nickname, callback);
-                Logger.Log($"[SESSION] User '{nickname}' connected. Total sessions: {_activeSessions.Count}");
+                Logger.Log($"[SESSION] User connected. Total sessions: {_activeSessions.Count}");
 
                 if (callback is ICommunicationObject channel)
                 {

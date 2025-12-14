@@ -24,6 +24,9 @@ namespace UnoLisServer.Contracts.Interfaces
         void DisconnectPlayer(string lobbyCode, string nickname);
 
         [OperationContract(IsOneWay = true)]
+        void LeaveGame(string lobbyCode, string nickname);
+
+        [OperationContract(IsOneWay = true)]
         void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname);
     }
 

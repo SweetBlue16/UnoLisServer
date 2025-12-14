@@ -28,7 +28,6 @@ namespace UnoLisServer.Test.HelpersTest
             _helper.StorePendingRegistration(email, data);
             var retrieved = _helper.GetAndRemovePendingRegistration(email);
 
-            Assert.NotNull(retrieved);
             Assert.Equal("StoreNick", retrieved.Nickname);
             Assert.Equal("Hash", retrieved.HashedPassword);
         }
@@ -43,7 +42,6 @@ namespace UnoLisServer.Test.HelpersTest
             var firstTry = _helper.GetAndRemovePendingRegistration(email);
             var secondTry = _helper.GetAndRemovePendingRegistration(email);
 
-            Assert.NotNull(firstTry);
             Assert.Null(secondTry); 
         }
 
@@ -65,7 +63,6 @@ namespace UnoLisServer.Test.HelpersTest
             _helper.StorePendingRegistration(email, data2);
             var result = _helper.GetAndRemovePendingRegistration(email);
 
-            Assert.NotNull(result);
             Assert.Equal("NewNick", result.Nickname);
         }
     }

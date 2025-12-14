@@ -15,5 +15,6 @@ namespace UnoLisServer.Services.ManagerInterfaces
         Task DrawCardAsync(string lobbyCode, string nickname);
         Task SayUnoAsync(string lobbyCode, string nickname);
         void UseItem(ItemUsageContext context);
+        void LeaveGame(string lobbyCode, string nickname);
     }
 }

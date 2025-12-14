@@ -30,7 +30,6 @@ namespace UnoLisServer.Test.HelpersTest
         {
             string hash = PasswordHelper.HashPassword("Test");
 
-            Assert.NotNull(hash);
             Assert.Equal(64, hash.Length);
 
             Assert.Matches("^[a-f0-9]+$", hash);

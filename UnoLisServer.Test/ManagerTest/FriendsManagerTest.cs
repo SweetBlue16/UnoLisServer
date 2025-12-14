@@ -278,7 +278,6 @@ namespace UnoLisServer.Test
 
             var result = await _manager.GetFriendsListAsync("SlowUser");
 
-            Assert.NotNull(result);
             Assert.Empty(result); 
         }
     }

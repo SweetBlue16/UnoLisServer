@@ -180,6 +180,32 @@ namespace UnoLisServer.Services
             }
         }
 
+        public void LeaveGame(string lobbyCode, string nickname)
+        {
+            if (IsInvalidInput(lobbyCode, nickname))
+            {
+                Logger.Warn("[GAMEPLAY] LeaveGame failed. Invalid parameters.");
+                return;
+            }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    _gameManager.LeaveGame(lobbyCode, nickname);
+                    Logger.Log($"[GAMEPLAY] Player left lobby {lobbyCode} manually.");
+                }
+                catch (InvalidOperationException invEx)
+                {
+                    Logger.Warn($"[GAMEPLAY] LeaveGame invalid state: {invEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[CRITICAL] Unexpected error leaving game", ex);
+                }
+            });
+        }
+
         public void UseItem(string lobbyCode, string nickname, ItemType itemType, string targetNickname)
         {
             if (IsInvalidInput(lobbyCode, nickname))

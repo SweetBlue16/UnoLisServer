@@ -52,7 +52,6 @@ namespace UnoLisServer.Test
 
             Assert.True(response.Success);
             Assert.Equal(MessageCode.LeaderboardDataRetrieved, response.Code);
-            Assert.NotNull(response.Data);
             Assert.Equal(2, response.Data.Count);
 
             var first = response.Data[0];
@@ -87,7 +86,6 @@ namespace UnoLisServer.Test
             var response = await _manager.GetGlobalLeaderboardAsync();
 
             Assert.True(response.Success);
-            Assert.NotNull(response.Data);
             Assert.Empty(response.Data);
         }
 

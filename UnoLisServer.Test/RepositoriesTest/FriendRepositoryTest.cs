@@ -72,7 +72,6 @@ namespace UnoLisServer.Test
         {
             var repo = CreateRepo();
             var friends = await repo.GetFriendsEntitiesAsync("Alpha");
-            Assert.NotNull(friends);
             Assert.Contains(friends, f => f.nickname == "Beta");
         }
 
@@ -81,7 +80,6 @@ namespace UnoLisServer.Test
         {
             var repo = CreateRepo();
             var friends = await repo.GetFriendsEntitiesAsync("Beta");
-            Assert.NotNull(friends);
             Assert.Contains(friends, f => f.nickname == "Alpha");
         }
 
@@ -131,10 +129,8 @@ namespace UnoLisServer.Test
         {
             var repo = CreateRepo();
             var rel1 = await repo.GetFriendshipEntryAsync(_idAlpha, _idBeta);
-            Assert.NotNull(rel1);
 
             var rel2 = await repo.GetFriendshipEntryAsync(_idBeta, _idAlpha);
-            Assert.NotNull(rel2);
             Assert.Equal(rel1.idFriendList, rel2.idFriendList);
         }
 
@@ -155,7 +151,6 @@ namespace UnoLisServer.Test
             using (var ctx = GetContext())
             {
                 var entry = ctx.FriendList.Find(newReq.idFriendList);
-                Assert.NotNull(entry);
                 Assert.False(entry.friendRequest);
                 Assert.Equal(_idAlpha, entry.Player_idPlayer);
                 Assert.Equal(_idDelta, entry.Player_idPlayer1);

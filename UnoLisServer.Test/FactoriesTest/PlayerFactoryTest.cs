@@ -28,7 +28,6 @@ namespace UnoLisServer.Test.FactoriesTest
         {
             var player = _factory.CreateNewPlayer("Nick", "Name", "e@mail.com", "Hash123");
 
-            Assert.NotNull(player.Account);
             Assert.Single(player.Account);
             Assert.Equal("e@mail.com", player.Account.First().email);
             Assert.Equal("Hash123", player.Account.First().password);
@@ -39,7 +38,6 @@ namespace UnoLisServer.Test.FactoriesTest
         {
             var player = _factory.CreateNewPlayer("Nick", "Name", "e@mail.com", "Hash");
 
-            Assert.NotNull(player.PlayerStatistics);
             Assert.Single(player.PlayerStatistics);
 
             var stats = player.PlayerStatistics.First();
@@ -53,7 +51,6 @@ namespace UnoLisServer.Test.FactoriesTest
         {
             var player = _factory.CreateNewPlayer("Nick", "Name", "e@mail.com", "Hash");
 
-            Assert.NotNull(player.AvatarsUnlocked);
             Assert.Equal(3, player.AvatarsUnlocked.Count);
 
             Assert.Contains(player.AvatarsUnlocked, a => a.Avatar_idAvatar == 1);
