@@ -97,6 +97,7 @@
     <Compile Include="Repositories\PlayerRepository.cs" />
     <Compile Include="Repositories\ReportRepository.cs" />
     <Compile Include="Repositories\SanctionRepository.cs" />
+    <Compile Include="Repositories\ShopRepository.cs" />
     <Compile Include="RepositoryInterfaces\IFriendRepository.cs" />
     <Compile Include="RepositoryInterfaces\IPlayerRepository.cs" />
     <Compile Include="RepositoryInterfaces\IReportRepository.cs" />

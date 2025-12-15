@@ -12,6 +12,9 @@ namespace UnoLisServer.Contracts.Interfaces
 
         [OperationContract(IsOneWay = true)]
         void PurchaseItem(PurchaseRequest request);
+
+        [OperationContract(IsOneWay = true)]
+        void GetPlayerBalance(string nickname);
     }
 
     [ServiceContract]
@@ -21,6 +24,9 @@ namespace UnoLisServer.Contracts.Interfaces
         void ShopItemsReceived(List<ShopItem> items);
 
         [OperationContract]
-        void PurchaseResponse(bool success, string itemName);
+        void PurchaseResponse(ShopPurchaseResult result);
+
+        [OperationContract(IsOneWay = true)]
+        void PlayerBalanceReceived(int balance);
     }
 }

@@ -70,6 +70,7 @@
     <Compile Include="DTOs\ReportData.cs" />
     <Compile Include="DTOs\ResultData.cs" />
     <Compile Include="DTOs\ShopItem.cs" />
+    <Compile Include="DTOs\ShopPurchaseResult.cs" />
     <Compile Include="DTOs\ValidationResultData.cs" />
     <Compile Include="Enums\CardColor.cs" />
     <Compile Include="Enums\CardValue.cs" />
