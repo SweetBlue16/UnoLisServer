@@ -106,6 +106,13 @@ namespace UnoLisServer.Services
                 LobbyValidator.ValidateJoinRequest(lobbyCode, nickname);
 
                 var lobby = _sessionHelper.GetLobby(lobbyCode);
+
+                if (lobby == null)
+                {
+                    Logger.Warn($"[LOBBY] Join attempt failed: Lobby {lobbyCode} not found (Returned NULL).");
+                    return new JoinMatchResponse { Success = false, Message = "Lobby not found." };
+                }
+
                 if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
                 {
                     Logger.Warn($"[LOBBY] Join attempt failed: Lobby {lobbyCode} not found.");
