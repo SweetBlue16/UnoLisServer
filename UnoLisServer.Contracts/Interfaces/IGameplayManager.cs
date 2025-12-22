@@ -60,6 +60,8 @@ namespace UnoLisServer.Contracts.Interfaces
         [OperationContract(IsOneWay = true)]
         void PlayerShoutedUno(string nickname);
 
+        [OperationContract(IsOneWay = true)]
+        void PlayerUsedItem(string nickname, ItemType itemType);
     }
 }
 

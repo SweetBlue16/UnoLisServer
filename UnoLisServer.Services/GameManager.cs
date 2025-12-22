@@ -623,23 +623,34 @@ namespace UnoLisServer.Services
 
         public void UseItem(ItemUsageContext context)
         {
-            if (IsInvalidItemContext(context)) return;
+            if (IsInvalidItemContext(context))
+            {
+                return;
+            }
 
             var session = _sessionHelper.GetGame(context.LobbyCode);
-            if (session == GameSession.Empty) return;
+            if (session == GameSession.Empty)
+            {
+                return;
+            }
 
             lock (session.GameLock)
             {
                 var player = session.GetPlayer(context.ActorNickname);
 
-                if (!CanUseItem(session, player, context.ItemType)) return;
+                if (!CanUseItem(session, player, context.ItemType))
+                {
+                    return;
+                }
 
                 if (context.ItemType == ItemType.SwapHands)
                 {
                     ExecuteSwapHands(session, player, context.TargetNickname);
+                    BroadcastItemUsageSafe(context.LobbyCode, player.Nickname, context.ItemType);
                 }
                 else
                 {
+                    BroadcastItemUsageSafe(context.LobbyCode, player.Nickname, context.ItemType);
                     Logger.Warn($"[GAME] Item logic not implemented for {context.ItemType}");
                 }
             }
@@ -1294,7 +1305,26 @@ namespace UnoLisServer.Services
             }
         }
 
-
+        private void BroadcastItemUsageSafe(string lobbyCode, string nickname, ItemType itemType)
+        {
+            try
+            {
+                _sessionHelper.BroadcastToGame(lobbyCode,
+                    callback => callback.PlayerUsedItem(nickname, itemType));
+            }
+            catch (CommunicationException commEx)
+            {
+                Logger.Warn($"[GAME] Failed broadcasting Item animation: {commEx.Message}");
+            }
+            catch (TimeoutException timeEx)
+            {
+                Logger.Warn($"[GAME] Timeout broadcasting item animation: {timeEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[GAME] Failed broadcasting item usage: {ex.Message}");
+            }
+        }
 
         private bool IsInvalidInput(string lobbyCode, string nickname)
         {
